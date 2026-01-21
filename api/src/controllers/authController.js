@@ -1,6 +1,6 @@
 
 import authService from "../services/authServices.js";
-import {createJWT, verifyJWT} from "../utils/jwt.js";
+import {createJWT} from "../utils/jwt.js";
 
 
 const login = async (req, res)=>{
@@ -18,15 +18,14 @@ const login = async (req, res)=>{
         const data = await authService.login(input);
 
         //generate token
-        // FIX: Convert Mongoose document to a plain object here
+        // FIX: Convert Mongoo  se document to a plain object here
         const payload = data.toObject();
         
         // generate token
         const token = createJWT(payload); 
 
-        const  result = await verifyJWT(token);
+        res.cookie("token", token, {maxAge:86400 * 1000});
 
-        console.log(result);
 
         res.json({ data, token }); // Sending both data and token
         }catch(error){
@@ -54,7 +53,18 @@ const register = async (req, res)=>{
 
    try{
 
-    const data =  await authService.register(input );    
+    const data =  await authService.register(input ); 
+    
+     //generate token
+        // FIX: Convert Mongoo  se document to a plain object here
+        const payload = data.toObject();
+        
+        // generate token
+        const token = createJWT(payload); 
+
+
+        res.cookie("token", token, {maxAge:86400 * 1000});
+
     res.status(201).send(data);
    }catch(error){ 
     res.status(400).send(error.message);

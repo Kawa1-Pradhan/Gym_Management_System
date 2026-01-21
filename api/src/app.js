@@ -1,19 +1,27 @@
 import express from "express";
 import bodyParser from "body-parser";
-
+import cors from "cors";
 import config from "./config/config.js";
 import authRoutes from "./routes/authRoute.js";
 import userRoute from "./routes/userRoute.js";
 import connectDB from "./config/database.js";
+import logger from "./middlewares/logger.js";
+
+
 
 const app = express();
 
-connectDB();
+// Enable CORS for all routes
+app.use(cors());
 
+connectDB();
 
 app.use(bodyParser.json());
 
-app.get("/", (req, res)=>{
+app.use(logger);
+
+
+app.get("/", (req, res)=>{ 
     res.json({
         name: config.name,
         port: config.port,
