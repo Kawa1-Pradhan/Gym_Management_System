@@ -1,2 +1,6 @@
 node_modules
 .env
+npm-debug.log
+
+# NPM cache / temp
+client/%USERPROFILE%/AppData/Local/npm-cache/

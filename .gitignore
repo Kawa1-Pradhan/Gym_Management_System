@@ -1,0 +1,15 @@
+# Backend
+node_modules/
+npm-debug.log*
+.env
+dist/
+
+# Frontend (React inside client/)
+client/node_modules/
+client/build/
+client/.env
+client/*.log
+client/coverage/
+# Ignore npm cache
+client/%USERPROFILE%/AppData/Local/npm-cache/
+api/%USERPROFILE%/AppData/Local/npm-cache/
