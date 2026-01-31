@@ -8,7 +8,8 @@ const SignUp = () => {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'MEMBER'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,15 +42,17 @@ const SignUp = () => {
     }
 
     try {
-      await apiRequest('/api/users', {
+      await apiRequest('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          role: formData.role,
           membershipStatus: 'Pending' // Default status
-        }),
+        },
       });
 
       // Success - redirect to login

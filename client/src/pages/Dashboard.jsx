@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isStaff = user.role && user.role.includes('STAFF');
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -22,6 +23,14 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-300">Welcome, {user.name || 'Member'}!</span>
+              {isStaff && (
+                <Link
+                  to="/staff-dashboard"
+                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
+                >
+                  Staff Dashboard
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
@@ -89,12 +98,12 @@ const Dashboard = () => {
               </svg>
               View Profile
             </button>
-            <button className="bg-purple-600 hover:bg-purple-700 p-4 rounded-lg text-white font-semibold transition duration-300">
+            <Link to="/book-session" className="bg-purple-600 hover:bg-purple-700 p-4 rounded-lg text-white font-semibold transition duration-300 block text-center">
               <svg className="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
               </svg>
               Book Session
-            </button>
+            </Link>
             <button className="bg-orange-600 hover:bg-orange-700 p-4 rounded-lg text-white font-semibold transition duration-300">
               <svg className="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />

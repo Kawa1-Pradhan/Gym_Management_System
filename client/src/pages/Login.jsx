@@ -26,13 +26,22 @@ const Login = () => {
     try {
       const data = await apiRequest('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify(formData),
+        body: formData,
       });
 
-      // Store token in localStorage
+      // Store token and user data in localStorage
       localStorage.setItem('token', data.token);
-      // Redirect to dashboard
-      navigate('/dashboard');
+      localStorage.setItem('user', JSON.stringify(data.data));
+
+      // Role-based redirection
+      const userRole = data.data.role;
+      if (userRole && userRole.includes('ADMIN')) {
+        navigate('/admin-dashboard');
+      } else if (userRole && userRole.includes('STAFF')) {
+        navigate('/staff-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.message || 'Network error. Please try again.');
     } finally {
