@@ -73,7 +73,7 @@ const StaffDashboard = () => {
   const loadBoxingSessions = async () => {
     try {
       const response = await apiRequest('/api/sessions/boxing');
-      setBoxingSessions(response);
+      setBoxingSessions(Array.isArray(response) ? response : []);
     } catch (err) {
       console.error('Error loading boxing sessions:', err);
     }
@@ -82,7 +82,7 @@ const StaffDashboard = () => {
   const loadSaunaSessions = async () => {
     try {
       const response = await apiRequest('/api/sessions/sauna');
-      setSaunaSessions(response);
+      setSaunaSessions(Array.isArray(response) ? response : []);
     } catch (err) {
       console.error('Error loading sauna sessions:', err);
     }
@@ -92,7 +92,7 @@ const StaffDashboard = () => {
     try {
       const response = await apiRequest('/api/users');
       // Filter only members
-      const memberUsers = response.filter(u => u.role && u.role.includes('MEMBER'));
+      const memberUsers = Array.isArray(response) ? response.filter(u => u.role && u.role.includes('MEMBER')) : [];
       setMembers(memberUsers);
     } catch (err) {
       console.error('Error loading members:', err);
@@ -108,8 +108,8 @@ const StaffDashboard = () => {
 
     try {
       const endpoint = bookingForm.sessionType === 'boxing'
-        ? '/api/bookings/boxing'
-        : '/api/bookings/sauna';
+        ? `/api/bookings/boxing/${bookingForm.sessionId}`
+        : `/api/bookings/sauna/${bookingForm.sessionId}`;
 
       await apiRequest(endpoint, {
         method: 'POST',
@@ -125,6 +125,8 @@ const StaffDashboard = () => {
         sessionId: '',
         sessionType: 'boxing'
       });
+      loadBoxingSessions();
+      loadSaunaSessions();
     } catch (err) {
       setError(err.message || 'Failed to book session');
     } finally {
@@ -394,7 +396,7 @@ const StaffDashboard = () => {
             </div>
 
             {/* Upcoming Sessions */}
-            <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
+            <div className="bg-slate-800 p-6 rounded-lg shadow-lg mb-8">
               <h2 className="text-2xl font-bold text-white mb-6">Upcoming Sessions</h2>
               <div className="space-y-4">
                 {upcomingSessions.length > 0 ? (
@@ -419,6 +421,22 @@ const StaffDashboard = () => {
                 ) : (
                   <p className="text-gray-400 text-center py-8">No upcoming sessions scheduled</p>
                 )}
+              </div>
+            </div>
+
+            {/* Simple Enrollment Card */}
+            <div
+              onClick={() => navigate('/enroll-member')}
+              className="bg-slate-800 p-6 rounded-lg shadow-lg cursor-pointer hover:bg-slate-700 transition duration-300 flex items-center gap-4"
+            >
+              <div className="bg-blue-600 p-3 rounded-full">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">Enroll New Member</h3>
+                <p className="text-gray-400 text-sm">Create a new member account and assign membership details.</p>
               </div>
             </div>
           </div>

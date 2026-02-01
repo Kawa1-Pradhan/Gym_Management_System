@@ -59,14 +59,7 @@ const AdminDashboard = () => {
 
       if (activeTab === 'overview' || activeTab === 'bookings') {
         try {
-          // Load all bookings from both endpoints
-          const boxingBookings = await apiRequest('/api/bookings/boxing');
-          const saunaBookings = await apiRequest('/api/bookings/sauna');
-
-          const allBookings = [
-            ...boxingBookings.map(b => ({ ...b, type: 'Boxing' })),
-            ...saunaBookings.map(b => ({ ...b, type: 'Sauna' }))
-          ];
+          const allBookings = await apiRequest('/api/bookings');
           setBookings(allBookings);
         } catch (err) {
           console.error('Error loading bookings:', err);
@@ -128,8 +121,44 @@ const AdminDashboard = () => {
   };
 
   const handleUserAction = async (userId, action) => {
-    // This would require additional admin API endpoints
-    setSuccess(`${action} action performed on user`);
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      let endpoint = '';
+      let method = 'POST';
+      let confirmMsg = '';
+
+      switch (action) {
+        case 'Deactivate':
+        case 'Activate':
+          endpoint = `/api/users/${userId}/deactivate`; // This endpoint toggles
+          method = 'PATCH';
+          confirmMsg = `Are you sure you want to ${action.toLowerCase()} this user?`;
+          break;
+        case 'Reset Password':
+          endpoint = `/api/users/${userId}/reset-password`;
+          confirmMsg = 'Generate a new password and send it via email?';
+          break;
+        case 'Resend Credentials':
+          endpoint = `/api/users/${userId}/resend`;
+          confirmMsg = 'Resend current enrollment credentials?';
+          break;
+        default:
+          return;
+      }
+
+      if (window.confirm(confirmMsg)) {
+        const response = await apiRequest(endpoint, { method });
+        setSuccess(response.message || `${action} successful`);
+        loadData(); // Refresh list
+      }
+    } catch (err) {
+      setError(err.message || `Failed to perform ${action}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -142,7 +171,7 @@ const AdminDashboard = () => {
 
   const stats = {
     totalUsers: users.length,
-    activeBookings: bookings.filter(b => b.status === 'Confirmed').length,
+    activeBookings: bookings.filter(b => b.status === 'Booked').length,
     totalSessions: sessions.length,
     staffMembers: users.filter(u => u.role.includes('STAFF')).length
   };
@@ -177,8 +206,8 @@ const AdminDashboard = () => {
           <button
             onClick={() => setActiveTab('overview')}
             className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'overview'
-                ? 'bg-red-600 text-white'
-                : 'text-gray-300 hover:text-white hover:bg-slate-700'
+              ? 'bg-red-600 text-white'
+              : 'text-gray-300 hover:text-white hover:bg-slate-700'
               }`}
           >
             📊 Overview
@@ -186,8 +215,8 @@ const AdminDashboard = () => {
           <button
             onClick={() => setActiveTab('users')}
             className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'users'
-                ? 'bg-red-600 text-white'
-                : 'text-gray-300 hover:text-white hover:bg-slate-700'
+              ? 'bg-red-600 text-white'
+              : 'text-gray-300 hover:text-white hover:bg-slate-700'
               }`}
           >
             👥 User Management
@@ -195,8 +224,8 @@ const AdminDashboard = () => {
           <button
             onClick={() => setActiveTab('bookings')}
             className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'bookings'
-                ? 'bg-red-600 text-white'
-                : 'text-gray-300 hover:text-white hover:bg-slate-700'
+              ? 'bg-red-600 text-white'
+              : 'text-gray-300 hover:text-white hover:bg-slate-700'
               }`}
           >
             📅 Booking Oversight
@@ -204,8 +233,8 @@ const AdminDashboard = () => {
           <button
             onClick={() => setActiveTab('sessions')}
             className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'sessions'
-                ? 'bg-red-600 text-white'
-                : 'text-gray-300 hover:text-white hover:bg-slate-700'
+              ? 'bg-red-600 text-white'
+              : 'text-gray-300 hover:text-white hover:bg-slate-700'
               }`}
           >
             🏋️‍♂️ Session Management
@@ -375,25 +404,40 @@ const AdminDashboard = () => {
                       <p className="text-gray-400">{user.email}</p>
                       <p className="text-gray-400 text-sm">Role: {user.role.join(', ')}</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.membershipStatus === 'Active' ? 'text-green-400 bg-green-900' : 'text-gray-400 bg-gray-700'
-                        }`}>
-                        {user.membershipStatus}
-                      </span>
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.isActive === false ? 'text-red-400 bg-red-900/30' : 'text-green-400 bg-green-900/30'}`}>
+                          {user.isActive === false ? 'Inactive' : 'Active'}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs box-border border ${user.emailLastStatus === 'Sent' ? 'border-green-500 text-green-500' : user.emailLastStatus === 'Failed' ? 'border-red-500 text-red-500' : 'border-slate-500 text-slate-500'}`}>
+                          Mail: {user.emailLastStatus || 'N/A'}
+                        </span>
+                      </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleUserAction(user._id, 'Edit')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition duration-300"
+                          onClick={() => handleUserAction(user._id, user.isActive === false ? 'Activate' : 'Deactivate')}
+                          className={`px-3 py-1 rounded text-sm transition duration-300 ${user.isActive === false ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
                         >
-                          Edit
+                          {user.isActive === false ? 'Activate' : 'Deactivate'}
                         </button>
                         <button
-                          onClick={() => handleUserAction(user._id, 'Suspend')}
-                          className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm transition duration-300"
+                          onClick={() => handleUserAction(user._id, 'Reset Password')}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition duration-300"
                         >
-                          Suspend
+                          Reset Pwd
+                        </button>
+                        <button
+                          onClick={() => handleUserAction(user._id, 'Resend Credentials')}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm transition duration-300"
+                        >
+                          Resend
                         </button>
                       </div>
+                      {user.emailLastError && (
+                        <p className="text-[10px] text-red-400 max-w-[200px] text-right truncate" title={user.emailLastError}>
+                          Error: {user.emailLastError}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -409,25 +453,44 @@ const AdminDashboard = () => {
             <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
               <h2 className="text-xl font-bold text-white mb-6">All Bookings</h2>
               <div className="space-y-4">
-                {bookings.map(booking => (
-                  <div key={booking._id} className="bg-slate-700 p-4 rounded-lg flex justify-between items-center">
+                {bookings.filter(b => b.status === 'Booked').map(booking => (
+                  <div key={booking._id} className="bg-slate-700 p-4 rounded-lg flex justify-between items-center transition-all hover:bg-slate-600">
                     <div>
-                      <h3 className="text-white font-semibold">{booking.memberName}</h3>
-                      <p className="text-gray-400">{booking.type}: {booking.sessionName}</p>
-                      <p className="text-gray-400 text-sm">Date: {booking.date}</p>
+                      <h3 className="text-white font-semibold flex items-center gap-2">
+                        {booking.memberId?.name || 'Unknown Member'}
+                        <span className="text-xs font-normal text-gray-400">({booking.memberId?.email || 'N/A'})</span>
+                      </h3>
+                      <p className="text-gray-300 font-medium">Session: {booking.sessionDetails?.name || 'Deleted Session'}</p>
+                      <p className="text-gray-400 text-sm">
+                        Type: <span className="text-blue-400">{booking.sessionType}</span> •
+                        Date: {booking.sessionDetails?.date ? new Date(booking.sessionDetails.date).toLocaleDateString() : 'N/A'} •
+                        Time: {booking.sessionDetails?.startTime || 'N/A'}
+                      </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.status === 'Confirmed' ? 'text-green-400 bg-green-900' : 'text-yellow-400 bg-yellow-900'
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.status === 'Booked' ? 'text-green-400 bg-green-900/30 border border-green-500/30' : 'text-red-400 bg-red-900/30 border border-red-500/30'
                         }`}>
                         {booking.status}
                       </span>
                       <div className="flex gap-2">
-                        <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition duration-300">
-                          View Details
-                        </button>
-                        <button className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition duration-300">
-                          Cancel
-                        </button>
+                        {booking.status === 'Booked' && (
+                          <button
+                            onClick={async () => {
+                              if (window.confirm('Cancel this booking for the member?')) {
+                                try {
+                                  await apiRequest(`/api/bookings/${booking._id}`, { method: 'DELETE' });
+                                  setSuccess('Booking cancelled successfully');
+                                  loadData();
+                                } catch (err) {
+                                  setError(err.message || 'Failed to cancel booking');
+                                }
+                              }
+                            }}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition duration-300"
+                          >
+                            Cancel
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -457,11 +520,68 @@ const AdminDashboard = () => {
                         {session.status}
                       </span>
                       <div className="flex gap-2">
-                        <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition duration-300">
-                          Edit
+                        <button
+                          onClick={async () => {
+                            const newCapacity = prompt('Enter new capacity:', session.maxCapacity);
+                            if (newCapacity && !isNaN(newCapacity)) {
+                              try {
+                                const type = session.type.toLowerCase();
+                                await apiRequest(`/api/sessions/${type}/${session._id}`, {
+                                  method: 'PUT',
+                                  body: { maxCapacity: parseInt(newCapacity) }
+                                });
+                                setSuccess('Session capacity updated');
+                                loadData();
+                              } catch (err) {
+                                setError(err.message || 'Failed to update session');
+                              }
+                            }
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition duration-300"
+                        >
+                          Capacity
                         </button>
-                        <button className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm transition duration-300">
-                          Update Status
+                        <button
+                          onClick={async () => {
+                            const newStatus = session.status === 'Active' ? 'Cancelled' : 'Active';
+                            if (window.confirm(`Change session status to ${newStatus}?`)) {
+                              try {
+                                const type = session.type.toLowerCase();
+                                const endpoint = newStatus === 'Cancelled'
+                                  ? `/api/sessions/${type}/${session._id}/cancel`
+                                  : `/api/sessions/${type}/${session._id}`; // PUT for reactivate
+
+                                await apiRequest(endpoint, {
+                                  method: newStatus === 'Cancelled' ? 'PATCH' : 'PUT',
+                                  body: newStatus === 'Active' ? { status: 'Active' } : undefined
+                                });
+                                setSuccess('Session status updated');
+                                loadData();
+                              } catch (err) {
+                                setError(err.message || 'Failed to update status');
+                              }
+                            }
+                          }}
+                          className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm transition duration-300"
+                        >
+                          {session.status === 'Active' ? 'Deactivate' : 'Reactivate'}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (window.confirm('PERMANENTLY DELETE this session? This action cannot be undone.')) {
+                              try {
+                                const type = session.type.toLowerCase();
+                                await apiRequest(`/api/sessions/${type}/${session._id}`, { method: 'DELETE' });
+                                setSuccess('Session deleted permanently');
+                                loadData();
+                              } catch (err) {
+                                setError(err.message || 'Failed to delete session');
+                              }
+                            }
+                          }}
+                          className="bg-red-600 hover:bg-black text-white px-3 py-1 rounded text-sm transition duration-300"
+                        >
+                          Delete
                         </button>
                       </div>
                     </div>

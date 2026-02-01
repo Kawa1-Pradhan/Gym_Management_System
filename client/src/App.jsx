@@ -6,6 +6,9 @@ import Dashboard from './pages/Dashboard';
 import BookSession from './pages/BookSession';
 import StaffDashboard from './pages/StaffDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import UserManagement from './pages/UserManagement';
+import EnrollMember from './pages/EnrollMember';
+import ChangePassword from './pages/ChangePassword';
 
 function App() {
   return (
@@ -14,11 +17,14 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
+          {/* <Route path="/signup" element={<SignUp />} /> */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/book-session" element={<BookSession />} />
           <Route path="/staff-dashboard" element={<StaffDashboard />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/user-management" element={<UserManagement />} />
+          <Route path="/enroll-member" element={<EnrollMember />} />
+          <Route path="/change-password" element={<ChangePassword />} />
         </Routes>
       </div>
     </Router>

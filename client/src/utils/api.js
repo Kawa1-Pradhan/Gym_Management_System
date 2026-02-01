@@ -63,11 +63,18 @@ export const apiRequest = async (endpoint, options = {}) => {
       let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
 
       try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
+        const text = await response.text();
+        try {
+          const errorData = JSON.parse(text);
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // If not JSON, use the raw text if it's short
+          if (text && text.length < 100) {
+            errorMessage = text;
+          }
+        }
       } catch (parseError) {
         console.error('Failed to parse error response:', parseError);
-        errorMessage = 'Network error or invalid response from server';
       }
 
       throw new Error(errorMessage);

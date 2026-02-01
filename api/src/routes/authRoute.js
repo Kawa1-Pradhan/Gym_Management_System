@@ -4,9 +4,10 @@ import authController from '../controllers/authController.js';
 const router = express.Router();
 
 //URL: /api/auth/register
-router.post("/register", authController.register);
+// Registration is now handled through user management by staff/admin
+// router.post("/register", authController.register);
 
-router.post("/login",authController.login);
+router.post("/login", authController.login);
 
 
 

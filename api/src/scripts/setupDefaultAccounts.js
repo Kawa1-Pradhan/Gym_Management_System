@@ -15,12 +15,15 @@ const setupDefaultAccounts = async () => {
         password: hashedAdminPassword,
         phone: "0000000000",
         role: ["ADMIN"],
-        membershipStatus: "Active"
+        membershipStatus: "Active",
+        mustChangePassword: false
       });
       await adminUser.save();
       console.log("✅ Default Admin account created: admin@example.com / 123456789");
     } else {
       console.log("ℹ️  Admin account already exists: admin@example.com");
+      // Update existing admin to not require password change if needed
+      await User.updateOne({ email: "admin@example.com" }, { mustChangePassword: false });
     }
 
     // Default Staff Account
@@ -33,12 +36,15 @@ const setupDefaultAccounts = async () => {
         password: hashedStaffPassword,
         phone: "1111111111",
         role: ["STAFF"],
-        membershipStatus: "Active"
+        membershipStatus: "Active",
+        mustChangePassword: false
       });
       await staffUser.save();
       console.log("Default Staff account created: staff@example.com / 123456789");
     } else {
       console.log("ℹ Staff account already exists: staff@example.com");
+      // Update existing staff to not require password change if needed
+      await User.updateOne({ email: "staff@example.com" }, { mustChangePassword: false });
     }
 
     console.log("Default accounts setup completed!");

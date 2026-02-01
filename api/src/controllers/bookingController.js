@@ -30,27 +30,46 @@ const getActiveSaunaSessions = async (req, res) => {
 const bookBoxingSession = async (req, res) => {
   try {
     const { id: sessionId } = req.params;
-    const memberId = req.user.id;
 
-    // Use service to handle business logic
-    await boxingService.bookSession(sessionId, memberId);
+    // Determine target member: Staff/Admin can book for anyone; Members book for themselves.
+    const isStaffOrAdmin = req.user.role.includes('STAFF') || req.user.role.includes('ADMIN');
+    const memberId = (isStaffOrAdmin && req.body.memberId) ? req.body.memberId : req.user.id;
 
-    // Create record in Booking collection
-    const booking = new Booking({
+    // 1. Check for existing active booking
+    const existing = await Booking.findOne({
       memberId,
       sessionId,
       sessionType: "Boxing",
       status: "Booked"
     });
 
-    await booking.save();
-    await booking.populate('memberId', 'name email');
+    if (existing) {
+      return res.status(400).json({ message: "You have already booked this session" });
+    }
 
-    res.status(201).json({
-      message: "Booking successful",
-      booking
-    });
+    // 2. Use service to update session slots
+    await boxingService.bookSession(sessionId, memberId);
+
+    // 3. Create record in Booking collection
+    try {
+      const booking = new Booking({
+        memberId,
+        sessionId,
+        sessionType: "Boxing",
+        status: "Booked"
+      });
+      await booking.save();
+      await booking.populate('memberId', 'name email');
+      res.status(201).json({ message: "Booking successful", booking });
+    } catch (dbError) {
+      // Rollback session slots if booking save fails
+      await boxingService.cancelBooking(sessionId, memberId);
+      throw dbError;
+    }
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "You have already booked this session" });
+    }
     console.error("Error booking boxing session:", error);
 
     if (error.message === "Session not found") {
@@ -58,11 +77,6 @@ const bookBoxingSession = async (req, res) => {
     }
     if (["Session is full", "Already booked", "You have already booked this session", "Session is not active or has been cancelled"].includes(error.message)) {
       return res.status(400).json({ message: error.message });
-    }
-
-    // Handle duplicate key error from unique index
-    if (error.code === 11000) {
-      return res.status(400).json({ message: "You have already booked this session" });
     }
 
     res.status(500).json({ message: "Server error", error: error.message });
@@ -73,27 +87,46 @@ const bookBoxingSession = async (req, res) => {
 const bookSaunaSession = async (req, res) => {
   try {
     const { id: sessionId } = req.params;
-    const memberId = req.user.id;
 
-    // Use service to handle business logic
-    await saunaService.bookSession(sessionId, memberId);
+    // Determine target member
+    const isStaffOrAdmin = req.user.role.includes('STAFF') || req.user.role.includes('ADMIN');
+    const memberId = (isStaffOrAdmin && req.body.memberId) ? req.body.memberId : req.user.id;
 
-    // Create record in Booking collection
-    const booking = new Booking({
+    // 1. Check for existing active booking
+    const existing = await Booking.findOne({
       memberId,
       sessionId,
       sessionType: "Sauna",
       status: "Booked"
     });
 
-    await booking.save();
-    await booking.populate('memberId', 'name email');
+    if (existing) {
+      return res.status(400).json({ message: "You have already booked this session" });
+    }
 
-    res.status(201).json({
-      message: "Booking successful",
-      booking
-    });
+    // 2. Use service
+    await saunaService.bookSession(sessionId, memberId);
+
+    // 3. Create record
+    try {
+      const booking = new Booking({
+        memberId,
+        sessionId,
+        sessionType: "Sauna",
+        status: "Booked"
+      });
+      await booking.save();
+      await booking.populate('memberId', 'name email');
+      res.status(201).json({ message: "Booking successful", booking });
+    } catch (dbError) {
+      // Rollback
+      await saunaService.cancelBooking(sessionId, memberId);
+      throw dbError;
+    }
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "You have already booked this session" });
+    }
     console.error("Error booking sauna session:", error);
 
     if (error.message === "Session not found") {
@@ -101,11 +134,6 @@ const bookSaunaSession = async (req, res) => {
     }
     if (["Session is full", "Already booked", "You have already booked this session", "Session is not active or has been cancelled"].includes(error.message)) {
       return res.status(400).json({ message: error.message });
-    }
-
-    // Handle duplicate key error from unique index
-    if (error.code === 11000) {
-      return res.status(400).json({ message: "You have already booked this session" });
     }
 
     res.status(500).json({ message: "Server error", error: error.message });
@@ -149,13 +177,13 @@ const getMyBookings = async (req, res) => {
 const cancelBooking = async (req, res) => {
   try {
     const { id: bookingId } = req.params;
-    const memberId = req.user.id;
+    // For members, verify ownership. For staff/admin, allow any.
+    let query = { _id: bookingId };
+    if (!req.user.role.includes('STAFF') && !req.user.role.includes('ADMIN')) {
+      query.memberId = req.user.id;
+    }
 
-    // Find booking and verify it belongs to the member
-    const booking = await Booking.findOne({
-      _id: bookingId,
-      memberId
-    });
+    const booking = await Booking.findOne(query).populate('memberId', 'name email');
 
     if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
@@ -171,17 +199,71 @@ const cancelBooking = async (req, res) => {
 
     // Use service to update session slots/members
     if (booking.sessionType === "Boxing") {
-      await boxingService.cancelBooking(booking.sessionId, memberId);
+      await boxingService.cancelBooking(booking.sessionId, booking.memberId._id);
     } else if (booking.sessionType === "Sauna") {
-      await saunaService.cancelBooking(booking.sessionId, memberId);
+      await saunaService.cancelBooking(booking.sessionId, booking.memberId._id);
+    }
+
+    // Notify user if cancelled by Admin or Staff
+    const isSelfCancel = req.user.id.toString() === booking.memberId._id.toString();
+    if (!isSelfCancel) {
+      const { sendBookingCancellationEmail } = await import("../utils/mail.js");
+
+      // Get session details for the email
+      let sessionDetails;
+      if (booking.sessionType === "Boxing") {
+        sessionDetails = await boxingService.getSessionById(booking.sessionId);
+      } else {
+        sessionDetails = await saunaService.getSessionById(booking.sessionId);
+      }
+
+      if (sessionDetails) {
+        sendBookingCancellationEmail(
+          booking.memberId.email,
+          booking.memberId.name,
+          {
+            name: sessionDetails.name,
+            date: sessionDetails.date ? new Date(sessionDetails.date).toLocaleDateString() : 'N/A',
+            startTime: sessionDetails.startTime || 'N/A'
+          }
+        );
+      }
     }
 
     res.json({
-      message: "Booking cancelled successfully",
+      message: isSelfCancel ? "Booking cancelled successfully" : "Member booking cancelled by administrator",
       booking
     });
   } catch (error) {
     console.error("Error cancelling booking:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const getAllBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find({})
+      .populate('memberId', 'name email')
+      .sort({ bookingDate: -1 });
+
+    // Populate session details based on session type
+    const populatedBookings = await Promise.all(
+      bookings.map(async (booking) => {
+        const bookingObj = booking.toObject();
+
+        if (booking.sessionType === "Boxing") {
+          bookingObj.sessionDetails = await boxingService.getSessionById(booking.sessionId);
+        } else if (booking.sessionType === "Sauna") {
+          bookingObj.sessionDetails = await saunaService.getSessionById(booking.sessionId);
+        }
+
+        return bookingObj;
+      })
+    );
+
+    res.json(populatedBookings);
+  } catch (error) {
+    console.error("Error fetching all bookings:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
@@ -192,5 +274,6 @@ export default {
   bookBoxingSession,
   bookSaunaSession,
   getMyBookings,
+  getAllBookings,
   cancelBooking
 };

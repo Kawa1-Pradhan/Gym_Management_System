@@ -18,12 +18,12 @@ const users = new mongoose.Schema({
       },
       message: "Invalid email address",
     },
-   
+
   },
   password: {
     type: String,
     required: [true, "Password is required"],
-    minlength: [6, "Password must be at least 6 characters long"],  
+    minlength: [6, "Password must be at least 6 characters long"],
   },
   role: {
     type: [String],
@@ -48,9 +48,36 @@ const users = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: [true, "Phone number is required"], 
+    required: [true, "Phone number is required"],
     unique: true,
-  }
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  mustChangePassword: {
+    type: Boolean,
+    default: false,
+  },
+  emailLastStatus: {
+    type: String,
+    enum: ["Pending", "Sent", "Failed", "N/A"],
+    default: "N/A",
+  },
+  emailLastError: {
+    type: String,
+  },
+  membershipType: {
+    type: String,
+    enum: ["Monthly", "Quarterly", "Semi-Annual", "Yearly", "None"],
+    default: "None",
+  },
+  membershipStartDate: {
+    type: Date,
+  },
+  notes: {
+    type: String,
+  },
 });
 
 const User = mongoose.model("users", users);

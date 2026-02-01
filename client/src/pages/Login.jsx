@@ -34,7 +34,14 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(data.data));
 
       // Role-based redirection
-      const userRole = data.data.role;
+      const user = data.data;
+
+      if (user.mustChangePassword) {
+        navigate('/change-password');
+        return;
+      }
+
+      const userRole = user.role;
       if (userRole && userRole.includes('ADMIN')) {
         navigate('/admin-dashboard');
       } else if (userRole && userRole.includes('STAFF')) {
@@ -107,10 +114,7 @@ const Login = () => {
 
         <div className="mt-6 text-center">
           <p className="text-gray-400">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-red-400 hover:text-red-300 font-medium">
-              Register as Staff
-            </Link>
+            Membership enrollment is handled in-person.
           </p>
         </div>
 

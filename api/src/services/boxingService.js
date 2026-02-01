@@ -82,10 +82,7 @@ const bookSession = async (sessionId, memberId) => {
         throw new Error("Session is full");
     }
 
-    // Check if member already booked (optional but good for robustness)
-    if (session.bookings.includes(memberId)) {
-        throw new Error("You have already booked this session");
-    }
+    // Uniqueness is enforced by the Booking model index (allows re-booking after cancel)
 
     session.availableSlots -= 1;
     session.bookings.push(memberId);

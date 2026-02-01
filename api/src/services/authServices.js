@@ -28,6 +28,8 @@ const login = async (data) => {
         role: user.role,
         membershipStatus: user.membershipStatus,
         membershipExpiryDate: user.membershipExpiryDate,
+        isActive: user.isActive,
+        mustChangePassword: user.mustChangePassword,
     };
 };
 

@@ -8,10 +8,13 @@ const router = express.Router();
 router.get('/sessions/boxing/active', bookingController.getActiveBoxingSessions);
 router.get('/sessions/sauna/active', bookingController.getActiveSaunaSessions);
 
-// Member-only routes - Booking management
-router.post('/boxing/:id', requireAuth, requireMember, bookingController.bookBoxingSession);
-router.post('/sauna/:id', requireAuth, requireMember, bookingController.bookSaunaSession);
+// Member-centric routes - Booking management (Now staff accessible for administrative booking)
+router.post('/boxing/:id', requireAuth, bookingController.bookBoxingSession);
+router.post('/sauna/:id', requireAuth, bookingController.bookSaunaSession);
 router.get('/my-bookings', requireAuth, requireMember, bookingController.getMyBookings);
-router.delete('/:id', requireAuth, requireMember, bookingController.cancelBooking);
+
+// Staff/Admin routes
+router.get('/', requireAuth, bookingController.getAllBookings);
+router.delete('/:id', requireAuth, bookingController.cancelBooking);
 
 export default router;

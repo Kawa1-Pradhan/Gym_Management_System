@@ -1,18 +1,26 @@
 import express from "express";
 import userController from "../controllers/userController.js";
-import auth from "../middlewares/auth.js";
+import { requireAuth, requireStaffOrAdmin } from "../middlewares/authMiddleware.js";
 
 
 const router = express.Router();
 
-router.post("/", userController.createUser);
+router.post("/", requireAuth, requireStaffOrAdmin, userController.createUser);
 
-router.get("/",auth, userController.getUsers);
+router.get("/", requireAuth, requireStaffOrAdmin, userController.getUsers);
 
-router.get("/:id",auth, userController.getUserById);
+router.get("/:id", requireAuth, userController.getUserById);
 
-router.put("/:id",auth, userController.updateUser);
+router.put("/:id", requireAuth, requireStaffOrAdmin, userController.updateUser);
 
-router.delete("/:id",auth, userController.deleteUser);
+router.patch("/:id/deactivate", requireAuth, requireStaffOrAdmin, userController.deactivateUser);
+
+router.post("/:id/reset-password", requireAuth, requireStaffOrAdmin, userController.resetPassword);
+
+router.post("/:id/resend", requireAuth, requireStaffOrAdmin, userController.resendCredentials);
+
+router.post("/change-password", requireAuth, userController.changePassword);
+
+router.delete("/:id", requireAuth, requireStaffOrAdmin, userController.deleteUser);
 
 export default router;

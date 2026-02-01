@@ -21,12 +21,18 @@ const login = async (req, res) => {
         }
         const data = await authService.login(input);
 
+        // Check if user is active
+        if (data.isActive === false) {
+            return res.status(403).send("Your account is deactivated. Please contact the administrator.");
+        }
+
         // Create clean JWT payload with id and role
         const payload = {
             id: data.id,
             name: data.name,
             email: data.email,
-            role: data.role
+            role: data.role,
+            mustChangePassword: data.mustChangePassword
         };
 
         // generate token
@@ -41,7 +47,7 @@ const login = async (req, res) => {
 
         res.json({ data, token }); // Sending both data and token
     } catch (error) {
-        res.status(error.statusCode || 500).send(error.message);
+        res.status(error.statusCode || 500).json({ message: error.message || "Internal Server Error" });
     }
 };
 
@@ -87,7 +93,7 @@ const register = async (req, res) => {
 
         res.status(201).send(data);
     } catch (error) {
-        res.status(400).send(error.message);
+        res.status(400).json({ message: error.message || "Bad Request" });
     }
 };
 

@@ -36,8 +36,15 @@ const bookingSchema = new mongoose.Schema({
     },
 });
 
-// Compound index to prevent duplicate bookings
-bookingSchema.index({ memberId: 1, sessionId: 1, sessionType: 1 }, { unique: true });
+// Compound index to prevent duplicate ACTIVE bookings
+// Allows multiple 'Cancelled' records but only one 'Booked' record for the same session
+bookingSchema.index(
+    { memberId: 1, sessionId: 1, sessionType: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { status: 'Booked' }
+    }
+);
 
 // Index for quick member booking lookups
 bookingSchema.index({ memberId: 1 });
