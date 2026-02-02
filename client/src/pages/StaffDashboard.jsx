@@ -285,8 +285,20 @@ const StaffDashboard = () => {
 
   const upcomingSessions = [...boxingSessions, ...saunaSessions]
     .filter(session => session.status === 'Active')
-    .filter(session => new Date(session.date) >= new Date())
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .filter(session => {
+      const sessionDate = new Date(session.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return sessionDate >= today;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      if (dateA.getTime() !== dateB.getTime()) {
+        return dateA - dateB;
+      }
+      return a.startTime.localeCompare(b.startTime);
+    })
     .slice(0, 5);
 
   if (!user) return null;
@@ -303,7 +315,13 @@ const StaffDashboard = () => {
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-300">Staff: {user.name}</span>
+              <span className="text-gray-300">Staff: {user?.name}</span>
+              <Link
+                to="/inventory"
+                className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
+              >
+                Inventory
+              </Link>
               <button
                 onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
@@ -424,19 +442,36 @@ const StaffDashboard = () => {
               </div>
             </div>
 
-            {/* Simple Enrollment Card */}
-            <div
-              onClick={() => navigate('/enroll-member')}
-              className="bg-slate-800 p-6 rounded-lg shadow-lg cursor-pointer hover:bg-slate-700 transition duration-300 flex items-center gap-4"
-            >
-              <div className="bg-blue-600 p-3 rounded-full">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
+            {/* Quick Actions */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div
+                onClick={() => navigate('/enroll-member')}
+                className="bg-slate-800 p-6 rounded-lg shadow-lg cursor-pointer hover:bg-slate-700 transition duration-300 flex items-center gap-4 border border-slate-700 hover:border-green-500/50"
+              >
+                <div className="bg-green-600/20 p-3 rounded-full">
+                  <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Enroll New Member</h3>
+                  <p className="text-gray-400 text-sm">Create a new member account and assign membership details.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">Enroll New Member</h3>
-                <p className="text-gray-400 text-sm">Create a new member account and assign membership details.</p>
+
+              <div
+                onClick={() => navigate('/inventory')}
+                className="bg-slate-800 p-6 rounded-lg shadow-lg cursor-pointer hover:bg-slate-700 transition duration-300 flex items-center gap-4 border border-slate-700 hover:border-blue-500/50"
+              >
+                <div className="bg-blue-600/20 p-3 rounded-full">
+                  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Manage Inventory</h3>
+                  <p className="text-gray-400 text-sm">Track equipment, supplements and gym merchandise.</p>
+                </div>
               </div>
             </div>
           </div>

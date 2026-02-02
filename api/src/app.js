@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoute.js";
 import userRoute from "./routes/userRoute.js";
 import bookingRoute from "./routes/bookingRoute.js";
 import sessionRoute from "./routes/sessionRoute.js";
+import inventoryRoute from "./routes/inventoryRoute.js";
 import connectDB from "./config/database.js";
 import logger from "./middlewares/logger.js";
 import setupDefaultAccounts from "./scripts/setupDefaultAccounts.js";
@@ -45,6 +46,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoute);
 app.use("/api/bookings", bookingRoute);
 app.use("/api/sessions", sessionRoute);
+app.use("/api/inventory", inventoryRoute);
 
 
 app.listen(config.port, () => {

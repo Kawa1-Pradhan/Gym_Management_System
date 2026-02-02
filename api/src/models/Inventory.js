@@ -1,9 +1,20 @@
 import mongoose from "mongoose";
 
 const inventorySchema = new mongoose.Schema({
-  itemName: {
+  name: {
     type: String,
     required: [true, "Inventory item name is required"],
+    trim: true
+  },
+  description: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  category: {
+    type: String,
+    enum: ["Weights", "Machines", "Consumable", "Sauna", "Supplement", "Merchandise"],
+    required: [true, "Category is required"],
   },
   quantity: {
     type: Number,
@@ -11,11 +22,21 @@ const inventorySchema = new mongoose.Schema({
     min: [0, "Quantity cannot be negative"],
     default: 0,
   },
+  price: {
+    type: Number,
+    min: [0, "Price cannot be negative"],
+    default: 0,
+  },
   lowStockThreshold: {
     type: Number,
     required: [true, "Low stock threshold is required"],
     min: [0, "Threshold cannot be negative"],
     default: 5,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "users",
+    required: [true, "Item creator is required"],
   },
   lastUpdatedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -39,13 +60,12 @@ const inventorySchema = new mongoose.Schema({
 });
 
 // Automatically update updatedAt on save
-inventorySchema.pre("save", function (next) {
+inventorySchema.pre("save", function () {
   this.updatedAt = Date.now();
   // Update status based on quantity and lowStockThreshold
   if (this.quantity === 0) this.status = "OutOfStock";
   else if (this.quantity <= this.lowStockThreshold) this.status = "Low";
   else this.status = "Available";
-  next();
 });
 
 const Inventory = mongoose.model("inventories", inventorySchema);

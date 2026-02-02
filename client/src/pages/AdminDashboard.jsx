@@ -188,7 +188,13 @@ const AdminDashboard = () => {
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-300">Admin: {user.name}</span>
+              <span className="text-gray-300">Admin: {user?.name}</span>
+              <Link
+                to="/inventory"
+                className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
+              >
+                Inventory
+              </Link>
               <button
                 onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
@@ -286,10 +292,10 @@ const AdminDashboard = () => {
                   {bookings.slice(0, 5).map(booking => (
                     <div key={booking._id} className="bg-slate-700 p-3 rounded-lg flex justify-between items-center">
                       <div>
-                        <p className="text-white font-semibold">{booking.memberName}</p>
-                        <p className="text-gray-400 text-sm">{booking.type}: {booking.sessionName}</p>
+                        <p className="text-white font-semibold">{booking.memberId?.name || 'Unknown Member'}</p>
+                        <p className="text-gray-400 text-sm">{booking.sessionType}: {booking.sessionDetails?.name || 'Session Info Unavailable'}</p>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.status === 'Confirmed' ? 'text-green-400 bg-green-900' : 'text-yellow-400 bg-yellow-900'
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.status === 'Booked' ? 'text-green-400 bg-green-900' : 'text-red-400 bg-red-900'
                         }`}>
                         {booking.status}
                       </span>

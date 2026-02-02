@@ -9,6 +9,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import UserManagement from './pages/UserManagement';
 import EnrollMember from './pages/EnrollMember';
 import ChangePassword from './pages/ChangePassword';
+import Inventory from './pages/Inventory';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/user-management" element={<UserManagement />} />
           <Route path="/enroll-member" element={<EnrollMember />} />
           <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/inventory" element={<Inventory />} />
         </Routes>
       </div>
     </Router>
