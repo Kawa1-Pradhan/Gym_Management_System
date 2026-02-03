@@ -10,6 +10,7 @@ import UserManagement from './pages/UserManagement';
 import EnrollMember from './pages/EnrollMember';
 import ChangePassword from './pages/ChangePassword';
 import Inventory from './pages/Inventory';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/enroll-member" element={<EnrollMember />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/inventory" element={<Inventory />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </div>
     </Router>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
+import UserMenu from '../components/UserMenu';
 
 const StaffDashboard = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -315,19 +316,13 @@ const StaffDashboard = () => {
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-300">Staff: {user?.name}</span>
               <Link
                 to="/inventory"
                 className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
               >
                 Inventory
               </Link>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
-              >
-                Logout
-              </button>
+              <UserMenu />
             </div>
           </div>
         </div>

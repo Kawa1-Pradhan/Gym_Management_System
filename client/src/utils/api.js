@@ -28,18 +28,23 @@ export const apiRequest = async (endpoint, options = {}) => {
     body: logBody
   });
 
-  // Ensure body is always JSON-stringified if it exists
+  // Ensure body is handled correctly
   let processedOptions = { ...options };
-  if (processedOptions.body && typeof processedOptions.body === 'object') {
+  const isFormData = processedOptions.body instanceof FormData;
+
+  if (processedOptions.body && typeof processedOptions.body === 'object' && !isFormData) {
     processedOptions.body = JSON.stringify(processedOptions.body);
   }
 
   // Get token from localStorage
   const token = localStorage.getItem('token');
   const headers = {
-    'Content-Type': 'application/json',
     ...options.headers,
   };
+
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   // Add authorization header if token exists
   if (token) {

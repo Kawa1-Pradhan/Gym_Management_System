@@ -1,6 +1,7 @@
 import express from "express";
 import userController from "../controllers/userController.js";
 import { requireAuth, requireStaffOrAdmin } from "../middlewares/authMiddleware.js";
+import upload from "../utils/multerConfig.js";
 
 
 const router = express.Router();
@@ -11,7 +12,7 @@ router.get("/", requireAuth, requireStaffOrAdmin, userController.getUsers);
 
 router.get("/:id", requireAuth, userController.getUserById);
 
-router.put("/:id", requireAuth, requireStaffOrAdmin, userController.updateUser);
+router.put("/:id", requireAuth, userController.updateUser);
 
 router.patch("/:id/deactivate", requireAuth, requireStaffOrAdmin, userController.deactivateUser);
 
@@ -20,6 +21,8 @@ router.post("/:id/reset-password", requireAuth, requireStaffOrAdmin, userControl
 router.post("/:id/resend", requireAuth, requireStaffOrAdmin, userController.resendCredentials);
 
 router.post("/change-password", requireAuth, userController.changePassword);
+
+router.post("/upload-avatar", requireAuth, upload.single('avatar'), userController.uploadAvatar);
 
 router.delete("/:id", requireAuth, requireStaffOrAdmin, userController.deleteUser);
 

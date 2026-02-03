@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../utils/api';
+import UserMenu from '../components/UserMenu';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -42,11 +43,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/';
-  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
@@ -69,12 +65,7 @@ const Dashboard = () => {
                   Staff Dashboard
                 </Link>
               )}
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
-              >
-                Logout
-              </button>
+              <UserMenu />
             </div>
           </div>
         </div>
