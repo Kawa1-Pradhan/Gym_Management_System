@@ -18,7 +18,7 @@ const plans = [
         price: 1500,
         durationDays: 30,
         description: "Standard monthly access",
-        features: ["Gym floor usage", "Boxing access", "Attendance tracking", "Booking system"],
+        features: [ "Boxing access", "Attendance tracking", "Booking system"],
         highlightTag: "",
         discountPercent: 0
     },
@@ -56,8 +56,7 @@ const seedDB = async () => {
         await mongoose.connect(process.env.MONGODB_URL);
         console.log("Connected to DB");
 
-        // Clear existing plans to ensure clean state or upsert?
-        // Let's delete all and re-insert to match the requested fresh start.
+    
         await MembershipPlan.deleteMany({});
 
         await MembershipPlan.insertMany(plans);
