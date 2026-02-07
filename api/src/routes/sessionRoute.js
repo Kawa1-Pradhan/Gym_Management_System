@@ -1,7 +1,11 @@
 import express from 'express';
 import sessionController from '../controllers/sessionController.js';
+import { requireAuth, requireStaffOrAdmin } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
+
+// All session routes require staff or admin access
+router.use(requireAuth, requireStaffOrAdmin);
 
 // Boxing session routes
 router.get('/boxing', sessionController.getBoxingSessions);

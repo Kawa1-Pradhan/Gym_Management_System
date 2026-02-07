@@ -152,8 +152,8 @@ const BookSession = () => {
             onClick={() => handleBookSession(session._id, sessionType)}
             disabled={isFull || loading}
             className={`w-full py-2 px-4 rounded-md font-semibold transition duration-300 ${isFull
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-red-600 hover:bg-red-700 text-white'
+              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              : 'bg-red-600 hover:bg-red-700 text-white'
               }`}
           >
             {isFull ? 'Session Full' : loading ? 'Booking...' : 'Book Now'}
@@ -259,8 +259,8 @@ const BookSession = () => {
           <button
             onClick={() => setActiveTab('boxing')}
             className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'boxing'
-                ? 'bg-red-600 text-white'
-                : 'text-gray-300 hover:text-white hover:bg-slate-700'
+              ? 'bg-red-600 text-white'
+              : 'text-gray-300 hover:text-white hover:bg-slate-700'
               }`}
           >
             🥊 Boxing Sessions
@@ -268,8 +268,8 @@ const BookSession = () => {
           <button
             onClick={() => setActiveTab('sauna')}
             className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'sauna'
-                ? 'bg-red-600 text-white'
-                : 'text-gray-300 hover:text-white hover:bg-slate-700'
+              ? 'bg-red-600 text-white'
+              : 'text-gray-300 hover:text-white hover:bg-slate-700'
               }`}
           >
             🏊‍♂️ Sauna Sessions
@@ -277,8 +277,8 @@ const BookSession = () => {
           <button
             onClick={() => setActiveTab('mybookings')}
             className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'mybookings'
-                ? 'bg-red-600 text-white'
-                : 'text-gray-300 hover:text-white hover:bg-slate-700'
+              ? 'bg-red-600 text-white'
+              : 'text-gray-300 hover:text-white hover:bg-slate-700'
               }`}
           >
             📋 My Bookings ({myBookings.filter(b => b.status === 'Booked').length})

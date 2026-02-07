@@ -10,7 +10,7 @@ router.get("/my", requireAuth, attendanceController.getMyAttendance);
 // Staff marks attendance
 router.post("/mark", requireAuth, requireStaffOrAdmin, attendanceController.markAttendance);
 
-// Admin views reports
-router.get("/reports", requireAuth, requireAdmin, attendanceController.getAttendanceReports);
+// Staff & Admin view reports
+router.get("/reports", requireAuth, requireStaffOrAdmin, attendanceController.getAttendanceReports);
 
 export default router;

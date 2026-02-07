@@ -1,40 +1,66 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
 import UserMenu from '../components/UserMenu';
+import InventoryComponent from '../components/InventoryComponent';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, Cell
+} from 'recharts';
+
+// StatCard component for Staff Dashboard (Aligned with Admin)
+const StatCard = ({ title, value, subtext, color = 'blue' }) => {
+  const colorClasses = {
+    blue: 'text-blue-400',
+    green: 'text-green-400',
+    orange: 'text-orange-400',
+    purple: 'text-purple-400',
+    red: 'text-red-400'
+  };
+
+  return (
+    <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700">
+      <div className="flex flex-col">
+        <p className="text-sm text-gray-400 mb-1 font-medium">{title}</p>
+        <p className={`text-3xl font-bold ${colorClasses[color]}`}>{value}</p>
+        {subtext && <p className="text-gray-500 text-xs mt-2 font-medium">{subtext}</p>}
+      </div>
+    </div>
+  );
+};
 
 const StaffDashboard = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   const [activeTab, setActiveTab] = useState('home');
-  const [boxingSessions, setBoxingSessions] = useState([]);
-  const [saunaSessions, setSaunaSessions] = useState([]);
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [user, setUser] = useState(null);
+
+  // Data state
+  const [boxingSessions, setBoxingSessions] = useState([]);
+  const [saunaSessions, setSaunaSessions] = useState([]);
+  const [allBookings, setAllBookings] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [members, setMembers] = useState([]);
   const [activeMembers, setActiveMembers] = useState([]);
-  const navigate = useNavigate();
+
+  // Stats state
+  const [stats, setStats] = useState({
+    activeMembersToday: 0,
+    sessionsToday: 0,
+    newBookingsToday: 0,
+    totalMembers: 0,
+    conductedThisWeek: []
+  });
 
   // Form states
   const [boxingForm, setBoxingForm] = useState({
-    name: '',
-    instructor: '',
-    date: '',
-    startTime: '',
-    endTime: '',
-    maxCapacity: '',
-    description: ''
+    name: '', instructor: '', date: '', startTime: '', endTime: '', maxCapacity: '', description: ''
   });
 
   const [saunaForm, setSaunaForm] = useState({
-    name: '',
-    date: '',
-    startTime: '',
-    endTime: '',
-    maxCapacity: '',
-    temperature: '85',
-    description: ''
+    name: '', date: '', startTime: '', endTime: '', maxCapacity: '', temperature: '85', description: ''
   });
 
   // Booking form state
@@ -48,81 +74,113 @@ const StaffDashboard = () => {
 
   useEffect(() => {
     checkStaffAccess();
-    if (activeTab === 'boxing' || activeTab === 'home') {
-      loadBoxingSessions();
-    }
-    if (activeTab === 'sauna' || activeTab === 'home') {
-      loadSaunaSessions();
-    }
-    if (activeTab === 'bookings') {
-      loadMembers();
-      loadBoxingSessions();
-      loadSaunaSessions();
-    }
-    if (activeTab === 'attendance') {
-      loadAttendanceData();
-    }
+    loadDashboardData();
   }, [activeTab]);
 
   const checkStaffAccess = () => {
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     const token = localStorage.getItem('token');
-
     if (!token || !userData.role || !userData.role.includes('STAFF')) {
       navigate('/dashboard');
       return;
     }
-
-    setUser(userData);
   };
 
-  const loadBoxingSessions = async () => {
-    try {
-      const response = await apiRequest('/api/sessions/boxing');
-      setBoxingSessions(Array.isArray(response) ? response : []);
-    } catch (err) {
-      console.error('Error loading boxing sessions:', err);
-    }
-  };
-
-  const loadSaunaSessions = async () => {
-    try {
-      const response = await apiRequest('/api/sessions/sauna');
-      setSaunaSessions(Array.isArray(response) ? response : []);
-    } catch (err) {
-      console.error('Error loading sauna sessions:', err);
-    }
-  };
-
-  const loadMembers = async () => {
-    try {
-      const response = await apiRequest('/api/users');
-      // Filter only members
-      const memberUsers = Array.isArray(response) ? response.filter(u => u.role && u.role.includes('MEMBER')) : [];
-      setMembers(memberUsers);
-    } catch (err) {
-      console.error('Error loading members:', err);
-      setError('Failed to load members');
-    }
-  };
-
-  const loadAttendanceData = async () => {
+  const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // 1. Load active members
-      const users = await apiRequest('/api/users');
-      // Filter all members (active and inactive)
-      const allMembers = Array.isArray(users) ? users.filter(u =>
-        u.role && u.role.includes('MEMBER')
-      ) : [];
-      setActiveMembers(allMembers);
+      const today = new Date();
+      const todayStr = today.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+      const currentUserId = (user.id || user._id || '').toString();
 
-      // 2. Load today's attendance
-      const today = new Date().toISOString().split('T')[0];
-      const attendance = await apiRequest(`/api/attendance/reports?date=${today}`);
-      setAttendanceRecords(Array.isArray(attendance) ? attendance : []);
+      const [boxingRes, saunaRes, bookingsRes, attRes, usersRes] = await Promise.all([
+        apiRequest('/api/sessions/boxing'),
+        apiRequest('/api/sessions/sauna'),
+        apiRequest('/api/bookings'),
+        apiRequest(`/api/attendance/reports?date=${todayStr}`),
+        apiRequest('/api/users')
+      ]);
+
+      const boxers = Array.isArray(boxingRes) ? boxingRes : [];
+      const saunas = Array.isArray(saunaRes) ? saunaRes : [];
+      const bookings = Array.isArray(bookingsRes) ? bookingsRes : [];
+      const attendance = Array.isArray(attRes) ? attRes : [];
+      const users = Array.isArray(usersRes) ? usersRes : [];
+
+      setBoxingSessions(boxers);
+      setSaunaSessions(saunas);
+      setAllBookings(bookings);
+      setAttendanceRecords(attendance);
+
+      const memberUsers = users.filter(u => u.role?.includes('MEMBER'));
+      setMembers(memberUsers);
+      setActiveMembers(memberUsers);
+
+      // Calculate Stats
+      const mySessionsToday = [...boxers, ...saunas].filter(s => {
+        if (!s || !s.date) return false;
+        const creatorId = (s.createdBy?._id || s.createdBy || '').toString();
+        const isCreator = creatorId === currentUserId;
+        const sessionDateStr = new Date(s.date).toLocaleDateString('en-CA');
+        return isCreator && sessionDateStr === todayStr && s.status !== 'Cancelled';
+      });
+
+      const sessionsBookings = bookings.filter(b => {
+        if (!b || !b.sessionId) return false;
+        const bSessionId = b.sessionId.toString();
+        return mySessionsToday.some(s => s._id.toString() === bSessionId) && b.status === 'Booked';
+      });
+
+      const uniqueMembersToday = new Set(
+        sessionsBookings
+          .map(b => (b.memberId?._id || b.memberId || '').toString())
+          .filter(Boolean)
+      );
+
+      const newBookingsToday = bookings.filter(b => {
+        if (!b || !b.createdAt || !b.sessionId) return false;
+        const bookingDateStr = new Date(b.createdAt).toLocaleDateString('en-CA');
+        const isToday = bookingDateStr === todayStr;
+        const bSessionId = b.sessionId.toString();
+        const isMySession = [...boxers, ...saunas].some(s => {
+          const sId = s._id.toString();
+          const creatorId = (s.createdBy?._id || s.createdBy || '').toString();
+          return sId === bSessionId && creatorId === currentUserId;
+        });
+        return isToday && isMySession;
+      }).length;
+
+      const last7Days = [...Array(7)].map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        return d.toLocaleDateString('en-CA');
+      });
+
+      const conductedData = last7Days.map(dateStr => {
+        const count = [...boxers, ...saunas].filter(s => {
+          if (!s || !s.date) return false;
+          const creatorId = (s.createdBy?._id || s.createdBy || '').toString();
+          const isCreator = creatorId === currentUserId;
+          const sessionDateStr = new Date(s.date).toLocaleDateString('en-CA');
+          return isCreator && sessionDateStr === dateStr && s.status === 'Completed';
+        }).length;
+        return {
+          name: new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short' }),
+          count
+        };
+      });
+
+      setStats({
+        activeMembersToday: uniqueMembersToday.size,
+        sessionsToday: mySessionsToday.length,
+        newBookingsToday,
+        totalMembers: memberUsers.length,
+        conductedThisWeek: conductedData
+      });
+
     } catch (err) {
-      console.error('Error loading attendance data:', err);
+      console.error('Error loading dashboard data:', err);
+      setError('Failed to refresh dashboard data');
     } finally {
       setLoading(false);
     }
@@ -137,7 +195,7 @@ const StaffDashboard = () => {
         body: { memberId }
       });
       setSuccess('Attendance marked successfully!');
-      loadAttendanceData();
+      loadDashboardData();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.message || 'Failed to mark attendance');
@@ -149,7 +207,6 @@ const StaffDashboard = () => {
     setLoading(true);
     setError('');
     setSuccess('');
-
     try {
       const endpoint = bookingForm.sessionType === 'boxing'
         ? `/api/bookings/boxing/${bookingForm.sessionId}`
@@ -164,13 +221,8 @@ const StaffDashboard = () => {
       });
 
       setSuccess(`${bookingForm.sessionType === 'boxing' ? 'Boxing' : 'Sauna'} session booked successfully for member!`);
-      setBookingForm({
-        memberId: '',
-        sessionId: '',
-        sessionType: 'boxing'
-      });
-      loadBoxingSessions();
-      loadSaunaSessions();
+      setBookingForm({ memberId: '', sessionId: '', sessionType: 'boxing' });
+      loadDashboardData();
     } catch (err) {
       setError(err.message || 'Failed to book session');
     } finally {
@@ -183,7 +235,6 @@ const StaffDashboard = () => {
     setLoading(true);
     setError('');
     setSuccess('');
-
     try {
       if (editingSession) {
         await apiRequest(`/api/sessions/boxing/${editingSession._id}`, {
@@ -198,18 +249,9 @@ const StaffDashboard = () => {
         });
         setSuccess('Boxing session created successfully!');
       }
-
-      setBoxingForm({
-        name: '',
-        instructor: '',
-        date: '',
-        startTime: '',
-        endTime: '',
-        maxCapacity: '',
-        description: ''
-      });
+      setBoxingForm({ name: '', instructor: '', date: '', startTime: '', endTime: '', maxCapacity: '', description: '' });
       setEditingSession(null);
-      loadBoxingSessions();
+      loadDashboardData();
     } catch (err) {
       setError(err.message || 'Failed to save boxing session');
     } finally {
@@ -222,7 +264,6 @@ const StaffDashboard = () => {
     setLoading(true);
     setError('');
     setSuccess('');
-
     try {
       if (editingSession) {
         await apiRequest(`/api/sessions/sauna/${editingSession._id}`, {
@@ -237,18 +278,9 @@ const StaffDashboard = () => {
         });
         setSuccess('Sauna session created successfully!');
       }
-
-      setSaunaForm({
-        name: '',
-        date: '',
-        startTime: '',
-        endTime: '',
-        maxCapacity: '',
-        temperature: '85',
-        description: ''
-      });
+      setSaunaForm({ name: '', date: '', startTime: '', endTime: '', maxCapacity: '', temperature: '85', description: '' });
       setEditingSession(null);
-      loadSaunaSessions();
+      loadDashboardData();
     } catch (err) {
       setError(err.message || 'Failed to save sauna session');
     } finally {
@@ -284,14 +316,10 @@ const StaffDashboard = () => {
 
   const handleCancel = async (sessionId, type) => {
     if (!confirm('Are you sure you want to cancel this session?')) return;
-
     try {
-      await apiRequest(`/api/sessions/${type}/${sessionId}/cancel`, {
-        method: 'PATCH'
-      });
+      await apiRequest(`/api/sessions/${type}/${sessionId}/cancel`, { method: 'PATCH' });
       setSuccess('Session cancelled successfully!');
-      if (type === 'boxing') loadBoxingSessions();
-      else loadSaunaSessions();
+      loadDashboardData();
     } catch (err) {
       setError(err.message || 'Failed to cancel session');
     }
@@ -299,14 +327,10 @@ const StaffDashboard = () => {
 
   const handleDelete = async (sessionId, type) => {
     if (!confirm('Are you sure you want to permanently delete this session?')) return;
-
     try {
-      await apiRequest(`/api/sessions/${type}/${sessionId}`, {
-        method: 'DELETE'
-      });
+      await apiRequest(`/api/sessions/${type}/${sessionId}`, { method: 'DELETE' });
       setSuccess('Session deleted successfully!');
-      if (type === 'boxing') loadBoxingSessions();
-      else loadSaunaSessions();
+      loadDashboardData();
     } catch (err) {
       setError(err.message || 'Failed to delete session');
     }
@@ -320,205 +344,164 @@ const StaffDashboard = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Active': return 'text-green-400 bg-green-900';
-      case 'Cancelled': return 'text-red-400 bg-red-900';
-      case 'Completed': return 'text-blue-400 bg-blue-900';
-      case 'Expired': return 'text-gray-500 bg-gray-800 border border-gray-700';
-      default: return 'text-gray-400 bg-gray-700';
+      case 'Active': return 'text-green-400 bg-green-900/30 border-green-500/20';
+      case 'Cancelled': return 'text-red-400 bg-red-900/30 border-red-500/20';
+      case 'Completed': return 'text-blue-400 bg-blue-900/30 border-blue-500/20';
+      case 'Expired': return 'text-gray-500 bg-gray-800/30 border-gray-700';
+      default: return 'text-gray-400 bg-gray-700/30 border-gray-600';
     }
   };
-
-  const upcomingSessions = [...boxingSessions, ...saunaSessions]
-    .filter(session => session.status === 'Active')
-    .filter(session => {
-      const sessionDate = new Date(session.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return sessionDate >= today;
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      if (dateA.getTime() !== dateB.getTime()) {
-        return dateA - dateB;
-      }
-      return a.startTime.localeCompare(b.startTime);
-    })
-    .slice(0, 5);
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       {/* Navigation */}
-      <nav className="bg-slate-800 shadow-lg">
+      <nav className="bg-slate-800 shadow-lg border-b border-slate-700 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link to="/" className="text-2xl font-bold text-green-400 hover:text-green-300 transition duration-300">
-                Dharan Fitness Club
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                to="/inventory"
-                className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
-              >
-                Inventory
-              </Link>
+          <div className="flex justify-between h-16 items-center">
+            <Link to="/dashboard" className="text-2xl font-bold text-green-400">
+              Staff Dashboard
+            </Link>
+            <div className="flex items-center gap-6">
               <UserMenu />
             </div>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Tab Navigation */}
-        <div className="flex mb-8 bg-slate-800 rounded-lg p-1">
-          <button
-            onClick={() => setActiveTab('home')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'home'
-              ? 'bg-red-600 text-white'
-              : 'text-gray-300 hover:text-white hover:bg-slate-700'
-              }`}
-          >
-            🏠 Dashboard Home
-          </button>
-          <button
-            onClick={() => setActiveTab('bookings')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'bookings'
-              ? 'bg-red-600 text-white'
-              : 'text-gray-300 hover:text-white hover:bg-slate-700'
-              }`}
-          >
-            📅 Book for Member
-          </button>
-          <button
-            onClick={() => setActiveTab('boxing')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'boxing'
-              ? 'bg-red-600 text-white'
-              : 'text-gray-300 hover:text-white hover:bg-slate-700'
-              }`}
-          >
-            🥊 Boxing Sessions
-          </button>
-          <button
-            onClick={() => setActiveTab('sauna')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'sauna'
-              ? 'bg-red-600 text-white'
-              : 'text-gray-300 hover:text-white hover:bg-slate-700'
-              }`}
-          >
-            🏊‍♂️ Sauna Sessions
-          </button>
-          <button
-            onClick={() => setActiveTab('attendance')}
-            className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'attendance'
-              ? 'bg-red-600 text-white'
-              : 'text-gray-300 hover:text-white hover:bg-slate-700'
-              }`}
-          >
-            📋 Daily Attendance
-          </button>
+        <div className="flex flex-wrap mb-8 bg-slate-800 rounded-lg p-1 border border-slate-700">
+          {[
+            { id: 'home', label: 'Dashboard', icon: '🏠' },
+            { id: 'bookings', label: 'Member Booking', icon: '📅' },
+            { id: 'boxing', label: 'Boxing', icon: '🥊' },
+            { id: 'sauna', label: 'Sauna', icon: '🏊‍♂️' },
+            { id: 'attendance', label: 'Attendance', icon: '📋' },
+            { id: 'inventory', label: 'Inventory', icon: '📦' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 flex items-center justify-center gap-2 ${activeTab === tab.id
+                ? 'bg-red-600 text-white shadow-lg'
+                : 'text-gray-300 hover:text-white hover:bg-slate-700'
+                }`}
+            >
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Messages */}
-        {error && (
-          <div className="bg-red-600 text-white p-4 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-600 text-white p-4 rounded-lg mb-6">
-            {success}
-          </div>
-        )}
+        {/* Global Messages */}
+        {error && <div className="bg-red-600 text-white p-4 rounded-lg mb-6 shadow-xl animate-in slide-in-from-top duration-300">{error}</div>}
+        {success && <div className="bg-green-600 text-white p-4 rounded-lg mb-6 shadow-xl animate-in slide-in-from-top duration-300">{success}</div>}
 
         {/* Dashboard Home */}
         {activeTab === 'home' && (
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-8">Staff Dashboard</h1>
-
-            {/* Stats Cards */}
-            <div className="grid md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-slate-800 p-6 rounded-lg shadow-lg text-center">
-                <div className="text-3xl font-bold text-green-400 mb-2">{boxingSessions.length}</div>
-                <p className="text-gray-300">Boxing Sessions</p>
-              </div>
-              <div className="bg-slate-800 p-6 rounded-lg shadow-lg text-center">
-                <div className="text-3xl font-bold text-blue-400 mb-2">{saunaSessions.length}</div>
-                <p className="text-gray-300">Sauna Sessions</p>
-              </div>
-              <div className="bg-slate-800 p-6 rounded-lg shadow-lg text-center">
-                <div className="text-3xl font-bold text-purple-400 mb-2">{upcomingSessions.length}</div>
-                <p className="text-gray-300">Upcoming Sessions</p>
-              </div>
-              <div className="bg-slate-800 p-6 rounded-lg shadow-lg text-center">
-                <div className="text-3xl font-bold text-orange-400 mb-2">
-                  {boxingSessions.filter(s => s.status === 'Active').length + saunaSessions.filter(s => s.status === 'Active').length}
-                </div>
-                <p className="text-gray-300">Active Sessions</p>
-              </div>
+          <div className="space-y-12 animate-in fade-in duration-500">
+            <div>
+              <h1 className="text-4xl font-extrabold text-white mb-2">Welcome back, {user.name}!</h1>
+              <p className="text-slate-400 font-medium">Here's an overview of your assigned tasks and sessions.</p>
             </div>
 
-            {/* Upcoming Sessions */}
-            <div className="bg-slate-800 p-6 rounded-lg shadow-lg mb-8">
-              <h2 className="text-2xl font-bold text-white mb-6">Upcoming Sessions</h2>
-              <div className="space-y-4">
-                {upcomingSessions.length > 0 ? (
-                  upcomingSessions.map(session => (
-                    <div key={session._id} className="bg-slate-700 p-4 rounded-lg flex justify-between items-center">
-                      <div>
-                        <h3 className="text-white font-semibold">{session.name}</h3>
-                        <p className="text-gray-400 text-sm">
-                          {new Date(session.date).toLocaleDateString()} • {session.startTime}-{session.endTime}
-                        </p>
-                        <p className="text-gray-400 text-sm">
-                          {session.instructor || `Temperature: ${session.temperature}°C`} • Capacity: {session.availableSlots}/{session.maxCapacity}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
-                          {session.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-400 text-center py-8">No upcoming sessions scheduled</p>
-                )}
-              </div>
+            {/* 4 Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard title="Active Members Today" value={stats.activeMembersToday} subtext="Booked your sessions" color="blue" />
+              <StatCard title="Sessions Today" value={stats.sessionsToday} subtext="Total to conduct today" color="purple" />
+              <StatCard title="New Bookings Today" value={stats.newBookingsToday} subtext="Recent member interest" color="green" />
+              <StatCard title="Total Members" value={stats.totalMembers} subtext="Registered in the system" color="purple" />
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div
-                onClick={() => navigate('/enroll-member')}
-                className="bg-slate-800 p-6 rounded-lg shadow-lg cursor-pointer hover:bg-slate-700 transition duration-300 flex items-center gap-4 border border-slate-700 hover:border-green-500/50"
-              >
-                <div className="bg-green-600/20 p-3 rounded-full">
-                  <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">Enroll New Member</h3>
-                  <p className="text-gray-400 text-sm">Create a new member account and assign membership details.</p>
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Left Side: Upcoming Sessions Table */}
+              <div className="lg:col-span-2 space-y-8">
+                <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
+                  <div className="px-8 py-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/20">
+                    <h2 className="text-xl font-bold">Your Next 7 Days</h2>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Upcoming Sessions</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-slate-800/30">
+                          <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date & Time</th>
+                          <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Session / Type</th>
+                          <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Bookings</th>
+                          <th className="px-8 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800">
+                        {[...boxingSessions, ...saunaSessions]
+                          .filter(s => (s.createdBy?._id === (user.id || user._id) || s.createdBy === (user.id || user._id)) && new Date(s.date) >= new Date().setHours(0, 0, 0, 0))
+                          .sort((a, b) => new Date(a.date) - new Date(b.date))
+                          .slice(0, 7)
+                          .map(session => (
+                            <tr key={session._id} className="hover:bg-slate-800/30 transition-colors group">
+                              <td className="px-8 py-5 text-sm">
+                                <div className="font-bold text-white mb-1">
+                                  {new Date(session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </div>
+                                <div className="text-slate-500 text-xs font-medium">{session.startTime} - {session.endTime}</div>
+                              </td>
+                              <td className="px-8 py-5">
+                                <div className="font-bold text-white group-hover:text-red-400 transition-colors">{session.name}</div>
+                                <span className={`inline-block px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider mt-1 ${session.instructor ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/30 text-blue-400'}`}>
+                                  {session.instructor ? 'Boxing' : 'Sauna'}
+                                </span>
+                              </td>
+                              <td className="px-8 py-5 text-sm text-slate-300 font-medium">
+                                {session.bookings?.length || 0} / {session.maxCapacity}
+                              </td>
+                              <td className="px-8 py-5 text-right">
+                                <button
+                                  onClick={() => { setActiveTab('attendance'); loadDashboardData(); }}
+                                  className="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-700 transition-all shadow-sm"
+                                >
+                                  Manage Attendance
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        {[...boxingSessions, ...saunaSessions].filter(s => s.createdBy?._id === user._id).length === 0 && (
+                          <tr>
+                            <td colSpan="4" className="px-8 py-12 text-center text-slate-500 italic font-medium">
+                              No upcoming sessions assigned to you.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
-              <div
-                onClick={() => navigate('/inventory')}
-                className="bg-slate-800 p-6 rounded-lg shadow-lg cursor-pointer hover:bg-slate-700 transition duration-300 flex items-center gap-4 border border-slate-700 hover:border-blue-500/50"
-              >
-                <div className="bg-blue-600/20 p-3 rounded-full">
-                  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
+              {/* Right Side: Charts & Performance */}
+              <div className="space-y-8">
+                <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 shadow-xl">
+                  <h2 className="text-lg font-bold mb-6 text-white">Conducting Performance</h2>
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stats.conductedThisWeek}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                        <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px' }} cursor={{ fill: '#1e293b' }} />
+                        <Bar dataKey="count" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={24} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-6 text-center italic">Sessions completed in the last 7 days.</p>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">Manage Inventory</h3>
-                  <p className="text-gray-400 text-sm">Track equipment, supplements and gym merchandise.</p>
+
+                <div className="bg-gradient-to-br from-red-900/40 to-slate-800 border border-red-500/20 p-6 rounded-lg flex items-center gap-4">
+                  <div className="bg-red-500/20 p-3 rounded-xl">
+                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                    Remember to mark attendance as soon as a session concludes to maintain accurate records.
+                  </p>
                 </div>
               </div>
             </div>
@@ -527,24 +510,23 @@ const StaffDashboard = () => {
 
         {/* Book for Member Tab */}
         {activeTab === 'bookings' && (
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-8">Book Session for Member</h1>
-
-            <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold text-white mb-6">Create Booking</h2>
-              <form onSubmit={handleBookingSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <h1 className="text-3xl font-bold text-white">Book Session for Member</h1>
+            <div className="bg-slate-800 border border-slate-700 shadow-xl p-8 rounded-lg">
+              <h2 className="text-xl font-bold text-white mb-6">Create New Booking</h2>
+              <form onSubmit={handleBookingSubmit} className="space-y-8">
+                <div className="grid md:grid-cols-2 gap-8">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Select Member</label>
+                    <label className="block text-sm font-semibold text-slate-400 mb-3">Select Member</label>
                     <select
                       value={bookingForm.memberId}
                       onChange={(e) => setBookingForm({ ...bookingForm, memberId: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-3.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-all cursor-pointer"
                       required
                     >
-                      <option value="">-- Select a Member --</option>
+                      <option value="">-- Choose a Member --</option>
                       {members.map(member => (
-                        <option key={member._id} value={member._id}>
+                        <option key={member._id} value={member._id} className="bg-slate-800">
                           {member.name} ({member.email})
                         </option>
                       ))}
@@ -552,46 +534,53 @@ const StaffDashboard = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Session Type</label>
-                    <select
-                      value={bookingForm.sessionType}
-                      onChange={(e) => setBookingForm({ ...bookingForm, sessionType: e.target.value, sessionId: '' })}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                      required
-                    >
-                      <option value="boxing">Boxing Session</option>
-                      <option value="sauna">Sauna Session</option>
-                    </select>
+                    <label className="block text-sm font-semibold text-slate-400 mb-3">Session Type</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      {['boxing', 'sauna'].map(type => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setBookingForm({ ...bookingForm, sessionType: type, sessionId: '' })}
+                          className={`py-3 px-4 rounded-lg font-bold text-xs uppercase tracking-widest transition-all border ${bookingForm.sessionType === type
+                            ? 'bg-red-600 border-red-500 text-white shadow-lg'
+                            : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
+                            }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Select Session</label>
+                  <label className="block text-sm font-semibold text-slate-400 mb-3">Select Active Session</label>
                   <select
                     value={bookingForm.sessionId}
                     onChange={(e) => setBookingForm({ ...bookingForm, sessionId: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-3.5 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-all cursor-pointer"
                     required
                   >
                     <option value="">-- Select a Session --</option>
                     {(bookingForm.sessionType === 'boxing' ? boxingSessions : saunaSessions)
                       .filter(s => s.status === 'Active' && s.availableSlots > 0)
                       .map(session => (
-                        <option key={session._id} value={session._id}>
-                          {session.name} - {new Date(session.date).toLocaleDateString()} {session.startTime}-{session.endTime}
-                          ({session.availableSlots}/{session.maxCapacity} slots)
+                        <option key={session._id} value={session._id} className="bg-slate-800">
+                          {session.name} • {new Date(session.date).toLocaleDateString()} ({session.startTime}-{session.endTime})
                         </option>
                       ))}
                   </select>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-semibold py-3 px-6 rounded-md transition duration-300"
-                >
-                  {loading ? 'Booking...' : 'Book Session for Member'}
-                </button>
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    disabled={loading || !bookingForm.memberId || !bookingForm.sessionId}
+                    className="w-full md:w-auto bg-red-600 hover:bg-red-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-black py-4 px-12 rounded-lg shadow-xl transition-all uppercase tracking-widest text-sm"
+                  >
+                    {loading ? 'Processing...' : 'Confirm Member Booking'}
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -599,197 +588,33 @@ const StaffDashboard = () => {
 
         {/* Boxing Sessions Management */}
         {activeTab === 'boxing' && (
-          <div>
-            <div className="flex justify-between items-center mb-8">
-              <h1 className="text-3xl font-bold text-white">Boxing Sessions Management</h1>
-              <button
-                onClick={() => {
-                  setEditingSession(null);
-                  setBoxingForm({
-                    name: '',
-                    instructor: '',
-                    date: '',
-                    startTime: '',
-                    endTime: '',
-                    maxCapacity: '',
-                    description: ''
-                  });
-                }}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-semibold transition duration-300"
-              >
-                Add New Session
-              </button>
-            </div>
-
-            {/* Add/Edit Form */}
-            <div className="bg-slate-800 p-6 rounded-lg shadow-lg mb-8">
-              <h2 className="text-xl font-bold text-white mb-6">
-                {editingSession ? 'Edit Boxing Session' : 'Add New Boxing Session'}
-              </h2>
-              <form onSubmit={handleBoxingSubmit} className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Session Name</label>
-                  <input
-                    type="text"
-                    value={boxingForm.name}
-                    onChange={(e) => setBoxingForm({ ...boxingForm, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Instructor</label>
-                  <input
-                    type="text"
-                    value={boxingForm.instructor}
-                    onChange={(e) => setBoxingForm({ ...boxingForm, instructor: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Date</label>
-                  <input
-                    type="date"
-                    value={boxingForm.date}
-                    onChange={(e) => setBoxingForm({ ...boxingForm, date: e.target.value })}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Max Capacity</label>
-                  <input
-                    type="number"
-                    value={boxingForm.maxCapacity}
-                    onChange={(e) => setBoxingForm({ ...boxingForm, maxCapacity: e.target.value })}
-                    min="1"
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Start Time</label>
-                  <input
-                    type="time"
-                    value={boxingForm.startTime}
-                    onChange={(e) => setBoxingForm({ ...boxingForm, startTime: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">End Time</label>
-                  <input
-                    type="time"
-                    value={boxingForm.endTime}
-                    onChange={(e) => setBoxingForm({ ...boxingForm, endTime: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                  <textarea
-                    value={boxingForm.description}
-                    onChange={(e) => setBoxingForm({ ...boxingForm, description: e.target.value })}
-                    rows="3"
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-semibold py-3 px-6 rounded-md transition duration-300"
-                  >
-                    {loading ? 'Saving...' : (editingSession ? 'Update Session' : 'Create Session')}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Sessions List */}
-            <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold text-white mb-6">All Boxing Sessions</h2>
-              <div className="space-y-4">
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <h1 className="text-3xl font-bold text-white text-gradient bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">Boxing Sessions</h1>
+            <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg shadow-xl">
+              <h2 className="text-xl font-bold text-white mb-8">Recent Boxing Sessions</h2>
+              <div className="grid gap-6">
                 {boxingSessions.map(session => (
-                  <div key={session._id} className="bg-slate-700 p-4 rounded-lg">
-                    <div className="flex justify-between items-start mb-3">
+                  <div key={session._id} className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 hover:border-red-500/30 transition-all group">
+                    <div className="flex flex-wrap justify-between items-start gap-4">
                       <div>
-                        <h3 className="text-white font-semibold text-lg">{session.name}</h3>
-                        <p className="text-gray-400">Instructor: {session.instructor}</p>
-                        <p className="text-gray-400 text-sm">
-                          {new Date(session.date).toLocaleDateString()} • {session.startTime}-{session.endTime}
-                        </p>
-                        <p className="text-gray-400 text-sm">
-                          Capacity: {session.availableSlots}/{session.maxCapacity} • Created by: {session.createdBy?.name}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
-                          {session.status}
-                        </span>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEdit(session, 'boxing')}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition duration-300"
-                          >
-                            Edit
-                          </button>
-                          {session.status === 'Active' && (
-                            <button
-                              onClick={() => handleCancel(session._id, 'boxing')}
-                              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm transition duration-300"
-                            >
-                              Cancel
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDelete(session._id, 'boxing')}
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition duration-300"
-                          >
-                            Delete
-                          </button>
+                        <h3 className="text-white font-bold text-lg mb-1">{session.name}</h3>
+                        <p className="text-slate-400 text-sm">Instructor: {session.instructor}</p>
+                        <div className="flex gap-4 mt-2">
+                          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            {new Date(session.date).toLocaleDateString()} • {session.startTime}-{session.endTime}
+                          </p>
+                          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            Capacity: {session.availableSlots}/{session.maxCapacity}
+                          </p>
                         </div>
                       </div>
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border ${getStatusColor(session.status)}`}>
+                        {session.status}
+                      </span>
                     </div>
-                    {session.description && (
-                      <p className="text-gray-300 text-sm">{session.description}</p>
-                    )}
-
-                    {/* Booked Members Section */}
-                    {session.bookings && session.bookings.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-slate-600">
-                        <details className="group">
-                          <summary className="cursor-pointer list-none flex items-center justify-between text-sm font-medium text-gray-300 hover:text-white">
-                            <span>👥 Booked Members ({session.bookings.length})</span>
-                            <span className="transition group-open:rotate-180">
-                              ▼
-                            </span>
-                          </summary>
-                          <div className="mt-3 space-y-2">
-                            {session.bookings.map((member, idx) => (
-                              <div key={member._id || idx} className="bg-slate-600 p-3 rounded flex justify-between items-center">
-                                <div>
-                                  <p className="text-white font-medium">{member.name}</p>
-                                  <p className="text-gray-400 text-xs">{member.email}</p>
-                                </div>
-                                <span className="px-2 py-1 bg-green-900 text-green-300 rounded text-xs">
-                                  Booked
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </details>
-                      </div>
-                    )}
                   </div>
                 ))}
-                {boxingSessions.length === 0 && (
-                  <p className="text-gray-400 text-center py-8">No boxing sessions found</p>
-                )}
+                {boxingSessions.length === 0 && <div className="text-center py-12 text-slate-500 italic">No boxing sessions found.</div>}
               </div>
             </div>
           </div>
@@ -797,313 +622,132 @@ const StaffDashboard = () => {
 
         {/* Sauna Sessions Management */}
         {activeTab === 'sauna' && (
-          <div>
-            <div className="flex justify-between items-center mb-8">
-              <h1 className="text-3xl font-bold text-white">Sauna Sessions Management</h1>
-              <button
-                onClick={() => {
-                  setEditingSession(null);
-                  setSaunaForm({
-                    name: '',
-                    date: '',
-                    startTime: '',
-                    endTime: '',
-                    maxCapacity: '',
-                    temperature: '85',
-                    description: ''
-                  });
-                }}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-semibold transition duration-300"
-              >
-                Add New Session
-              </button>
-            </div>
-
-            {/* Add/Edit Form */}
-            <div className="bg-slate-800 p-6 rounded-lg shadow-lg mb-8">
-              <h2 className="text-xl font-bold text-white mb-6">
-                {editingSession ? 'Edit Sauna Session' : 'Add New Sauna Session'}
-              </h2>
-              <form onSubmit={handleSaunaSubmit} className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Session Name</label>
-                  <input
-                    type="text"
-                    value={saunaForm.name}
-                    onChange={(e) => setSaunaForm({ ...saunaForm, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Temperature (°C)</label>
-                  <input
-                    type="number"
-                    value={saunaForm.temperature}
-                    onChange={(e) => setSaunaForm({ ...saunaForm, temperature: e.target.value })}
-                    min="60"
-                    max="100"
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Date</label>
-                  <input
-                    type="date"
-                    value={saunaForm.date}
-                    onChange={(e) => setSaunaForm({ ...saunaForm, date: e.target.value })}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Max Capacity</label>
-                  <input
-                    type="number"
-                    value={saunaForm.maxCapacity}
-                    onChange={(e) => setSaunaForm({ ...saunaForm, maxCapacity: e.target.value })}
-                    min="1"
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Start Time</label>
-                  <input
-                    type="time"
-                    value={saunaForm.startTime}
-                    onChange={(e) => setSaunaForm({ ...saunaForm, startTime: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">End Time</label>
-                  <input
-                    type="time"
-                    value={saunaForm.endTime}
-                    onChange={(e) => setSaunaForm({ ...saunaForm, endTime: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                    required
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                  <textarea
-                    value={saunaForm.description}
-                    onChange={(e) => setSaunaForm({ ...saunaForm, description: e.target.value })}
-                    rows="3"
-                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-semibold py-3 px-6 rounded-md transition duration-300"
-                  >
-                    {loading ? 'Saving...' : (editingSession ? 'Update Session' : 'Create Session')}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Sessions List */}
-            <div className="bg-slate-800 p-6 rounded-lg shadow-lg">
-              <h2 className="text-xl font-bold text-white mb-6">All Sauna Sessions</h2>
-              <div className="space-y-4">
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <h1 className="text-3xl font-bold text-white text-gradient bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Sauna Sessions</h1>
+            <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg shadow-xl">
+              <h2 className="text-xl font-bold text-white mb-8">Recent Sauna Sessions</h2>
+              <div className="grid gap-6">
                 {saunaSessions.map(session => (
-                  <div key={session._id} className="bg-slate-700 p-4 rounded-lg">
-                    <div className="flex justify-between items-start mb-3">
+                  <div key={session._id} className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 hover:border-blue-500/30 transition-all group">
+                    <div className="flex flex-wrap justify-between items-start gap-4">
                       <div>
-                        <h3 className="text-white font-semibold text-lg">{session.name}</h3>
-                        <p className="text-gray-400">Temperature: {session.temperature}°C</p>
-                        <p className="text-gray-400 text-sm">
-                          {new Date(session.date).toLocaleDateString()} • {session.startTime}-{session.endTime}
-                        </p>
-                        <p className="text-gray-400 text-sm">
-                          Capacity: {session.availableSlots}/{session.maxCapacity} • Created by: {session.createdBy?.name}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(session.status)}`}>
-                          {session.status}
-                        </span>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleEdit(session, 'sauna')}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition duration-300"
-                          >
-                            Edit
-                          </button>
-                          {session.status === 'Active' && (
-                            <button
-                              onClick={() => handleCancel(session._id, 'sauna')}
-                              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm transition duration-300"
-                            >
-                              Cancel
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDelete(session._id, 'sauna')}
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition duration-300"
-                          >
-                            Delete
-                          </button>
+                        <h3 className="text-white font-bold text-lg mb-1">{session.name}</h3>
+                        <p className="text-slate-400 text-sm">Temperature: {session.temperature}°C</p>
+                        <div className="flex gap-4 mt-2">
+                          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            {new Date(session.date).toLocaleDateString()} • {session.startTime}-{session.endTime}
+                          </p>
+                          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            Capacity: {session.availableSlots}/{session.maxCapacity}
+                          </p>
                         </div>
                       </div>
+                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border ${getStatusColor(session.status)}`}>
+                        {session.status}
+                      </span>
                     </div>
-                    {session.description && (
-                      <p className="text-gray-300 text-sm">{session.description}</p>
-                    )}
-
-                    {/* Booked Members Section */}
-                    {session.bookings && session.bookings.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-slate-600">
-                        <details className="group">
-                          <summary className="cursor-pointer list-none flex items-center justify-between text-sm font-medium text-gray-300 hover:text-white">
-                            <span>👥 Booked Members ({session.bookings.length})</span>
-                            <span className="transition group-open:rotate-180">
-                              ▼
-                            </span>
-                          </summary>
-                          <div className="mt-3 space-y-2">
-                            {session.bookings.map((member, idx) => (
-                              <div key={member._id || idx} className="bg-slate-600 p-3 rounded flex justify-between items-center">
-                                <div>
-                                  <p className="text-white font-medium">{member.name}</p>
-                                  <p className="text-gray-400 text-xs">{member.email}</p>
-                                </div>
-                                <span className="px-2 py-1 bg-green-900 text-green-300 rounded text-xs">
-                                  Booked
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </details>
-                      </div>
-                    )}
                   </div>
                 ))}
-                {saunaSessions.length === 0 && (
-                  <p className="text-gray-400 text-center py-8">No sauna sessions found</p>
-                )}
+                {saunaSessions.length === 0 && <div className="text-center py-12 text-slate-500 italic">No sauna sessions found.</div>}
               </div>
             </div>
           </div>
         )}
+
         {/* Attendance Tab */}
         {activeTab === 'attendance' && (
-          <div className="bg-slate-800 rounded-lg shadow-xl border border-slate-700 overflow-hidden">
-            <div className="p-6 border-b border-slate-700 bg-slate-700/30 flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold text-white">Daily Attendance</h2>
-                <p className="text-gray-400 text-sm mt-1">Mark attendance for active members - {new Date().toLocaleDateString()}</p>
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
+              <div className="p-8 border-b border-slate-800 bg-slate-800/20 flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Daily Attendance</h2>
+                  <p className="text-slate-400 font-medium text-sm mt-1">Mark attendance for active members - {new Date().toLocaleDateString()}</p>
+                </div>
+                <button onClick={loadDashboardData} className="bg-slate-800 hover:bg-slate-700 text-white p-2.5 rounded-xl border border-slate-700 transition" title="Refresh List">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                </button>
               </div>
-              <button
-                onClick={loadAttendanceData}
-                className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg transition"
-                title="Refresh List"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              </button>
-            </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-900/50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Member</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Contact</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Membership</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-700">
-                  {activeMembers.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="px-6 py-12 text-center text-gray-500 italic">
-                        No members found.
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-800/30">
+                      <th className="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Member</th>
+                      <th className="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Contact</th>
+                      <th className="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Membership</th>
+                      <th className="px-8 py-5 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                      <th className="px-8 py-5 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Action</th>
                     </tr>
-                  ) : (
-                    activeMembers.map(member => {
-                      const isMarked = attendanceRecords.some(r => r.member?._id === member._id);
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {activeMembers.length === 0 ? (
+                      <tr><td colSpan="5" className="px-8 py-16 text-center text-slate-500 italic">No members found for today.</td></tr>
+                    ) : (
+                      activeMembers.map(member => {
+                        const isMarked = attendanceRecords.some(r => r.member?._id === member._id);
+                        const isActive = member.membershipStatus === 'Active';
+                        const isExpired = member.membershipExpiryDate && new Date(member.membershipExpiryDate) < new Date();
+                        const canMarkInfo = isActive && !isExpired;
 
-                      // Check active status
-                      const isActive = member.membershipStatus === 'Active';
-                      const isExpired = member.membershipExpiryDate && new Date(member.membershipExpiryDate) < new Date();
-
-                      const canMarkInfo = isActive && !isExpired;
-
-                      return (
-                        <tr key={member._id} className={`transition-colors ${!canMarkInfo ? 'bg-slate-800/50 opacity-75' : 'hover:bg-slate-700/30'}`}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mr-3 ${canMarkInfo ? 'bg-red-600' : 'bg-gray-600'}`}>
-                                {member.name.charAt(0)}
+                        return (
+                          <tr key={member._id} className={`transition-colors ${!canMarkInfo ? 'bg-slate-900/50 opacity-60' : 'hover:bg-slate-800/30'}`}>
+                            <td className="px-8 py-5">
+                              <div className="flex items-center">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black mr-4 ${canMarkInfo ? 'bg-gradient-to-br from-red-500 to-orange-600 shadow-lg' : 'bg-slate-700 text-slate-500'}`}>
+                                  {member.name.charAt(0)}
+                                </div>
+                                <div>
+                                  <div className="text-sm font-bold text-white">{member.name}</div>
+                                  {!isActive && <span className="text-[10px] text-red-400 font-extrabold uppercase">Inactive Account</span>}
+                                </div>
                               </div>
-                              <div className="text-sm font-medium text-white">
-                                {member.name}
-                                {!isActive && <span className="ml-2 text-xs text-red-400 border border-red-400/30 px-1 rounded">Inactive</span>}
+                            </td>
+                            <td className="px-8 py-5 text-sm text-slate-300 font-medium">{member.phone || '--'}</td>
+                            <td className="px-8 py-5">
+                              <div className="text-xs font-bold text-slate-400">
+                                {member.membershipExpiryDate ? new Date(member.membershipExpiryDate).toLocaleDateString() : 'No Plan'}
+                                {isExpired && <span className="ml-2 text-red-500 text-[10px] uppercase">(Expired)</span>}
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                            {member.phone || 'N/A'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-300">
-                              Expires: {member.membershipExpiryDate ? new Date(member.membershipExpiryDate).toLocaleDateString() : 'N/A'}
-                              {isExpired && <span className="ml-2 text-xs text-red-400 font-bold">(Expired)</span>}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            {isMarked ? (
-                              <span className="px-3 py-1 bg-green-900/40 text-green-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-green-500/20">
-                                Present
-                              </span>
-                            ) : (
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${canMarkInfo
-                                ? 'bg-slate-700 text-gray-400 border-slate-600'
-                                : 'bg-red-900/20 text-red-500 border-red-900/30'
-                                }`}>
-                                {canMarkInfo ? 'Pending' : 'Ineligible'}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            {!isMarked ? (
-                              <button
-                                onClick={() => handleMarkAttendance(member._id)}
-                                disabled={!canMarkInfo}
-                                className={`text-xs font-bold px-4 py-2 rounded transition duration-300 ${canMarkInfo
-                                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                                  : 'bg-slate-700 text-gray-500 cursor-not-allowed border border-slate-600'
-                                  }`}
-                              >
-                                {canMarkInfo ? 'Mark Present' : 'Membership Expired'}
-                              </button>
-                            ) : (
-                              <button
-                                disabled
-                                className="bg-slate-700 text-green-500/80 text-xs font-bold px-4 py-2 rounded cursor-not-allowed border border-green-900/30"
-                              >
-                                Marked
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                            </td>
+                            <td className="px-8 py-5 text-center">
+                              {isMarked ? (
+                                <span className="px-3 py-1 bg-green-900/30 text-green-400 rounded-lg text-[10px] font-black uppercase tracking-widest border border-green-500/20">PRESENT</span>
+                              ) : (
+                                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${canMarkInfo ? 'bg-slate-800 text-slate-500 border-slate-700' : 'bg-red-900/20 text-red-500 border-red-900/30'}`}>
+                                  {canMarkInfo ? 'PENDING' : 'INELIGIBLE'}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-8 py-5 text-right">
+                              {!isMarked ? (
+                                <button
+                                  onClick={() => handleMarkAttendance(member._id)}
+                                  disabled={!canMarkInfo}
+                                  className={`text-xs font-bold px-5 py-2.5 rounded-xl transition ${canMarkInfo ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg' : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'}`}
+                                >
+                                  {canMarkInfo ? 'Mark Present' : 'Inactive'}
+                                </button>
+                              ) : (
+                                <div className="text-green-500/80 text-xs font-black uppercase tracking-widest flex items-center justify-end gap-2 px-5">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                  Done
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+        )}
+
+        {/* Inventory Tab */}
+        {activeTab === 'inventory' && (
+          <InventoryComponent />
         )}
       </div>
     </div>

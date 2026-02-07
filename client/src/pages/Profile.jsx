@@ -328,8 +328,8 @@ const Profile = () => {
                                                         </td>
                                                         <td className="py-3 px-4">
                                                             <span className={`px-2 py-1 rounded text-xs font-bold ${payment.status === 'Completed' ? 'bg-green-900/50 text-green-400' :
-                                                                    payment.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
-                                                                        'bg-red-900/50 text-red-400'
+                                                                payment.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                                                                    'bg-red-900/50 text-red-400'
                                                                 }`}>
                                                                 {payment.status}
                                                             </span>

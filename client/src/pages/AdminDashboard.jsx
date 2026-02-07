@@ -2,6 +2,27 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
 import UserMenu from '../components/UserMenu';
+import InventoryComponent from '../components/InventoryComponent';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+
+// StatCard component for summary metrics
+const StatCard = ({ title, value, color = 'blue' }) => {
+  const colorClasses = {
+    blue: 'text-blue-400',
+    green: 'text-green-400',
+    orange: 'text-orange-400',
+    purple: 'text-purple-400'
+  };
+
+  return (
+    <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700">
+      <div className="flex flex-col">
+        <p className="text-sm text-gray-400 mb-1 font-medium">{title}</p>
+        <p className={`text-3xl font-bold ${colorClasses[color]}`}>{value}</p>
+      </div>
+    </div>
+  );
+};
 
 // Helper component for individual Plan card to manage local state
 const PlanCard = ({ plan, onUpdate }) => {
@@ -75,7 +96,7 @@ const PlanCard = ({ plan, onUpdate }) => {
 };
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('home'); // renamed from overview
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -121,53 +142,35 @@ const AdminDashboard = () => {
 
   const loadData = async () => {
     try {
-      // Load users
-      if (activeTab === 'overview' || activeTab === 'users' || activeTab === 'attendance') {
-        try {
-          const response = await apiRequest('/api/users');
-          setUsers(Array.isArray(response) ? response : []);
-        } catch (err) {
-          console.error('Error loading users:', err);
-        }
-      }
+      setLoading(true);
 
-      // Load bookings
-      if (activeTab === 'overview' || activeTab === 'bookings') {
-        try {
-          const allBookings = await apiRequest('/api/bookings');
-          setBookings(Array.isArray(allBookings) ? allBookings : []);
-        } catch (err) {
-          console.error('Error loading bookings:', err);
-        }
-      }
+      // Fetch all data concurrently
+      const [usersRes, bookingsRes, boxingRes, saunaRes, plansRes] = await Promise.all([
+        apiRequest('/api/users'),
+        apiRequest('/api/bookings'),
+        apiRequest('/api/sessions/boxing'),
+        apiRequest('/api/sessions/sauna'),
+        apiRequest('/api/membership/plans')
+      ]);
 
-      // Load sessions
-      if (activeTab === 'overview' || activeTab === 'sessions') {
-        try {
-          const boxingSessions = await apiRequest('/api/sessions/boxing');
-          const saunaSessions = await apiRequest('/api/sessions/sauna');
+      const fetchedUsers = Array.isArray(usersRes) ? usersRes : [];
+      const fetchedBookings = Array.isArray(bookingsRes) ? bookingsRes : [];
+      const fetchedBoxing = Array.isArray(boxingRes) ? boxingRes : [];
+      const fetchedSauna = Array.isArray(saunaRes) ? saunaRes : [];
+      const fetchedPlans = Array.isArray(plansRes) ? plansRes : [];
 
-          const allSessions = [
-            ...Array.isArray(boxingSessions) ? boxingSessions.map(s => ({ ...s, type: 'Boxing' })) : [],
-            ...Array.isArray(saunaSessions) ? saunaSessions.map(s => ({ ...s, type: 'Sauna' })) : []
-          ];
-          setSessions(allSessions);
-        } catch (err) {
-          console.error('Error loading sessions:', err);
-        }
-      }
+      const fetchedSessions = [
+        ...fetchedBoxing.map(s => ({ ...s, type: 'Boxing' })),
+        ...fetchedSauna.map(s => ({ ...s, type: 'Sauna' }))
+      ];
 
-      // Load plans
-      if (activeTab === 'overview' || activeTab === 'plans') {
-        try {
-          const res = await apiRequest('/api/membership/plans'); // Ensure this endpoint returns all plans (or add /admin/plans for all including inactive)
-          setPlans(Array.isArray(res) ? res : []);
-        } catch (err) {
-          console.error("Error loading plans", err);
-        }
-      }
+      // Update basic states
+      setUsers(fetchedUsers);
+      setBookings(fetchedBookings);
+      setSessions(fetchedSessions);
+      setPlans(fetchedPlans);
 
-      // Load attendance filters
+      // Load attendance reports if that tab is active
       if (activeTab === 'attendance') {
         try {
           let url = '/api/attendance/reports';
@@ -183,17 +186,99 @@ const AdminDashboard = () => {
         }
       }
 
-      // Calculate stats for overview
-      if (activeTab === 'overview') {
-        setStats({
-          totalUsers: users.length,
-          activeBookings: bookings.filter(b => b.status === 'Booked').length,
-          totalSessions: sessions.length,
-          staffMembers: users.filter(u => u.role?.includes('STAFF')).length
-        });
+      // Calculate stats for overview using the LOCAL variables (fetchedUsers, etc.)
+      const members = fetchedUsers.filter(u => u.role?.includes('MEMBER'));
+      const activeMembers = members.filter(m => m.isActive !== false);
+      const inactiveMembers = members.filter(m => m.isActive === false);
+
+      // Monthly revenue (current month)
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthlyRevenue = members
+        .filter(m => {
+          if (!m.membershipStartDate) return false;
+          const startDate = new Date(m.membershipStartDate);
+          return startDate >= firstDayOfMonth && startDate <= now;
+        })
+        .reduce((sum, m) => {
+          const plan = fetchedPlans.find(p => p.name === m.membershipType);
+          if (plan) {
+            const finalPrice = plan.price - (plan.price * (plan.discountPercent || 0) / 100);
+            return sum + finalPrice;
+          }
+          return sum;
+        }, 0);
+
+      // Memberships expiring soon (within 7 days)
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+      const expiringSoon = members.filter(m => {
+        if (!m.membershipExpiryDate) return false;
+        const endDate = new Date(m.membershipExpiryDate);
+        return endDate >= now && endDate <= sevenDaysFromNow;
+      }).length;
+
+      // Plan distribution
+      const planCounts = {};
+      fetchedPlans.forEach(p => { planCounts[p.name] = 0; });
+      members.forEach(m => {
+        if (m.membershipType && m.membershipType !== 'None') {
+          planCounts[m.membershipType] = (planCounts[m.membershipType] || 0) + 1;
+        }
+      });
+
+      const planDistribution = Object.entries(planCounts).map(([name, count]) => ({
+        name,
+        count
+      }));
+
+      // Active sessions today
+      const today = new Date();
+      const todayStr = today.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+      const activeSessionsToday = fetchedSessions.filter(s => {
+        if (!s || !s.date) return false;
+        const sDate = new Date(s.date).toLocaleDateString('en-CA');
+        return sDate === todayStr && s.status === 'Active';
+      }).length;
+
+      // New members this month
+      const newMembersThisMonth = members.filter(m => {
+        if (!m.createdAt) return false;
+        const createdDate = new Date(m.createdAt);
+        return createdDate >= firstDayOfMonth && createdDate <= now;
+      }).length;
+
+      // Most booked session type
+      const boxingCount = fetchedBookings.filter(b => b.sessionType === 'Boxing').length;
+      const saunaCount = fetchedBookings.filter(b => b.sessionType === 'Sauna').length;
+      let mostBookedType = 'N/A';
+      if (boxingCount > 0 || saunaCount > 0) {
+        if (boxingCount > saunaCount) mostBookedType = 'Boxing';
+        else if (saunaCount > boxingCount) mostBookedType = 'Sauna';
+        else mostBookedType = 'Both Equal';
       }
+
+      setStats({
+        activeMembers: activeMembers.length,
+        inactiveMembers: inactiveMembers.length,
+        monthlyRevenue,
+        expiringSoon,
+        planDistribution,
+        totalMembers: members.length,
+        activeSessionsToday,
+        newMembersThisMonth,
+        mostBookedType,
+        totalUsers: fetchedUsers.length,
+        activeBookings: fetchedBookings.filter(b => b.status === 'Booked').length,
+        totalSessions: fetchedSessions.length,
+        staffMembers: fetchedUsers.filter(u => u.role?.includes('STAFF')).length
+      });
+
     } catch (err) {
       console.error('Error in loadData:', err);
+      setError('Failed to refresh data. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -282,13 +367,10 @@ const AdminDashboard = () => {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link to="/dashboard" className="text-2xl font-bold text-green-400">
-                DFC Admin
+                Admin Dashboard
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <Link to="/inventory" className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium">
-                Inventory
-              </Link>
               <UserMenu />
             </div>
           </div>
@@ -297,21 +379,22 @@ const AdminDashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Tab Navigation */}
-        <div className="flex flex-wrap mb-8 bg-slate-800 rounded-lg p-1">
-          {['overview', 'users', 'bookings', 'sessions', 'attendance', 'plans'].map((tab) => (
+        <div className="flex flex-wrap mb-8 bg-slate-800 rounded-lg p-1 border border-slate-700">
+          {['home', 'users', 'bookings', 'sessions', 'attendance', 'plans', 'inventory'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 capitalize ${activeTab === tab
-                ? 'bg-red-600 text-white'
+                ? 'bg-red-600 text-white shadow-lg'
                 : 'text-gray-300 hover:text-white hover:bg-slate-700'
                 }`}
             >
-              {tab === 'bookings' ? '📅 Bookings' :
-                tab === 'sessions' ? '🥊 Sessions' :
-                  tab === 'attendance' ? '📋 Attendance' :
-                    tab === 'plans' ? '💎 Plans' :
-                      tab === 'overview' ? '📊 Overview' : '👥 Users'}
+              {tab === 'bookings' ? 'Bookings' :
+                tab === 'sessions' ? 'Sessions' :
+                  tab === 'attendance' ? 'Attendance' :
+                    tab === 'plans' ? 'Plans' :
+                      tab === 'inventory' ? 'Inventory' :
+                        tab === 'home' ? 'Dashboard' : 'Users'}
             </button>
           ))}
         </div>
@@ -322,56 +405,155 @@ const AdminDashboard = () => {
 
         {/* Tab Content */}
         <div className="min-h-[400px]">
-          {activeTab === 'overview' && (
+          {activeTab === 'home' && (
             <div>
-              <h1 className="text-3xl font-bold mb-8">Admin Overview</h1>
-              <div className="grid md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-slate-800 p-6 rounded-lg shadow-lg text-center border border-slate-700">
-                  <div className="text-3xl font-bold text-green-400 mb-2">{users.length}</div>
-                  <p className="text-gray-300">Total Users</p>
-                </div>
-                <div className="bg-slate-800 p-6 rounded-lg shadow-lg text-center border border-slate-700">
-                  <div className="text-3xl font-bold text-blue-400 mb-2">{bookings.filter(b => b.status === "Booked").length}</div>
-                  <p className="text-gray-300">Active Bookings</p>
-                </div>
-                <div className="bg-slate-800 p-6 rounded-lg shadow-lg text-center border border-slate-700">
-                  <div className="text-3xl font-bold text-purple-400 mb-2">{sessions.length}</div>
-                  <p className="text-gray-300">Total Sessions</p>
-                </div>
-                <div className="bg-slate-800 p-6 rounded-lg shadow-lg text-center border border-slate-700">
-                  <div className="text-3xl font-bold text-orange-400 mb-2">{users.filter(u => u.role?.includes("STAFF")).length}</div>
-                  <p className="text-gray-300">Staff Members</p>
+              <h1 className="text-3xl font-bold mb-8 text-gradient bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Admin Dashboard</h1>
+
+              {/* Quick Stats Section */}
+              <div className="mb-8">
+                <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Quick Stats</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <StatCard
+                    title="Total Members"
+                    value={stats.totalMembers || 0}
+                    color="blue"
+                  />
+                  <StatCard
+                    title="Sessions Today"
+                    value={stats.activeSessionsToday || 0}
+                    color="purple"
+                  />
+                  <StatCard
+                    title="New This Month"
+                    value={stats.newMembersThisMonth || 0}
+                    color="green"
+                  />
+                  <StatCard
+                    title="Top Session"
+                    value={stats.mostBookedType || 'N/A'}
+                    color="orange"
+                  />
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700">
-                  <h2 className="text-xl font-bold mb-4">Recent Bookings</h2>
-                  <div className="space-y-3">
-                    {bookings.slice(0, 5).map(booking => (
-                      <div key={booking._id} className="bg-slate-700 p-3 rounded-lg flex justify-between items-center">
-                        <div>
-                          <p className="text-white font-semibold">{booking.memberId?.name || 'Unknown'}</p>
-                          <p className="text-gray-400 text-sm">{booking.sessionType}</p>
-                        </div>
-                        <span className="px-2 py-1 bg-green-900/30 text-green-400 text-xs rounded-full">{booking.status}</span>
-                      </div>
-                    ))}
-                    {bookings.length === 0 && <p className="text-gray-500 italic">No recent bookings</p>}
-                  </div>
+              {/* Membership Metrics Section */}
+              <div className="mb-8">
+                <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Membership Metrics</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <StatCard
+                    title="Active Members"
+                    value={stats.activeMembers || 0}
+                    color="green"
+                  />
+                  <StatCard
+                    title="Inactive Members"
+                    value={stats.inactiveMembers || 0}
+                    color="orange"
+                  />
+                  <StatCard
+                    title="Monthly Revenue"
+                    value={`NPR ${(stats.monthlyRevenue || 0).toLocaleString()}`}
+                    color="blue"
+                  />
+                  <StatCard
+                    title="Expiring Soon"
+                    value={stats.expiringSoon || 0}
+                    color="purple"
+                  />
                 </div>
-                <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700">
-                  <h2 className="text-xl font-bold mb-4">Quick Stats</h2>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-400">Total Members:</span>
-                      <span className="text-white font-bold">{users.filter(u => u.role?.includes("MEMBER")).length}</span>
+              </div>
+
+              {/* Best-selling Plans Graph */}
+              <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700 mb-8">
+                <h3 className="text-xl font-bold mb-6 text-white">Best-Selling Membership Plans</h3>
+                <div className="h-80 w-full">
+                  {stats.planDistribution && stats.planDistribution.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={stats.planDistribution}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                        <XAxis
+                          dataKey="name"
+                          stroke="#94a3b8"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          stroke="#94a3b8"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          allowDecimals={false}
+                        />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
+                          itemStyle={{ color: '#4ade80' }}
+                          cursor={{ stroke: '#334155', strokeWidth: 2 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="count"
+                          stroke="#4ade80"
+                          strokeWidth={3}
+                          dot={{ fill: '#4ade80', r: 6 }}
+                          activeDot={{ r: 8, strokeWidth: 0 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500 italic">
+                      No plan data available
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-400">Active Sessions Today:</span>
-                      <span className="text-white font-bold">{sessions.filter(s => s.status === "Active").length}</span>
-                    </div>
-                  </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Recent Bookings */}
+              <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700 mb-8">
+                <h3 className="text-xl font-bold mb-4 text-white">Recent Bookings</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-900/50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase">Member</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase">Session Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-700">
+                      {bookings.slice(0, 5).map(booking => (
+                        <tr key={booking._id} className="hover:bg-slate-700/30">
+                          <td className="px-4 py-3 text-sm text-white">{booking.memberId?.name || 'Unknown'}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className={`px-2 py-1 rounded text-xs font-bold ${booking.sessionType === 'Boxing' ? 'bg-red-900/50 text-red-400' : 'bg-blue-900/50 text-blue-400'
+                              }`}>
+                              {booking.sessionType}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-300">
+                            {booking.sessionDetails?.date ? new Date(booking.sessionDetails.date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            }) : 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className="px-2 py-1 bg-green-900/30 text-green-400 text-xs rounded-full font-bold">
+                              {booking.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      {bookings.length === 0 && (
+                        <tr>
+                          <td colSpan="4" className="px-4 py-8 text-center text-gray-500 italic">
+                            No recent bookings
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -578,8 +760,8 @@ const AdminDashboard = () => {
 
 
 
-          // ... inside the main component render ...
-          // ...
+
+
           {activeTab === 'plans' && (
             <div>
               <h1 className="text-3xl font-bold mb-8">Membership Plans</h1>
@@ -590,7 +772,11 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
-// ...
+
+          {activeTab === 'inventory' && (
+            <InventoryComponent />
+          )}
+
         </div>
       </div>
 

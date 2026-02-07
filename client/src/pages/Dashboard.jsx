@@ -3,311 +3,368 @@ import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../utils/api';
 import UserMenu from '../components/UserMenu';
 
+// StatCard component for Member Dashboard
+const StatCard = ({ title, value, subtext, color = 'blue' }) => {
+    const colorClasses = {
+        blue: 'text-blue-400 border-blue-500/20',
+        green: 'text-green-400 border-green-500/20',
+        orange: 'text-orange-400 border-orange-500/20',
+        purple: 'text-purple-400 border-purple-500/20',
+        red: 'text-red-400 border-red-500/20'
+    };
+
+    return (
+        <div className={`bg-slate-800/50 p-6 rounded-xl border ${colorClasses[color]} shadow-lg transition-all hover:scale-[1.02] duration-300`}>
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">{title}</p>
+            <div className={`text-3xl font-bold ${colorClasses[color].split(' ')[0]}`}>{value}</div>
+            {subtext && <p className="text-gray-500 text-xs mt-2 font-medium">{subtext}</p>}
+        </div>
+    );
+};
+
+// Progress bar for attendance
+const AttendanceProgress = ({ completed, total }) => {
+    const percentage = total > 0 ? Math.min(Math.round((completed / total) * 100), 100) : 0;
+
+    return (
+        <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700 shadow-lg">
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">Attendance Progress</h3>
+                <span className="text-cyan-400 font-bold">{percentage}%</span>
+            </div>
+            <div className="w-full bg-slate-700 rounded-full h-3 mb-4">
+                <div
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-3 rounded-full transition-all duration-1000"
+                    style={{ width: `${percentage}%` }}
+                ></div>
+            </div>
+            <p className="text-xs text-gray-500 font-medium">
+                You have completed <span className="text-white">{completed}</span> out of <span className="text-white">{total}</span> sessions booked.
+            </p>
+        </div>
+    );
+};
+
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [attendanceHistory, setAttendanceHistory] = useState([]);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+    const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const [bookings, setBookings] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [attendanceHistory, setAttendanceHistory] = useState([]);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
-  const isStaff = user.role && user.role.includes('STAFF');
+    const [plans, setPlans] = useState([]);
+    const [renewing, setRenewing] = useState(false);
+    const [showRenewModal, setShowRenewModal] = useState(false);
 
-  // New state for renewal
-  const [showRenewModal, setShowRenewModal] = useState(false);
-  const [plans, setPlans] = useState([]);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [renewing, setRenewing] = useState(false);
+    const isStaff = user.role && user.role.includes('STAFF');
 
-  useEffect(() => {
-    loadMyBookings();
-    loadAttendanceHistory();
-    if (user.role && user.role.includes('MEMBER')) {
-      fetchPlans();
-    }
-  }, []);
+    useEffect(() => {
+        loadData();
+    }, []);
 
-  const fetchPlans = async () => {
-    try {
-      const res = await apiRequest('/api/membership/plans');
-      setPlans(res);
-    } catch (err) {
-      console.error("Failed to load plans", err);
-    }
-  };
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const [bookingsData, attendanceData, plansData] = await Promise.all([
+                apiRequest('/api/bookings/my-bookings'),
+                apiRequest('/api/attendance/my'),
+                user.role?.includes('MEMBER') ? apiRequest('/api/membership/plans') : Promise.resolve([])
+            ]);
 
-  const loadMyBookings = async () => {
-    try {
-      // Assuming endpoint exists or using generic sessions with filter? 
-      // Requirement says "My Bookings". 
-      // Let's try /api/bookings/my-bookings or similar.
-      // If not exists, I might need to create it or use existing one.
-      // Let's assume standard REST: GET /api/bookings?userId=... or /api/bookings/mine
-      // Given previous context, let's try /api/bookings/user/${user.id} or just /api/bookings/my-bookings
+            setBookings(Array.isArray(bookingsData) ? bookingsData : []);
+            setAttendanceHistory(Array.isArray(attendanceData) ? attendanceData : []);
+            setPlans(Array.isArray(plansData) ? plansData : []);
+        } catch (err) {
+            console.error("Failed to load dashboard data", err);
+            setError("Failed to sync your dashboard data.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-      // I'll check server routes next, but for now lets implement safe call
-      const res = await apiRequest('/api/bookings/my-bookings');
-      // If 404, we'll catch it.
-      setBookings(res);
-    } catch (err) {
-      console.error("Failed to load bookings", err);
-      // setBookings([]); // Fail silently for now or show error
-    }
-  };
+    const handleCancelBooking = async (id) => {
+        if (!window.confirm("Are you sure you want to cancel this booking?")) return;
+        try {
+            await apiRequest(`/api/bookings/${id}`, { method: 'DELETE' });
+            setSuccess("Booking cancelled successfully.");
+            loadData();
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            setError(err.message || "Failed to cancel booking");
+        }
+    };
 
-  const loadAttendanceHistory = async () => {
-    try {
-      const res = await apiRequest('/api/attendance/my'); // Or /api/attendance/my-history
-      setAttendanceHistory(res);
-    } catch (err) {
-      console.error("Failed to load attendance", err);
-    }
-  };
+    const handleRenew = async (plan) => {
+        if (!window.confirm(`Renew with ${plan.name} for NPR ${plan.price}?`)) return;
+        setRenewing(true);
+        try {
+            const res = await apiRequest('/api/membership/purchase', {
+                method: 'POST',
+                body: { planId: plan._id }
+            });
+            if (res.payment_url) {
+                window.location.href = res.payment_url;
+            }
+        } catch (err) {
+            setError(err.message || "Failed to initiate renewal");
+            setRenewing(false);
+        }
+    };
 
-  const handleRenew = async (plan) => {
-    if (!window.confirm(`Renew with ${plan.name} for NPR ${plan.price}?`)) return;
-    setRenewing(true);
-    try {
-      const res = await apiRequest('/api/membership/purchase', {
-        method: 'POST',
-        body: { planId: plan._id }
-      });
-      if (res.payment_url) {
-        window.location.href = res.payment_url;
-      }
-    } catch (err) {
-      setError(err.message || "Failed to initiate renewal");
-      setRenewing(false);
-    }
-  };
+    // Derived data
+    const upcomingBookings = bookings
+        .filter(b => {
+            if (!b.sessionDetails?.date) return false;
+            const sessionDate = new Date(b.sessionDetails.date);
+            return sessionDate >= new Date();
+        })
+        .sort((a, b) => new Date(a.sessionDetails.date) - new Date(b.sessionDetails.date));
 
+    const countUpcomingNext7Days = upcomingBookings.filter(b => {
+        const sessionDate = new Date(b.sessionDetails.date);
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        return sessionDate < nextWeek;
+    }).length;
 
-  return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      {/* Navigation */}
-      <nav className="bg-slate-800 shadow-lg">
-        {/* ... existing nav ... */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link to="/" className="text-2xl font-bold text-green-400 hover:text-green-300 transition duration-300">
-                Dharan Fitness Club
-              </Link>
+    const totalAttended = attendanceHistory.filter(r => r.status === 'Present').length;
+
+    // Format expiry date
+    const expiryDateFormatted = user.membershipExpiryDate
+        ? new Date(user.membershipExpiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : 'N/A';
+
+    const statusColorMap = {
+        'Active': 'green',
+        'Expired': 'red',
+        'Pending': 'orange'
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-300">Welcome, {user.name || 'Member'}!</span>
-              {isStaff && (
-                <Link
-                  to="/staff-dashboard"
-                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
-                >
-                  Staff Dashboard
-                </Link>
-              )}
-              {!isStaff && (
-                <button
-                  onClick={() => setShowRenewModal(true)}
-                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md text-sm font-medium transition duration-300"
-                >
-                  Renew Membership
-                </button>
-              )}
-              <UserMenu />
-            </div>
-          </div>
-        </div>
-      </nav>
+        );
+    }
 
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Messages */}
-        {error && (
-          <div className="bg-red-600/20 border border-red-500 text-red-500 p-4 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-600/20 border border-green-500 text-green-500 p-4 rounded-lg mb-6">
-            {success}
-          </div>
-        )}
-
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">Welcome to Your Dashboard</h1>
-          <p className="text-xl text-gray-300">Manage your gym membership and track your progress</p>
-        </div>
-
-        {/* Existing Dashboard Content */}
-        {/* ... */}
-
-        {/* Renewal Modal */}
-        {showRenewModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-slate-800 w-full max-w-4xl rounded-xl shadow-2xl border border-slate-700 p-6 my-8">
-              <div className="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
-                <h2 className="text-2xl font-bold text-white">Select a Plan to Renew</h2>
-                <button onClick={() => setShowRenewModal(false)} className="text-gray-400 hover:text-white text-2xl">&times;</button>
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {plans.map(plan => (
-                  <div key={plan._id} className="bg-slate-900/50 border border-slate-700 rounded-lg p-6 hover:border-cyan-400 transition-colors">
-                    <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-                    <div className="text-2xl font-bold text-cyan-400 mb-4">NPR {plan.price.toLocaleString()}</div>
-                    <ul className="mb-6 space-y-2 text-sm text-gray-300">
-                      {plan.features.map((f, i) => <li key={i}>• {f}</li>)}
-                    </ul>
-                    <button
-                      onClick={() => handleRenew(plan)}
-                      disabled={renewing}
-                      className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 rounded transition-colors disabled:opacity-50"
-                    >
-                      {renewing ? 'Processing...' : 'Renew Now'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-        {/* ... */}
-
-
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
-
-
-          <div className="bg-slate-800 p-6 rounded-lg shadow-lg text-center border border-slate-700">
-            <div className="bg-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-purple-400 mb-2">{bookings.length}</h3>
-            <p className="text-gray-300">Booked Sessions</p>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-slate-800 p-8 rounded-lg shadow-lg mb-8 border border-slate-700">
-          <h2 className="text-2xl font-bold text-white mb-6">Quick Actions</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link to="/profile" className="bg-blue-600 hover:bg-blue-700 p-4 rounded-lg text-white font-semibold transition duration-300 block text-center">
-              <svg className="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              View Profile
-            </Link>
-            <Link to="/book-session" className="bg-purple-600 hover:bg-purple-700 p-4 rounded-lg text-white font-semibold transition duration-300 block text-center">
-              <svg className="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-              </svg>
-              Book Session
-            </Link>
-            <button className="bg-orange-600 hover:bg-orange-700 p-4 rounded-lg text-white font-semibold transition duration-300">
-              <svg className="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-              </svg>
-              Contact Support
-            </button>
-          </div>
-        </div>
-
-        {/* My Active Bookings Section */}
-        {bookings.length > 0 && (
-          <div className="bg-slate-800 p-8 rounded-lg shadow-lg mb-8 border border-slate-700">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-              📅 My Schedule
-            </h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {bookings.map(booking => (
-                <div key={booking._id} className="bg-slate-700 p-5 rounded-lg border border-slate-600 hover:border-slate-500 transition-all">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${booking.sessionType === 'Boxing' ? 'bg-red-900/50 text-red-400' : 'bg-blue-900/50 text-blue-400'}`}>
-                        {booking.sessionType}
-                      </span>
-                      <h3 className="text-lg font-bold text-white mt-1">
-                        {booking.sessionDetails?.name || 'Session Info Unavailable'}
-                      </h3>
+    return (
+        <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-cyan-500/30">
+            {/* Navigation */}
+            <nav className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between h-16 items-center">
+                        <Link to="/" className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                            Dharan Fitness Club
+                        </Link>
+                        <div className="flex items-center gap-6">
+                            {isStaff && (
+                                <Link to="/staff-dashboard" className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
+                                    Staff Dashboard
+                                </Link>
+                            )}
+                            <UserMenu />
+                        </div>
                     </div>
-                    <button
-                      onClick={() => handleCancelBooking(booking._id)}
-                      className="text-gray-400 hover:text-red-400 transition-colors"
-                      title="Cancel Booking"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-gray-300">
-                    <p className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      {booking.sessionDetails?.date ? new Date(booking.sessionDetails.date).toLocaleDateString() : 'N/A'}
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {booking.sessionDetails?.startTime || 'N/A'} - {booking.sessionDetails?.endTime || 'N/A'}
-                    </p>
-                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+            </nav>
 
-        {/* Attendance History */}
-        <div className="bg-slate-800 p-8 rounded-lg shadow-lg border border-slate-700 mt-8">
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-            <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-            Attendance History
-          </h2>
-          {attendanceHistory.length === 0 ? (
-            <p className="text-gray-500 italic">No attendance records found yet. Get active!</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-900/50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Marked By</th>
-                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-700">
-                  {attendanceHistory.map(record => (
-                    <tr key={record._id} className="hover:bg-slate-700/30 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                        {new Date(record.date).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400 font-mono">
-                        {new Date(record.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                        {record.markedBy?.name || 'Staff'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <span className="px-2 py-0.5 bg-green-900/40 text-green-400 rounded text-[10px] font-bold uppercase tracking-wider border border-green-500/20">
-                          {record.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+            <main className="max-w-7xl mx-auto px-4 py-12">
+                {/* Header Section */}
+                <div className="mb-12">
+                    <h1 className="text-4xl font-extrabold text-white mb-2">Welcome back, {user.name}!</h1>
+                    <p className="text-slate-400 font-medium">Here's what's happening with your membership today.</p>
+                </div>
+
+                {/* Status Messages */}
+                {error && <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl mb-8 animate-in fade-in slide-in-from-top-4 duration-300">{error}</div>}
+                {success && <div className="bg-green-500/10 border border-green-500/50 text-green-500 p-4 rounded-xl mb-8 animate-in fade-in slide-in-from-top-4 duration-300">{success}</div>}
+
+                {/* 4 Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                    <StatCard
+                        title="Membership Status"
+                        value={user.membershipStatus || 'Pending'}
+                        color={statusColorMap[user.membershipStatus] || 'orange'}
+                    />
+                    <StatCard
+                        title="Expiry Date"
+                        value={expiryDateFormatted}
+                        subtext="Renew anytime to stay active"
+                        color="blue"
+                    />
+                    <StatCard
+                        title="Upcoming Sessions"
+                        value={countUpcomingNext7Days}
+                        subtext="In the next 7 days"
+                        color="purple"
+                    />
+                    <StatCard
+                        title="Total Attended"
+                        value={totalAttended}
+                        subtext="All-time sessions"
+                        color="green"
+                    />
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-8">
+                    {/* Left Column: Schedule and Actions */}
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* Upcoming Sessions Section */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                            <div className="px-8 py-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/20">
+                                <h2 className="text-xl font-bold">Upcoming Sessions</h2>
+                                <Link to="/book-session" className="text-sm font-bold text-cyan-400 hover:text-cyan-300 transition-colors uppercase tracking-wider">Book New</Link>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-slate-800/30">
+                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Session</th>
+                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date & Time</th>
+                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Instructor</th>
+                                            <th className="px-8 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-800">
+                                        {upcomingBookings.slice(0, 7).map(booking => (
+                                            <tr key={booking._id} className="hover:bg-slate-800/30 transition-colors group">
+                                                <td className="px-8 py-5">
+                                                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1 ${booking.sessionType === 'Boxing' ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/30 text-blue-400'}`}>
+                                                        {booking.sessionType}
+                                                    </span>
+                                                    <div className="font-bold text-white group-hover:text-cyan-400 transition-colors">{booking.sessionDetails?.name}</div>
+                                                </td>
+                                                <td className="px-8 py-5 text-sm text-slate-300">
+                                                    <div className="font-medium">{new Date(booking.sessionDetails?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                                                    <div className="text-slate-500 text-xs">{booking.sessionDetails?.startTime} - {booking.sessionDetails?.endTime}</div>
+                                                </td>
+                                                <td className="px-8 py-5 text-sm text-slate-400 font-medium">
+                                                    {booking.sessionDetails?.instructor || 'Staff'}
+                                                </td>
+                                                <td className="px-8 py-5 text-right">
+                                                    <button
+                                                        onClick={() => handleCancelBooking(booking._id)}
+                                                        className="text-slate-500 hover:text-red-500 transition-colors p-2"
+                                                        title="Cancel Session"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {upcomingBookings.length === 0 && (
+                                            <tr>
+                                                <td colSpan="4" className="px-8 py-12 text-center text-slate-500 italic font-medium">
+                                                    No upcoming sessions booked. Time to hit the gym!
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Attendance Progress Visual (Mobile/Table) */}
+                        <div className="lg:hidden">
+                            <AttendanceProgress completed={totalAttended} total={bookings.length} />
+                        </div>
+                    </div>
+
+                    {/* Right Column: Actions & Progress */}
+                    <div className="space-y-8">
+                        {/* Quick Actions Card */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+                            <h2 className="text-xl font-bold mb-6">Quick Actions</h2>
+                            <div className="space-y-4">
+                                <Link to="/book-session" className="flex items-center justify-between w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg shadow-cyan-900/20 group">
+                                    Book Session
+                                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                                </Link>
+                                <button
+                                    onClick={() => setShowRenewModal(true)}
+                                    className="flex items-center justify-between w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 px-6 rounded-xl transition-all border border-slate-700 group"
+                                >
+                                    Renew Membership
+                                    <svg className="w-5 h-5 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                </button>
+                                <Link to="/profile" className="flex items-center justify-between w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 px-6 rounded-xl transition-all border border-slate-700 group">
+                                    View Profile
+                                    <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* Attendance Progress Visual (Desktop) */}
+                        <div className="hidden lg:block">
+                            <AttendanceProgress completed={totalAttended} total={bookings.length} />
+                        </div>
+
+                        {/* Simple Info Badge */}
+                        <div className="bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/20 p-6 rounded-2xl flex items-center gap-4">
+                            <div className="bg-indigo-500/20 p-3 rounded-xl">
+                                <svg className="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                                Consistency is key! Regular attendance helps you achieve your fitness goals faster.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            {/* Renewal Modal - Reusing logic but styled better */}
+            {showRenewModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
+                        <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-800/20">
+                            <div>
+                                <h2 className="text-2xl font-bold">Renew Membership</h2>
+                                <p className="text-slate-400 text-sm mt-1">Select a plan to extend your fitness journey.</p>
+                            </div>
+                            <button
+                                onClick={() => setShowRenewModal(false)}
+                                className="bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors"
+                                title="Close"
+                            >
+                                <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        <div className="p-8 max-h-[70vh] overflow-y-auto">
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {plans.map(plan => (
+                                    <div key={plan._id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 transition-all hover:border-cyan-500/50 group flex flex-col">
+                                        <div className="mb-4">
+                                            <h3 className="text-lg font-bold text-white mb-1">{plan.name}</h3>
+                                            <div className="text-2xl font-black text-cyan-400">NPR {plan.price.toLocaleString()}</div>
+                                        </div>
+                                        <ul className="mb-8 space-y-3 flex-grow">
+                                            {plan.features.map((f, i) => (
+                                                <li key={i} className="text-sm text-slate-400 flex items-center gap-2">
+                                                    <svg className="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                                    {f}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <button
+                                            onClick={() => handleRenew(plan)}
+                                            disabled={renewing}
+                                            className="w-full bg-slate-800 group-hover:bg-cyan-600 border border-slate-700 group-hover:border-cyan-500 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+                                        >
+                                            {renewing ? 'Processing...' : 'Choose Plan'}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Dashboard;
