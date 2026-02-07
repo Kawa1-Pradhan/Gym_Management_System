@@ -12,6 +12,8 @@ const StaffDashboard = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [user, setUser] = useState(null);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [activeMembers, setActiveMembers] = useState([]);
   const navigate = useNavigate();
 
   // Form states
@@ -57,6 +59,9 @@ const StaffDashboard = () => {
       loadBoxingSessions();
       loadSaunaSessions();
     }
+    if (activeTab === 'attendance') {
+      loadAttendanceData();
+    }
   }, [activeTab]);
 
   const checkStaffAccess = () => {
@@ -98,6 +103,44 @@ const StaffDashboard = () => {
     } catch (err) {
       console.error('Error loading members:', err);
       setError('Failed to load members');
+    }
+  };
+
+  const loadAttendanceData = async () => {
+    setLoading(true);
+    try {
+      // 1. Load active members
+      const users = await apiRequest('/api/users');
+      // Filter all members (active and inactive)
+      const allMembers = Array.isArray(users) ? users.filter(u =>
+        u.role && u.role.includes('MEMBER')
+      ) : [];
+      setActiveMembers(allMembers);
+
+      // 2. Load today's attendance
+      const today = new Date().toISOString().split('T')[0];
+      const attendance = await apiRequest(`/api/attendance/reports?date=${today}`);
+      setAttendanceRecords(Array.isArray(attendance) ? attendance : []);
+    } catch (err) {
+      console.error('Error loading attendance data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAttendance = async (memberId) => {
+    setError('');
+    setSuccess('');
+    try {
+      await apiRequest('/api/attendance/mark', {
+        method: 'POST',
+        body: { memberId }
+      });
+      setSuccess('Attendance marked successfully!');
+      loadAttendanceData();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.message || 'Failed to mark attendance');
     }
   };
 
@@ -280,6 +323,7 @@ const StaffDashboard = () => {
       case 'Active': return 'text-green-400 bg-green-900';
       case 'Cancelled': return 'text-red-400 bg-red-900';
       case 'Completed': return 'text-blue-400 bg-blue-900';
+      case 'Expired': return 'text-gray-500 bg-gray-800 border border-gray-700';
       default: return 'text-gray-400 bg-gray-700';
     }
   };
@@ -366,6 +410,15 @@ const StaffDashboard = () => {
               }`}
           >
             🏊‍♂️ Sauna Sessions
+          </button>
+          <button
+            onClick={() => setActiveTab('attendance')}
+            className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 ${activeTab === 'attendance'
+              ? 'bg-red-600 text-white'
+              : 'text-gray-300 hover:text-white hover:bg-slate-700'
+              }`}
+          >
+            📋 Daily Attendance
           </button>
         </div>
 
@@ -938,6 +991,117 @@ const StaffDashboard = () => {
                   <p className="text-gray-400 text-center py-8">No sauna sessions found</p>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+        {/* Attendance Tab */}
+        {activeTab === 'attendance' && (
+          <div className="bg-slate-800 rounded-lg shadow-xl border border-slate-700 overflow-hidden">
+            <div className="p-6 border-b border-slate-700 bg-slate-700/30 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-white">Daily Attendance</h2>
+                <p className="text-gray-400 text-sm mt-1">Mark attendance for active members - {new Date().toLocaleDateString()}</p>
+              </div>
+              <button
+                onClick={loadAttendanceData}
+                className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg transition"
+                title="Refresh List"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-900/50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Member</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Contact</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Membership</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-700">
+                  {activeMembers.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-12 text-center text-gray-500 italic">
+                        No members found.
+                      </td>
+                    </tr>
+                  ) : (
+                    activeMembers.map(member => {
+                      const isMarked = attendanceRecords.some(r => r.member?._id === member._id);
+
+                      // Check active status
+                      const isActive = member.membershipStatus === 'Active';
+                      const isExpired = member.membershipExpiryDate && new Date(member.membershipExpiryDate) < new Date();
+
+                      const canMarkInfo = isActive && !isExpired;
+
+                      return (
+                        <tr key={member._id} className={`transition-colors ${!canMarkInfo ? 'bg-slate-800/50 opacity-75' : 'hover:bg-slate-700/30'}`}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mr-3 ${canMarkInfo ? 'bg-red-600' : 'bg-gray-600'}`}>
+                                {member.name.charAt(0)}
+                              </div>
+                              <div className="text-sm font-medium text-white">
+                                {member.name}
+                                {!isActive && <span className="ml-2 text-xs text-red-400 border border-red-400/30 px-1 rounded">Inactive</span>}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                            {member.phone || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-300">
+                              Expires: {member.membershipExpiryDate ? new Date(member.membershipExpiryDate).toLocaleDateString() : 'N/A'}
+                              {isExpired && <span className="ml-2 text-xs text-red-400 font-bold">(Expired)</span>}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            {isMarked ? (
+                              <span className="px-3 py-1 bg-green-900/40 text-green-400 rounded-full text-[10px] font-bold uppercase tracking-wider border border-green-500/20">
+                                Present
+                              </span>
+                            ) : (
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${canMarkInfo
+                                ? 'bg-slate-700 text-gray-400 border-slate-600'
+                                : 'bg-red-900/20 text-red-500 border-red-900/30'
+                                }`}>
+                                {canMarkInfo ? 'Pending' : 'Ineligible'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            {!isMarked ? (
+                              <button
+                                onClick={() => handleMarkAttendance(member._id)}
+                                disabled={!canMarkInfo}
+                                className={`text-xs font-bold px-4 py-2 rounded transition duration-300 ${canMarkInfo
+                                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                                  : 'bg-slate-700 text-gray-500 cursor-not-allowed border border-slate-600'
+                                  }`}
+                              >
+                                {canMarkInfo ? 'Mark Present' : 'Membership Expired'}
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="bg-slate-700 text-green-500/80 text-xs font-bold px-4 py-2 rounded cursor-not-allowed border border-green-900/30"
+                              >
+                                Marked
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

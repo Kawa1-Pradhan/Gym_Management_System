@@ -1,41 +1,33 @@
 import mongoose from "mongoose";
 
 const attendanceSchema = new mongoose.Schema({
-  memberId: {
+  member: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "users",
     required: [true, "Attendance must be linked to a member"],
   },
-  staffId: {
+  markedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "users",
     required: [true, "Attendance must be recorded by a staff member"],
   },
-  checkInTime: {
+  date: {
     type: Date,
-    required: [true, "Check-in time is required"],
-    default: Date.now,
+    required: [true, "Date is required"],
+    default: () => new Date().setHours(0, 0, 0, 0), // Use start of day for easier comparison
   },
-  checkOutTime: {
-    type: Date,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-    immutable: true,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
+  status: {
+    type: String,
+    enum: ["Present"],
+    default: "Present",
+  }
+}, {
+  timestamps: true
 });
 
-// Automatically update updatedAt on save
-attendanceSchema.pre("save", function (next) {
-  this.updatedAt = Date.now();
-  next();
-});
+// Avoid duplicate attendance for same member on same day
+attendanceSchema.index({ member: 1, date: 1 }, { unique: true });
 
-const Attendance = mongoose.model("attendances", attendanceSchema);
+const Attendance = mongoose.model("Attendance", attendanceSchema);
 
 export default Attendance;

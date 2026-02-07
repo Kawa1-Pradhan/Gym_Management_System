@@ -30,14 +30,6 @@ const users = new mongoose.Schema({
     enum: ["MEMBER", "ADMIN", "STAFF"],
     default: ["MEMBER"],
   },
-  membershipStatus: {
-    type: String,
-    enum: ["Active", "Expired", "Pending"],
-    default: "Pending",
-  },
-  membershipExpiryDate: {
-    type: Date,
-  },
   profileImageUrls: {
     type: [String],
   },
@@ -64,16 +56,23 @@ const users = new mongoose.Schema({
     enum: ["Pending", "Sent", "Failed", "N/A"],
     default: "N/A",
   },
-  emailLastError: {
+  membershipStatus: {
     type: String,
+    enum: ["Active", "Expired", "Pending"],
+    default: "Pending",
+  },
+  membershipExpiryDate: {
+    type: Date,
   },
   membershipType: {
-    type: String,
-    enum: ["Monthly", "Quarterly", "Semi-Annual", "Yearly", "None"],
-    default: "None",
+    type: String, // e.g. "Monthly", "Yearly" - derived from Plan Name
+    default: "None"
   },
   membershipStartDate: {
-    type: Date,
+    type: Date
+  },
+  emailLastError: {
+    type: String,
   },
   notes: {
     type: String,

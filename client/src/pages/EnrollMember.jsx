@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
 
@@ -8,14 +8,29 @@ const EnrollMember = () => {
         name: '',
         email: '',
         phone: '',
-        membershipType: 'Monthly',
-        membershipStartDate: new Date().toISOString().split('T')[0],
-        role: 'MEMBER'
+        role: 'MEMBER',
+        membershipStartDate: new Date().toISOString().split('T')[0]
     });
+    const [plans, setPlans] = useState([]);
+    const [selectedPlanId, setSelectedPlanId] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
     const [tempPassword, setTempPassword] = useState('');
+
+    useEffect(() => {
+        fetchPlans();
+    }, []);
+
+    const fetchPlans = async () => {
+        try {
+            const res = await apiRequest('/api/membership/plans');
+            setPlans(Array.isArray(res) ? res : []);
+            if (res.length > 0) setSelectedPlanId(res[0]._id);
+        } catch (err) {
+            console.error("Failed to fetch plans");
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,9 +43,29 @@ const EnrollMember = () => {
         setSuccess('');
 
         try {
+            // Calculate details
+            const selectedPlan = plans.find(p => p._id === selectedPlanId);
+            if (!selectedPlan && formData.role === 'MEMBER') throw new Error("Please select a valid plan for members");
+
+            let payload = { ...formData };
+
+            if (formData.role === 'MEMBER' && selectedPlan) {
+                const startDate = new Date(formData.membershipStartDate);
+                const expiryDate = new Date(startDate);
+                expiryDate.setDate(expiryDate.getDate() + selectedPlan.durationDays);
+
+                payload = {
+                    ...payload,
+                    membershipStatus: 'Active',
+                    membershipType: selectedPlan.name,
+                    membershipExpiryDate: expiryDate,
+                    membershipStartDate: startDate
+                };
+            }
+
             const response = await apiRequest('/api/users', {
                 method: 'POST',
-                body: formData
+                body: payload
             });
 
             setSuccess('Member enrolled successfully!');
@@ -39,9 +74,8 @@ const EnrollMember = () => {
                 name: '',
                 email: '',
                 phone: '',
-                membershipType: 'Monthly',
-                membershipStartDate: new Date().toISOString().split('T')[0],
-                role: 'MEMBER'
+                role: 'MEMBER',
+                membershipStartDate: new Date().toISOString().split('T')[0]
             });
         } catch (err) {
             setError(err.message || 'Failed to enroll member');
@@ -111,32 +145,49 @@ const EnrollMember = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-400 mb-2">Membership Type</label>
+                                <label className="block text-sm font-medium text-slate-400 mb-2">Member Role</label>
                                 <select
-                                    name="membershipType"
-                                    value={formData.membershipType}
+                                    name="role"
+                                    value={formData.role}
                                     onChange={handleChange}
                                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                                 >
-                                    <option value="Monthly">Monthly</option>
-                                    <option value="Quarterly">Quarterly</option>
-                                    <option value="Semi-Annual">Semi-Annual</option>
-                                    <option value="Yearly">Yearly</option>
+                                    <option value="MEMBER">Member</option>
+                                    <option value="STAFF">Staff</option>
+                                    <option value="ADMIN">Admin</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-400 mb-2">Start Date</label>
-                            <input
-                                type="date"
-                                name="membershipStartDate"
-                                value={formData.membershipStartDate}
-                                onChange={handleChange}
-                                required
-                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
-                            />
-                        </div>
+                        {formData.role === 'MEMBER' && (
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">Membership Plan</label>
+                                    <select
+                                        value={selectedPlanId}
+                                        onChange={(e) => setSelectedPlanId(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                                    >
+                                        {plans.map(plan => (
+                                            <option key={plan._id} value={plan._id}>
+                                                {plan.name} ({plan.durationDays} days) - NPR {plan.price}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">Start Date</label>
+                                    <input
+                                        type="date"
+                                        name="membershipStartDate"
+                                        value={formData.membershipStartDate}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex gap-4">
                             <button
@@ -144,14 +195,14 @@ const EnrollMember = () => {
                                 disabled={loading}
                                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4"
                             >
-                                {loading ? 'Processing...' : 'Complete Enrollment'}
+                                {loading ? 'Enrolling...' : 'Enroll Member'}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => navigate('/staff-dashboard')}
-                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all mt-4"
+                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all mt-4 border border-slate-700"
                             >
-                                Back to Dashboard
+                                Cancel
                             </button>
                         </div>
                     </form>

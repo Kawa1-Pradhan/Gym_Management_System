@@ -36,10 +36,7 @@ const Login = () => {
       // Role-based redirection
       const user = data.data;
 
-      if (user.mustChangePassword) {
-        navigate('/change-password');
-        return;
-      }
+
 
       const userRole = user.role;
       if (userRole && userRole.includes('ADMIN')) {

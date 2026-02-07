@@ -15,6 +15,8 @@ const Profile = () => {
         confirmPassword: ''
     });
 
+    const [payments, setPayments] = useState([]);
+
     const [phone, setPhone] = useState('');
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
@@ -33,6 +35,11 @@ const Profile = () => {
             const response = await apiRequest(`/api/users/${userId}`);
             setUser(response);
             setPhone(response.phone || '');
+
+            // Fetch payments
+            const paymentRes = await apiRequest('/api/membership/my-payments');
+            setPayments(paymentRes);
+
         } catch (err) {
             setError('Failed to load user data');
         } finally {
@@ -288,66 +295,112 @@ const Profile = () => {
                                 </div>
                             </section>
                         )}
-
+                        {isMember && (
+                            <section className="bg-slate-800 p-8 rounded-lg shadow-xl border border-slate-700">
+                                <h3 className="text-xl font-bold mb-6 flex items-center gap-2 border-b border-slate-700 pb-4">
+                                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    Payment History
+                                </h3>
+                                {payments.length === 0 ? (
+                                    <p className="text-gray-400">No payment history found.</p>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="text-gray-400 border-b border-slate-700">
+                                                    <th className="py-3 px-4">Date</th>
+                                                    <th className="py-3 px-4">Plan</th>
+                                                    <th className="py-3 px-4">Amount</th>
+                                                    <th className="py-3 px-4">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {payments.map((payment) => (
+                                                    <tr key={payment._id} className="border-b border-slate-700/50 hover:bg-slate-700/30">
+                                                        <td className="py-3 px-4 text-white">
+                                                            {new Date(payment.createdAt).toLocaleDateString()}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-white font-medium">
+                                                            {payment.purchaseOrderName}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-cyan-400 font-bold">
+                                                            NPR {(payment.amount / 100).toLocaleString()}
+                                                        </td>
+                                                        <td className="py-3 px-4">
+                                                            <span className={`px-2 py-1 rounded text-xs font-bold ${payment.status === 'Completed' ? 'bg-green-900/50 text-green-400' :
+                                                                    payment.status === 'Pending' ? 'bg-yellow-900/50 text-yellow-400' :
+                                                                        'bg-red-900/50 text-red-400'
+                                                                }`}>
+                                                                {payment.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </section>
+                        )}
                     </div>
                 </div>
-            </div>
 
-            {/* Change Password Modal */}
-            {showPasswordModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-slate-800 w-full max-w-md rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
-                        <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-700/30">
-                            <h2 className="text-xl font-bold text-white">Change Password</h2>
-                            <button onClick={() => setShowPasswordModal(false)} className="text-gray-400 hover:text-white transition-colors">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l18 18" /></svg>
-                            </button>
+                {/* Change Password Modal */}
+                {showPasswordModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <div className="bg-slate-800 w-full max-w-md rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
+                            <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-700/30">
+                                <h2 className="text-xl font-bold text-white">Change Password</h2>
+                                <button onClick={() => setShowPasswordModal(false)} className="text-gray-400 hover:text-white transition-colors">
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l18 18" /></svg>
+                                </button>
+                            </div>
+                            <form onSubmit={handleChangePassword} className="p-8 space-y-6">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Current Password</label>
+                                    <input
+                                        required
+                                        type="password"
+                                        value={passwordData.currentPassword}
+                                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
+                                    />
+                                </div>
+                                <div className="grid gap-6">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">New Password</label>
+                                        <input
+                                            required
+                                            type="password"
+                                            value={passwordData.newPassword}
+                                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Confirm New Password</label>
+                                        <input
+                                            required
+                                            type="password"
+                                            value={passwordData.confirmPassword}
+                                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="pt-4 flex gap-3">
+                                    <button type="button" onClick={() => setShowPasswordModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 rounded-lg transition duration-300">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" disabled={saving} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-lg transition duration-300 disabled:opacity-50">
+                                        {saving ? 'Updating...' : 'Update Password'}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                        <form onSubmit={handleChangePassword} className="p-8 space-y-6">
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Current Password</label>
-                                <input
-                                    required
-                                    type="password"
-                                    value={passwordData.currentPassword}
-                                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
-                                />
-                            </div>
-                            <div className="grid gap-6">
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">New Password</label>
-                                    <input
-                                        required
-                                        type="password"
-                                        value={passwordData.newPassword}
-                                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Confirm New Password</label>
-                                    <input
-                                        required
-                                        type="password"
-                                        value={passwordData.confirmPassword}
-                                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
-                                    />
-                                </div>
-                            </div>
-                            <div className="pt-4 flex gap-3">
-                                <button type="button" onClick={() => setShowPasswordModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 rounded-lg transition duration-300">
-                                    Cancel
-                                </button>
-                                <button type="submit" disabled={saving} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-lg transition duration-300 disabled:opacity-50">
-                                    {saving ? 'Updating...' : 'Update Password'}
-                                </button>
-                            </div>
-                        </form>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

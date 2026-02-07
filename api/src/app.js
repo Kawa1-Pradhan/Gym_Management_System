@@ -8,6 +8,8 @@ import userRoute from "./routes/userRoute.js";
 import bookingRoute from "./routes/bookingRoute.js";
 import sessionRoute from "./routes/sessionRoute.js";
 import inventoryRoute from "./routes/inventoryRoute.js";
+import attendanceRoute from "./routes/attendanceRoute.js";
+import membershipRoute from "./routes/membershipRoute.js";
 import connectDB from "./config/database.js";
 import logger from "./middlewares/logger.js";
 import setupDefaultAccounts from "./scripts/setupDefaultAccounts.js";
@@ -48,6 +50,8 @@ app.use("/api/users", userRoute);
 app.use("/api/bookings", bookingRoute);
 app.use("/api/sessions", sessionRoute);
 app.use("/api/inventory", inventoryRoute);
+app.use("/api/attendance", attendanceRoute);
+app.use("/api/membership", membershipRoute);
 
 
 app.listen(config.port, () => {

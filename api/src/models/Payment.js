@@ -1,52 +1,56 @@
 import mongoose from "mongoose";
 
 const paymentSchema = new mongoose.Schema({
-  memberId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "users",
-    required: [true, "Payment must be linked to a member"],
-  },
-  membershipId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "memberships",
-    required: [true, "Payment must be linked to a membership"],
-  },
-  amount: {
-    type: Number,
-    required: [true, "Payment amount is required"],
-    min: [0, "Amount cannot be negative"],
-  },
-  paymentMethod: {
-    type: String,
-    enum: ["Online", "Offline"],
-    required: [true, "Payment method is required"],
-  },
-  status: {
-    type: String,
-    enum: ["Pending", "Completed", "Failed"],
-    default: "Pending",
-  },
-  paymentDate: {
-    type: Date,
-    default: Date.now,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-    immutable: true,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+    transactionId: {
+        type: String, // pidx from Khalti
+        required: true,
+        unique: true
+    },
+    amount: {
+        type: Number, // In paisa
+        required: true
+    },
+    purchaseOrderId: {
+        type: String,
+        required: true
+    },
+    purchaseOrderName: {
+        type: String,
+        required: true
+    },
+    customerInfo: {
+        name: String,
+        email: String,
+        phone: String
+    },
+    status: {
+        type: String,
+        enum: ["Pending", "Completed", "Expired", "User Canceled"], // "Refunded"
+        default: "Pending"
+    },
+    paymentMethod: {
+        type: String, // e.g., "Khalti", "Cash" (for manual enroll)
+        default: "Khalti"
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: false // Nullable for guest checkouts initially
+    },
+    planId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "MembershipPlan",
+        required: true
+    },
+    type: {
+        type: String,
+        enum: ["New", "Renewal"],
+        default: "New"
+    },
+    gatewayResponse: {
+        type: Object
+    }
+}, { timestamps: true });
 
-// Automatically update updatedAt on save
-paymentSchema.pre("save", function (next) {
-  this.updatedAt = Date.now();
-  next();
-});
-
-const Payment = mongoose.model("payments", paymentSchema);
-
+const Payment = mongoose.model("Payment", paymentSchema);
 export default Payment;

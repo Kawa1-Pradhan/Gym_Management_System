@@ -1,16 +1,87 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { apiRequest } from '../utils/api';
 
 const Landing = () => {
+  const navigate = useNavigate();
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const scrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  // Guest Checkout Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [guestDetails, setGuestDetails] = useState({ name: '', email: '', phone: '' });
+  const [processing, setProcessing] = useState(false);
+
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    try {
+      // Public endpoint, use raw fetch or apiRequest if configured for public
+      const response = await apiRequest('/api/membership/plans'); // apiRequest should handle it
+      setPlans(response);
+    } catch (error) {
+      console.error("Failed to fetch plans", error);
+    } finally {
+      setLoading(false);
     }
-    setIsMenuOpen(false);
   };
+
+  const handleBuyNow = (plan) => {
+    // Check if user is logged in
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (storedUser && storedUser.email) {
+      // If logged in, proceed directly with their details
+      setSelectedPlan(plan);
+      setGuestDetails({
+        name: storedUser.name,
+        email: storedUser.email,
+        phone: storedUser.phone
+      });
+      // Trigger payment immediately for logged-in users? 
+      // Or show confirmation? Let's show confirmation/modal pre-filled.
+      setGuestDetails({
+        name: storedUser.name || '',
+        email: storedUser.email || '',
+        phone: storedUser.phone || ''
+      });
+      setShowModal(true);
+    } else {
+      // Guest: Open Modal
+      setSelectedPlan(plan);
+      setGuestDetails({ name: '', email: '', phone: '' });
+      setShowModal(true);
+    }
+  };
+
+  const handleProceedPayment = async (e) => {
+    e.preventDefault();
+    setProcessing(true);
+
+    // Check for "guest@example.com" or generic failures? 
+    // Backend handles duplicate email check.
+
+    try {
+      const res = await apiRequest('/api/membership/purchase', {
+        method: 'POST',
+        body: {
+          planId: selectedPlan._id,
+          ...guestDetails
+        }
+      });
+
+      if (res.payment_url) {
+        window.location.href = res.payment_url;
+      }
+    } catch (err) {
+      alert("Payment Error: " + (err.response?.data?.message || err.message));
+      setProcessing(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -318,180 +389,119 @@ const Landing = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* 1 Month Plan */}
-            <div className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-cyan-400/50 hover:bg-slate-800/80 transition-all duration-300">
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-semibold text-white mb-2">1 Month</h3>
-                <div className="text-3xl font-bold text-cyan-400 mb-1">NPR 1,500</div>
-                <div className="text-slate-400">/month</div>
-              </div>
-              <ul className="space-y-3 mb-6 text-sm">
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-cyan-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Gym floor usage
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-cyan-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Boxing access
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-cyan-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Attendance tracking
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-cyan-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Booking system
-                </li>
-              </ul>
-              <button
-                onClick={() => scrollToSection('about')}
-                className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 block text-center"
-              >
-                Contact to Enroll
-              </button>
-            </div>
+            {plans.map((plan) => (
+              <div key={plan._id} className={`group bg-slate-800/50 backdrop-blur-sm border ${plan.highlightTag ? 'border-2 border-violet-500/50' : 'border-slate-700/50'} rounded-xl p-6 hover:border-cyan-400/50 hover:bg-slate-800/80 transition-all duration-300 relative`}>
 
-            {/* 3 Months Plan */}
-            <div className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-violet-400/50 hover:bg-slate-800/80 transition-all duration-300">
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-semibold text-white mb-2">3 Months</h3>
-                <div className="text-3xl font-bold text-violet-400 mb-1">NPR 4,000</div>
-                <div className="text-slate-400">/3 months</div>
-              </div>
-              <ul className="space-y-3 mb-6 text-sm">
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-violet-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  All 1-month features
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-violet-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Priority booking
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-violet-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Guest pass (1/month)
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-violet-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  10% savings
-                </li>
-              </ul>
-              <Link
-                to="/signup"
-                className="w-full bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 block text-center"
-              >
-                Choose Plan
-              </Link>
-            </div>
+                {plan.highlightTag && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                      {plan.highlightTag}
+                    </span>
+                  </div>
+                )}
 
-            {/* 6 Months Plan */}
-            <div className="group bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-cyan-400/50 hover:bg-slate-800/80 transition-all duration-300">
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-semibold text-white mb-2">6 Months</h3>
-                <div className="text-3xl font-bold text-cyan-400 mb-1">NPR 7,200</div>
-                <div className="text-slate-400">/6 months</div>
-              </div>
-              <ul className="space-y-3 mb-6 text-sm">
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-cyan-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  All 3-month features
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-cyan-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Free personal training session
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-cyan-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Nutrition consultation
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-cyan-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  15% savings
-                </li>
-              </ul>
-              <button
-                onClick={() => scrollToSection('about')}
-                className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 block text-center"
-              >
-                Contact to Enroll
-              </button>
-            </div>
+                <div className="text-center mb-6 pt-2">
+                  <h3 className="text-2xl font-semibold text-white mb-2">{plan.name}</h3>
+                  <div className="text-3xl font-bold text-cyan-400 mb-1">
+                    NPR {plan.price.toLocaleString()}
+                  </div>
+                  {plan.discountPercent > 0 && (
+                    <div className="text-green-400 text-sm font-bold">{plan.discountPercent}% OFF</div>
+                  )}
+                  <div className="text-slate-400">/ {plan.durationDays} days</div>
+                </div>
 
-            {/* Yearly Plan */}
-            <div className="group bg-slate-800/50 backdrop-blur-sm border-2 border-violet-500/50 rounded-xl p-6 hover:border-violet-400 hover:bg-slate-800/80 transition-all duration-300 relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                  Best Value
-                </span>
+                <ul className="space-y-3 mb-6 text-sm">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-center text-slate-300">
+                      <svg className="w-4 h-4 text-cyan-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => handleBuyNow(plan)}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 block text-center shadow-lg"
+                >
+                  Buy Now
+                </button>
               </div>
-              <div className="text-center mb-6 pt-2">
-                <h3 className="text-2xl font-semibold text-white mb-2">Yearly</h3>
-                <div className="text-3xl font-bold text-violet-400 mb-1">NPR 12,000</div>
-                <div className="text-slate-400">/year</div>
+            ))}
+            {/* Loading/Empty State */}
+            {loading && (
+              <div className="col-span-full text-center text-slate-400 py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+                Loading plans...
               </div>
-              <ul className="space-y-3 mb-6 text-sm">
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-violet-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  All 6-month features
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-violet-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Unlimited guest passes
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-violet-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  Premium locker
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <svg className="w-4 h-4 text-violet-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  25% savings
-                </li>
-              </ul>
-              <Link
-                to="/signup"
-                className="w-full bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 block text-center"
-              >
-                Choose Plan
-              </Link>
-            </div>
+            )}
           </div>
         </div>
       </section>
 
+      {/* Guest Checkout Modal */}
+      {showModal && selectedPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-slate-800 w-full max-w-md rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
+            <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-700/30">
+              <h3 className="text-xl font-bold text-white">Enroll: {selectedPlan.name}</h3>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white">✕</button>
+            </div>
+            <form onSubmit={handleProceedPayment} className="p-6 space-y-4">
+              <div className="bg-slate-900/50 p-4 rounded-lg mb-4">
+                <div className="flex justify-between text-slate-300 mb-1">
+                  <span>Price</span>
+                  <span>NPR {selectedPlan.price.toLocaleString()}</span>
+                </div>
+                {selectedPlan.discountPercent > 0 && (
+                  <div className="flex justify-between text-green-400 text-sm font-bold">
+                    <span>Discount ({selectedPlan.discountPercent}%)</span>
+                    <span>- {(selectedPlan.price * selectedPlan.discountPercent / 100).toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-white font-bold text-lg mt-2 border-t border-slate-700 pt-2">
+                  <span>Total</span>
+                  <span>NPR {(selectedPlan.price - (selectedPlan.price * selectedPlan.discountPercent / 100)).toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-400 mb-1">Full Name</label>
+                <input required type="text" className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white"
+                  value={guestDetails.name}
+                  onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-400 mb-1">Email</label>
+                <input required type="email" className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white"
+                  value={guestDetails.email}
+                  onChange={e => setGuestDetails({ ...guestDetails, email: e.target.value })}
+                />
+                <p className="text-xs text-slate-500 mt-1">Credentials will be sent here.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-400 mb-1">Phone</label>
+                <input required type="tel" className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white"
+                  value={guestDetails.phone}
+                  onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={processing}
+                className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-lg transition-colors disabled:opacity-50 mt-4"
+              >
+                {processing ? "Redirecting to Khalti..." : "Pay with Khalti"}
+              </button>
+            </form >
+          </div >
+        </div >
+      )}
       {/* About & Location Section */}
-      <section id="about" className="py-20 px-4 bg-slate-900">
+      < section id="about" className="py-20 px-4 bg-slate-900" >
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -567,10 +577,10 @@ const Landing = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Footer */}
-      <footer className="bg-slate-950 border-t border-slate-800/50 py-12 px-4">
+      < footer className="bg-slate-950 border-t border-slate-800/50 py-12 px-4" >
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
@@ -643,8 +653,8 @@ const Landing = () => {
             </p>
           </div>
         </div>
-      </footer>
-    </div>
+      </footer >
+    </div >
   );
 };
 

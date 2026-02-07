@@ -11,6 +11,7 @@ import EnrollMember from './pages/EnrollMember';
 import ChangePassword from './pages/ChangePassword';
 import Inventory from './pages/Inventory';
 import Profile from './pages/Profile';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
         </Routes>
       </div>
     </Router>

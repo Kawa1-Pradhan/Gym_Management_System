@@ -1,6 +1,24 @@
 import SaunaSession from "../models/SaunaSession.js";
 
 const getAllSessions = async () => {
+    // Auto-expire sessions
+    const now = new Date();
+    const activeSessions = await SaunaSession.find({ status: 'Active' });
+
+    const expiredUpdates = activeSessions
+        .filter(session => {
+            if (!session.date || !session.endTime) return false;
+            const [hours, minutes] = session.endTime.split(':');
+            const sessionEnd = new Date(session.date);
+            sessionEnd.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            return sessionEnd < now;
+        })
+        .map(session => SaunaSession.findByIdAndUpdate(session._id, { status: 'Expired' }));
+
+    if (expiredUpdates.length > 0) {
+        await Promise.all(expiredUpdates);
+    }
+
     return await SaunaSession.find({})
         .populate("createdBy", "name email")
         .populate("bookings", "name email")

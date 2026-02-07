@@ -1,4 +1,44 @@
 import { verifyJWT } from "../utils/jwt.js";
+import User from "../models/User.js";
+
+// Middleware to require ACTIVE MEMBER role (blocks expired)
+export const requireActiveMember = async (req, res, next) => {
+    try {
+        // 1. Run basic member check first
+        await requireMember(req, res, async () => {
+            // 2. Fetch fresh user data from DB (Token might be old)
+            const user = await User.findById(req.user.id);
+
+            if (!user) {
+                return res.status(401).json({ message: "User not found" });
+            }
+
+            // 3. Check status field
+            if (user.membershipStatus !== 'Active') {
+                return res.status(403).json({
+                    message: "Your membership is not active. Please renew to book sessions.",
+                    code: "MEMBERSHIP_INACTIVE"
+                });
+            }
+
+            // 4. Check date (double verification)
+            if (user.membershipExpiryDate && new Date(user.membershipExpiryDate) < new Date()) {
+                return res.status(403).json({
+                    message: "Your membership has expired. Please renew to book sessions.",
+                    code: "MEMBERSHIP_EXPIRED"
+                });
+            }
+
+            // Attach fresh user to request if needed downstream
+            req.user = { ...req.user, ...user.toObject() };
+            next();
+        });
+
+    } catch (error) {
+        console.error('Active Member authorization error:', error);
+        return res.status(403).json({ message: "Access denied" });
+    }
+};
 
 // Middleware to require authentication
 export const requireAuth = async (req, res, next) => {
@@ -33,6 +73,29 @@ export const requireAuth = async (req, res, next) => {
     }
 };
 
+// Middleware for optional authentication (e.g., Guest or Member)
+export const optionalAuth = async (req, res, next) => {
+    try {
+        let token = req.cookies?.token;
+        if (!token) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.substring(7);
+            }
+        }
+
+        if (token) {
+            const decoded = await verifyJWT(token);
+            if (decoded && decoded.id) {
+                req.user = decoded;
+            }
+        }
+    } catch (error) {
+        // Ignore error, proceed as guest
+    }
+    next();
+};
+
 // Middleware to require MEMBER role
 export const requireMember = async (req, res, next) => {
     try {
@@ -65,6 +128,8 @@ export const requireMember = async (req, res, next) => {
         return res.status(403).json({ message: "Access denied" });
     }
 };
+
+
 
 // Middleware to require STAFF or ADMIN role
 export const requireStaffOrAdmin = async (req, res, next) => {
