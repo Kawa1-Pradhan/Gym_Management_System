@@ -73,3 +73,33 @@ export const sendEnrollmentEmail = async (userEmail, userName, tempPassword) => 
         }
     }
 };
+export const sendBookingCancellationEmail = async (userEmail, userName, sessionDetails) => {
+    if (!user || !pass || user === 'your-email@gmail.com') return;
+
+    const mailOptions = {
+        from: user,
+        to: userEmail,
+        subject: 'Booking Cancelled - Dharan Fitness Club',
+        html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                <h2 style="color: #ef4444;">Booking Cancellation Notice</h2>
+                <p>Hello ${userName},</p>
+                <p>Your booking for the following session has been cancelled by an administrator:</p>
+                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p><strong>Session:</strong> ${sessionDetails.name}</p>
+                    <p><strong>Date:</strong> ${sessionDetails.date}</p>
+                    <p><strong>Time:</strong> ${sessionDetails.startTime}</p>
+                </div>
+                <p>If you have any questions, please contact the gym staff.</p>
+                <p>Best regards,<br>Dharan Fitness Club Team</p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Cancellation email sent to:', userEmail);
+    } catch (error) {
+        console.error('❌ Error sending cancellation email:', error.message);
+    }
+};

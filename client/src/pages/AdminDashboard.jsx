@@ -284,11 +284,17 @@ const AdminDashboard = () => {
 
   const handleUpdatePlan = async (planId, updates) => {
     try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
       await apiRequest(`/api/membership/plans/${planId}`, { method: 'PATCH', body: updates });
       setSuccess('Plan updated successfully');
-      loadData();
+      await loadData();
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.message || "Failed to update plan");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -350,7 +356,8 @@ const AdminDashboard = () => {
       if (window.confirm(confirmMsg)) {
         await apiRequest(endpoint, { method });
         setSuccess(`${action} successful!`);
-        loadData();
+        await loadData();
+        setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
       setError(err.message || `Failed to ${action}`);
@@ -522,7 +529,7 @@ const AdminDashboard = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-700">
-                      {bookings.slice(0, 5).map(booking => (
+                      {bookings.filter(b => !['Expired', 'Cancelled'].includes(b.status)).slice(0, 5).map(booking => (
                         <tr key={booking._id} className="hover:bg-slate-700/30">
                           <td className="px-4 py-3 text-sm text-white">{booking.memberId?.name || 'Unknown'}</td>
                           <td className="px-4 py-3 text-sm">
@@ -643,8 +650,19 @@ const AdminDashboard = () => {
                       </div>
                       <button onClick={async () => {
                         if (window.confirm("Cancel this booking?")) {
-                          await apiRequest(`/api/bookings/${b._id}`, { method: 'DELETE' });
-                          loadData();
+                          try {
+                            setLoading(true);
+                            setError('');
+                            setSuccess('');
+                            const res = await apiRequest(`/api/bookings/${b._id}`, { method: 'DELETE' });
+                            setSuccess(res.message || "Booking cancelled successfully.");
+                            await loadData();
+                            setTimeout(() => setSuccess(''), 3000);
+                          } catch (err) {
+                            setError(err.message || "Failed to cancel booking");
+                          } finally {
+                            setLoading(false);
+                          }
                         }
                       }} className="text-red-500 text-sm font-bold hover:underline">Cancel Booking</button>
                     </div>

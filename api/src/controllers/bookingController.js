@@ -1,6 +1,7 @@
 import Booking from "../models/Booking.js";
 import boxingService from "../services/boxingService.js";
 import saunaService from "../services/saunaService.js";
+import notificationService from "../services/notificationService.js";
 
 // Get all active boxing sessions (public/member accessible)
 const getActiveBoxingSessions = async (req, res) => {
@@ -60,6 +61,16 @@ const bookBoxingSession = async (req, res) => {
       });
       await booking.save();
       await booking.populate('memberId', 'name email');
+
+      // Create Notification
+      const session = await boxingService.getSessionById(sessionId);
+      await notificationService.createNotification(
+        memberId,
+        "Booking Confirmed",
+        `Your boxing session "${session ? session.name : 'Boxing'}" has been booked successfully.`,
+        "booking"
+      );
+
       res.status(201).json({ message: "Booking successful", booking });
     } catch (dbError) {
       // Rollback session slots if booking save fails
@@ -117,6 +128,16 @@ const bookSaunaSession = async (req, res) => {
       });
       await booking.save();
       await booking.populate('memberId', 'name email');
+
+      // Create Notification
+      const session = await saunaService.getSessionById(sessionId);
+      await notificationService.createNotification(
+        memberId,
+        "Booking Confirmed",
+        `Your sauna session "${session ? session.name : 'Sauna'}" has been booked successfully.`,
+        "booking"
+      );
+
       res.status(201).json({ message: "Booking successful", booking });
     } catch (dbError) {
       // Rollback
@@ -194,39 +215,71 @@ const cancelBooking = async (req, res) => {
     }
 
     // Update booking status
+    console.log(`[CancelBooking] Marking booking ${bookingId} as Cancelled`);
     booking.status = "Cancelled";
     await booking.save();
 
     // Use service to update session slots/members
-    if (booking.sessionType === "Boxing") {
-      await boxingService.cancelBooking(booking.sessionId, booking.memberId._id);
-    } else if (booking.sessionType === "Sauna") {
-      await saunaService.cancelBooking(booking.sessionId, booking.memberId._id);
+    if (!booking.sessionId || !booking.memberId) {
+      console.warn(`[CancelBooking] Missing sessionId or memberId on booking object. Skipping session update.`);
+    } else {
+      console.log(`[CancelBooking] Updating session slots for ${booking.sessionType} session ${booking.sessionId}`);
+      const memberIdToUse = booking.memberId._id || booking.memberId;
+
+      try {
+        if (booking.sessionType === "Boxing") {
+          await boxingService.cancelBooking(booking.sessionId, memberIdToUse);
+        } else if (booking.sessionType === "Sauna") {
+          await saunaService.cancelBooking(booking.sessionId, memberIdToUse);
+        }
+      } catch (serviceErr) {
+        console.error(`[CancelBooking] Error in service cancelBooking:`, serviceErr);
+        // Non-fatal if the booking status was already saved
+      }
     }
 
     // Notify user if cancelled by Admin or Staff
     const isSelfCancel = req.user.id.toString() === booking.memberId._id.toString();
+    console.log(`[CancelBooking] isSelfCancel: ${isSelfCancel}`);
     if (!isSelfCancel) {
-      const { sendBookingCancellationEmail } = await import("../utils/mail.js");
+      try {
+        console.log(`[CancelBooking] Sending cancellation notification for member ${booking.memberId._id}`);
+        const { sendBookingCancellationEmail } = await import("../utils/mail.js");
 
-      // Get session details for the email
-      let sessionDetails;
-      if (booking.sessionType === "Boxing") {
-        sessionDetails = await boxingService.getSessionById(booking.sessionId);
-      } else {
-        sessionDetails = await saunaService.getSessionById(booking.sessionId);
-      }
+        // Get session details for the email
+        let sessionDetails;
+        if (booking.sessionType === "Boxing") {
+          sessionDetails = await boxingService.getSessionById(booking.sessionId);
+        } else {
+          sessionDetails = await saunaService.getSessionById(booking.sessionId);
+        }
 
-      if (sessionDetails) {
-        sendBookingCancellationEmail(
-          booking.memberId.email,
-          booking.memberId.name,
-          {
-            name: sessionDetails.name,
-            date: sessionDetails.date ? new Date(sessionDetails.date).toLocaleDateString() : 'N/A',
-            startTime: sessionDetails.startTime || 'N/A'
-          }
+        if (sessionDetails) {
+          console.log(`[CancelBooking] Sending email to ${booking.memberId.email}`);
+          await sendBookingCancellationEmail(
+            booking.memberId.email,
+            booking.memberId.name,
+            {
+              name: sessionDetails.name,
+              date: sessionDetails.date ? new Date(sessionDetails.date).toLocaleDateString() : 'N/A',
+              startTime: sessionDetails.startTime || 'N/A'
+            }
+          );
+        } else {
+          console.warn(`[CancelBooking] Could not find session details for email`);
+        }
+
+        // Create In-App Notification
+        console.log(`[CancelBooking] Creating in-app notification`);
+        await notificationService.createNotification(
+          booking.memberId._id,
+          "Booking Cancelled",
+          `Your booking for "${sessionDetails ? sessionDetails.name : 'session'}" has been cancelled by an administrator.`,
+          "booking"
         );
+      } catch (notifError) {
+        console.error("[CancelBooking] Failed to send cancellation notification:", notifError);
+        // We continue because the booking IS already cancelled in DB
       }
     }
 

@@ -23,11 +23,13 @@ const Profile = () => {
 
     useEffect(() => {
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!userData.id) {
+        const userId = userData._id || userData.id;
+
+        if (!userId) {
             navigate('/login');
             return;
         }
-        fetchUserData(userData.id);
+        fetchUserData(userId);
     }, [navigate]);
 
     const fetchUserData = async (userId) => {

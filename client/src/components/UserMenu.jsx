@@ -4,14 +4,19 @@ import { apiRequest, API_BASE_URL } from '../utils/api';
 
 const UserMenu = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(() => {
+        const stored = localStorage.getItem('user');
+        return stored ? JSON.parse(stored) : null;
+    });
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
 
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-        if (storedUser.id) {
-            fetchUserData(storedUser.id);
+        const userId = storedUser._id || storedUser.id;
+
+        if (userId) {
+            fetchUserData(userId);
         }
 
         const handleClickOutside = (event) => {

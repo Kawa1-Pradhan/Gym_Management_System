@@ -44,6 +44,7 @@ const StaffDashboard = () => {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [members, setMembers] = useState([]);
   const [activeMembers, setActiveMembers] = useState([]);
+  const [attendanceFilters, setAttendanceFilters] = useState({ onlyBooked: true });
 
   // Stats state
   const [stats, setStats] = useState({
@@ -71,6 +72,8 @@ const StaffDashboard = () => {
   });
 
   const [editingSession, setEditingSession] = useState(null);
+  const [showBoxingForm, setShowBoxingForm] = useState(false);
+  const [showSaunaForm, setShowSaunaForm] = useState(false);
 
   useEffect(() => {
     checkStaffAccess();
@@ -251,6 +254,7 @@ const StaffDashboard = () => {
       }
       setBoxingForm({ name: '', instructor: '', date: '', startTime: '', endTime: '', maxCapacity: '', description: '' });
       setEditingSession(null);
+      setShowBoxingForm(false);
       loadDashboardData();
     } catch (err) {
       setError(err.message || 'Failed to save boxing session');
@@ -280,6 +284,7 @@ const StaffDashboard = () => {
       }
       setSaunaForm({ name: '', date: '', startTime: '', endTime: '', maxCapacity: '', temperature: '85', description: '' });
       setEditingSession(null);
+      setShowSaunaForm(false);
       loadDashboardData();
     } catch (err) {
       setError(err.message || 'Failed to save sauna session');
@@ -589,28 +594,165 @@ const StaffDashboard = () => {
         {/* Boxing Sessions Management */}
         {activeTab === 'boxing' && (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <h1 className="text-3xl font-bold text-white text-gradient bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">Boxing Sessions</h1>
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold text-white text-gradient bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">Boxing Sessions</h1>
+              <button
+                onClick={() => {
+                  setShowBoxingForm(!showBoxingForm);
+                  setEditingSession(null);
+                  setBoxingForm({ name: '', instructor: '', date: '', startTime: '', endTime: '', maxCapacity: '', description: '' });
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition-all flex items-center gap-2"
+              >
+                <span>{showBoxingForm ? 'Cancel' : '+ New Session'}</span>
+              </button>
+            </div>
+
+            {showBoxingForm && (
+              <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg shadow-xl animate-in slide-in-from-top duration-300">
+                <h2 className="text-xl font-bold text-white mb-6">{editingSession ? 'Edit Boxing Session' : 'Create New Boxing Session'}</h2>
+                <form onSubmit={handleBoxingSubmit} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Session Name</label>
+                      <input
+                        type="text"
+                        value={boxingForm.name}
+                        onChange={(e) => setBoxingForm({ ...boxingForm, name: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-red-500 outline-none"
+                        placeholder="e.g. Morning Sparring"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Instructor</label>
+                      <input
+                        type="text"
+                        value={boxingForm.instructor}
+                        onChange={(e) => setBoxingForm({ ...boxingForm, instructor: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-red-500 outline-none"
+                        placeholder="e.g. Mike Tyson"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Date</label>
+                      <input
+                        type="date"
+                        value={boxingForm.date}
+                        onChange={(e) => setBoxingForm({ ...boxingForm, date: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-red-500 outline-none"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Start Time</label>
+                        <input
+                          type="time"
+                          value={boxingForm.startTime}
+                          onChange={(e) => setBoxingForm({ ...boxingForm, startTime: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-red-500 outline-none"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">End Time</label>
+                        <input
+                          type="time"
+                          value={boxingForm.endTime}
+                          onChange={(e) => setBoxingForm({ ...boxingForm, endTime: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-red-500 outline-none"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Max Capacity</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={boxingForm.maxCapacity}
+                        onChange={(e) => setBoxingForm({ ...boxingForm, maxCapacity: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-red-500 outline-none"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Description</label>
+                    <textarea
+                      value={boxingForm.description}
+                      onChange={(e) => setBoxingForm({ ...boxingForm, description: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white h-24 focus:ring-2 focus:ring-red-500 outline-none"
+                      placeholder="Session details..."
+                    ></textarea>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-md transition disabled:opacity-50"
+                  >
+                    {loading ? 'Processing...' : (editingSession ? 'Update Session' : 'Create Session')}
+                  </button>
+                </form>
+              </div>
+            )}
+
             <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg shadow-xl">
               <h2 className="text-xl font-bold text-white mb-8">Recent Boxing Sessions</h2>
               <div className="grid gap-6">
                 {boxingSessions.map(session => (
                   <div key={session._id} className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 hover:border-red-500/30 transition-all group">
                     <div className="flex flex-wrap justify-between items-start gap-4">
-                      <div>
-                        <h3 className="text-white font-bold text-lg mb-1">{session.name}</h3>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="text-white font-bold text-lg">{session.name}</h3>
+                          <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border ${getStatusColor(session.status)}`}>
+                            {session.status}
+                          </span>
+                        </div>
                         <p className="text-slate-400 text-sm">Instructor: {session.instructor}</p>
-                        <div className="flex gap-4 mt-2">
-                          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
-                            {new Date(session.date).toLocaleDateString()} • {session.startTime}-{session.endTime}
-                          </p>
-                          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
-                            Capacity: {session.availableSlots}/{session.maxCapacity}
-                          </p>
+                        <div className="flex flex-wrap gap-4 mt-2">
+                          <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            {new Date(session.date).toLocaleDateString()}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            {session.startTime}-{session.endTime}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                            {session.availableSlots}/{session.maxCapacity}
+                          </div>
                         </div>
                       </div>
-                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border ${getStatusColor(session.status)}`}>
-                        {session.status}
-                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { handleEdit(session, 'boxing'); setShowBoxingForm(true); }}
+                          className="p-2.5 bg-slate-700 hover:bg-slate-600 text-blue-400 rounded-xl border border-slate-600 transition"
+                          title="Edit Session"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                        {session.status === 'Active' && (
+                          <button
+                            onClick={() => handleCancel(session._id, 'boxing')}
+                            className="p-2.5 bg-slate-700 hover:bg-slate-600 text-orange-400 rounded-xl border border-slate-600 transition"
+                            title="Cancel Session"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(session._id, 'boxing')}
+                          className="p-2.5 bg-slate-700 hover:bg-slate-600 text-red-400 rounded-xl border border-slate-600 transition"
+                          title="Delete Session"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -623,28 +765,164 @@ const StaffDashboard = () => {
         {/* Sauna Sessions Management */}
         {activeTab === 'sauna' && (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <h1 className="text-3xl font-bold text-white text-gradient bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Sauna Sessions</h1>
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-bold text-white text-gradient bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Sauna Sessions</h1>
+              <button
+                onClick={() => {
+                  setShowSaunaForm(!showSaunaForm);
+                  setEditingSession(null);
+                  setSaunaForm({ name: '', date: '', startTime: '', endTime: '', maxCapacity: '', temperature: '85', description: '' });
+                }}
+                className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition-all flex items-center gap-2"
+              >
+                <span>{showSaunaForm ? 'Cancel' : '+ New Session'}</span>
+              </button>
+            </div>
+
+            {showSaunaForm && (
+              <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg shadow-xl animate-in slide-in-from-top duration-300">
+                <h2 className="text-xl font-bold text-white mb-6">{editingSession ? 'Edit Sauna Session' : 'Create New Sauna Session'}</h2>
+                <form onSubmit={handleSaunaSubmit} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Session Name</label>
+                      <input
+                        type="text"
+                        value={saunaForm.name}
+                        onChange={(e) => setSaunaForm({ ...saunaForm, name: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                        placeholder="e.g. Steam Therapy"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Target Temperature (°C)</label>
+                      <input
+                        type="number"
+                        value={saunaForm.temperature}
+                        onChange={(e) => setSaunaForm({ ...saunaForm, temperature: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Date</label>
+                      <input
+                        type="date"
+                        value={saunaForm.date}
+                        onChange={(e) => setSaunaForm({ ...saunaForm, date: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Start Time</label>
+                        <input
+                          type="time"
+                          value={saunaForm.startTime}
+                          onChange={(e) => setSaunaForm({ ...saunaForm, startTime: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">End Time</label>
+                        <input
+                          type="time"
+                          value={saunaForm.endTime}
+                          onChange={(e) => setSaunaForm({ ...saunaForm, endTime: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Max Capacity</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={saunaForm.maxCapacity}
+                        onChange={(e) => setSaunaForm({ ...saunaForm, maxCapacity: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Description</label>
+                    <textarea
+                      value={saunaForm.description}
+                      onChange={(e) => setSaunaForm({ ...saunaForm, description: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-md p-3 text-white h-24 focus:ring-2 focus:ring-cyan-500 outline-none"
+                      placeholder="Session details..."
+                    ></textarea>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-md transition disabled:opacity-50"
+                  >
+                    {loading ? 'Processing...' : (editingSession ? 'Update Session' : 'Create Session')}
+                  </button>
+                </form>
+              </div>
+            )}
+
             <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg shadow-xl">
               <h2 className="text-xl font-bold text-white mb-8">Recent Sauna Sessions</h2>
               <div className="grid gap-6">
                 {saunaSessions.map(session => (
                   <div key={session._id} className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 hover:border-blue-500/30 transition-all group">
                     <div className="flex flex-wrap justify-between items-start gap-4">
-                      <div>
-                        <h3 className="text-white font-bold text-lg mb-1">{session.name}</h3>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="text-white font-bold text-lg">{session.name}</h3>
+                          <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border ${getStatusColor(session.status)}`}>
+                            {session.status}
+                          </span>
+                        </div>
                         <p className="text-slate-400 text-sm">Temperature: {session.temperature}°C</p>
-                        <div className="flex gap-4 mt-2">
-                          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
-                            {new Date(session.date).toLocaleDateString()} • {session.startTime}-{session.endTime}
-                          </p>
-                          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">
-                            Capacity: {session.availableSlots}/{session.maxCapacity}
-                          </p>
+                        <div className="flex flex-wrap gap-4 mt-2">
+                          <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            {new Date(session.date).toLocaleDateString()}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            {session.startTime}-{session.endTime}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                            {session.availableSlots}/{session.maxCapacity}
+                          </div>
                         </div>
                       </div>
-                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest border ${getStatusColor(session.status)}`}>
-                        {session.status}
-                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { handleEdit(session, 'sauna'); setShowSaunaForm(true); }}
+                          className="p-2.5 bg-slate-700 hover:bg-slate-600 text-cyan-400 rounded-xl border border-slate-600 transition"
+                          title="Edit Session"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                        {session.status === 'Active' && (
+                          <button
+                            onClick={() => handleCancel(session._id, 'sauna')}
+                            className="p-2.5 bg-slate-700 hover:bg-slate-600 text-orange-400 rounded-xl border border-slate-600 transition"
+                            title="Cancel Session"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(session._id, 'sauna')}
+                          className="p-2.5 bg-slate-700 hover:bg-slate-600 text-red-400 rounded-xl border border-slate-600 transition"
+                          title="Delete Session"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -658,14 +936,30 @@ const StaffDashboard = () => {
         {activeTab === 'attendance' && (
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
-              <div className="p-8 border-b border-slate-800 bg-slate-800/20 flex justify-between items-center">
+              <div className="p-8 border-b border-slate-800 bg-slate-800/20 flex flex-wrap justify-between items-center gap-4">
                 <div>
                   <h2 className="text-2xl font-bold text-white">Daily Attendance</h2>
                   <p className="text-slate-400 font-medium text-sm mt-1">Mark attendance for active members - {new Date().toLocaleDateString()}</p>
                 </div>
-                <button onClick={loadDashboardData} className="bg-slate-800 hover:bg-slate-700 text-white p-2.5 rounded-xl border border-slate-700 transition" title="Refresh List">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                </button>
+                <div className="flex items-center gap-4">
+                  <div className="bg-slate-900 p-1 rounded-lg border border-slate-700 flex">
+                    <button
+                      onClick={() => setAttendanceFilters({ ...attendanceFilters, onlyBooked: false })}
+                      className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${!attendanceFilters.onlyBooked ? 'bg-red-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setAttendanceFilters({ ...attendanceFilters, onlyBooked: true })}
+                      className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${attendanceFilters.onlyBooked ? 'bg-red-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                    >
+                      Booked Today
+                    </button>
+                  </div>
+                  <button onClick={loadDashboardData} className="bg-slate-800 hover:bg-slate-700 text-white p-2.5 rounded-xl border border-slate-700 transition" title="Refresh List">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  </button>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -675,68 +969,99 @@ const StaffDashboard = () => {
                       <th className="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Member</th>
                       <th className="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Contact</th>
                       <th className="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Membership</th>
-                      <th className="px-8 py-5 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                      <th className="px-8 py-5 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Status / Note</th>
                       <th className="px-8 py-5 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
-                    {activeMembers.length === 0 ? (
-                      <tr><td colSpan="5" className="px-8 py-16 text-center text-slate-500 italic">No members found for today.</td></tr>
-                    ) : (
-                      activeMembers.map(member => {
-                        const isMarked = attendanceRecords.some(r => r.member?._id === member._id);
-                        const isActive = member.membershipStatus === 'Active';
-                        const isExpired = member.membershipExpiryDate && new Date(member.membershipExpiryDate) < new Date();
-                        const canMarkInfo = isActive && !isExpired;
-
-                        return (
-                          <tr key={member._id} className={`transition-colors ${!canMarkInfo ? 'bg-slate-900/50 opacity-60' : 'hover:bg-slate-800/30'}`}>
-                            <td className="px-8 py-5">
-                              <div className="flex items-center">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black mr-4 ${canMarkInfo ? 'bg-gradient-to-br from-red-500 to-orange-600 shadow-lg' : 'bg-slate-700 text-slate-500'}`}>
-                                  {member.name.charAt(0)}
-                                </div>
-                                <div>
-                                  <div className="text-sm font-bold text-white">{member.name}</div>
-                                  {!isActive && <span className="text-[10px] text-red-400 font-extrabold uppercase">Inactive Account</span>}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-8 py-5 text-sm text-slate-300 font-medium">{member.phone || '--'}</td>
-                            <td className="px-8 py-5">
-                              <div className="text-xs font-bold text-slate-400">
-                                {member.membershipExpiryDate ? new Date(member.membershipExpiryDate).toLocaleDateString() : 'No Plan'}
-                                {isExpired && <span className="ml-2 text-red-500 text-[10px] uppercase">(Expired)</span>}
-                              </div>
-                            </td>
-                            <td className="px-8 py-5 text-center">
-                              {isMarked ? (
-                                <span className="px-3 py-1 bg-green-900/30 text-green-400 rounded-lg text-[10px] font-black uppercase tracking-widest border border-green-500/20">PRESENT</span>
-                              ) : (
-                                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${canMarkInfo ? 'bg-slate-800 text-slate-500 border-slate-700' : 'bg-red-900/20 text-red-500 border-red-900/30'}`}>
-                                  {canMarkInfo ? 'PENDING' : 'INELIGIBLE'}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-8 py-5 text-right">
-                              {!isMarked ? (
-                                <button
-                                  onClick={() => handleMarkAttendance(member._id)}
-                                  disabled={!canMarkInfo}
-                                  className={`text-xs font-bold px-5 py-2.5 rounded-xl transition ${canMarkInfo ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg' : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'}`}
-                                >
-                                  {canMarkInfo ? 'Mark Present' : 'Inactive'}
-                                </button>
-                              ) : (
-                                <div className="text-green-500/80 text-xs font-black uppercase tracking-widest flex items-center justify-end gap-2 px-5">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                  Done
-                                </div>
-                              )}
-                            </td>
-                          </tr>
+                    {members
+                      .filter(m => {
+                        if (!attendanceFilters.onlyBooked) return true;
+                        return allBookings.some(b =>
+                          (b.memberId?._id || b.memberId) === m._id &&
+                          b.status === 'Booked' &&
+                          new Date(b.bookingDate || b.createdAt).toLocaleDateString('en-CA') === new Date().toLocaleDateString('en-CA')
                         );
                       })
+                      .length === 0 ? (
+                      <tr><td colSpan="5" className="px-8 py-16 text-center text-slate-500 italic">No members found for the selected view.</td></tr>
+                    ) : (
+                      members
+                        .filter(m => {
+                          if (!attendanceFilters.onlyBooked) return true;
+                          return allBookings.some(b =>
+                            (b.memberId?._id || b.memberId) === m._id &&
+                            b.status === 'Booked' &&
+                            new Date(b.bookingDate || b.createdAt).toLocaleDateString('en-CA') === new Date().toLocaleDateString('en-CA')
+                          );
+                        })
+                        .map(member => {
+                          const isMarked = attendanceRecords.some(r => r.member?._id === member._id);
+                          const isActive = member.membershipStatus === 'Active';
+                          const isExpired = member.membershipExpiryDate && new Date(member.membershipExpiryDate) < new Date();
+                          const canMarkInfo = isActive && !isExpired;
+
+                          const todayBooking = allBookings.find(b =>
+                            (b.memberId?._id || b.memberId) === member._id &&
+                            b.status === 'Booked' &&
+                            new Date(b.bookingDate || b.createdAt).toLocaleDateString('en-CA') === new Date().toLocaleDateString('en-CA')
+                          );
+
+                          return (
+                            <tr key={member._id} className={`transition-colors ${!canMarkInfo ? 'bg-slate-900/50 opacity-60' : 'hover:bg-slate-800/30'}`}>
+                              <td className="px-8 py-5">
+                                <div className="flex items-center">
+                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black mr-4 ${canMarkInfo ? 'bg-gradient-to-br from-red-500 to-orange-600 shadow-lg' : 'bg-slate-700 text-slate-500'}`}>
+                                    {member.name.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-bold text-white">{member.name}</div>
+                                    {!isActive && <span className="text-[10px] text-red-400 font-extrabold uppercase">Inactive Account</span>}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-8 py-5 text-sm text-slate-300 font-medium">{member.phone || '--'}</td>
+                              <td className="px-8 py-5">
+                                <div className="text-xs font-bold text-slate-400">
+                                  {member.membershipExpiryDate ? new Date(member.membershipExpiryDate).toLocaleDateString() : 'No Plan'}
+                                  {isExpired && <span className="ml-2 text-red-500 text-[10px] uppercase">(Expired)</span>}
+                                </div>
+                              </td>
+                              <td className="px-8 py-5 text-center">
+                                <div className="flex flex-col items-center gap-2">
+                                  {isMarked ? (
+                                    <span className="px-3 py-1 bg-green-900/30 text-green-400 rounded-lg text-[10px] font-black uppercase tracking-widest border border-green-500/20">PRESENT</span>
+                                  ) : (
+                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${canMarkInfo ? 'bg-slate-800 text-slate-500 border-slate-700' : 'bg-red-900/20 text-red-500 border-red-900/30'}`}>
+                                      {canMarkInfo ? 'PENDING' : 'INELIGIBLE'}
+                                    </span>
+                                  )}
+                                  {todayBooking && (
+                                    <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-tighter">
+                                      Booked: {todayBooking.sessionType} ({todayBooking.sessionDetails?.startTime || 'Today'})
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-8 py-5 text-right">
+                                {!isMarked ? (
+                                  <button
+                                    onClick={() => handleMarkAttendance(member._id)}
+                                    disabled={!canMarkInfo}
+                                    className={`text-xs font-bold px-5 py-2.5 rounded-xl transition ${canMarkInfo ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg' : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'}`}
+                                  >
+                                    {canMarkInfo ? 'Mark Present' : 'Inactive'}
+                                  </button>
+                                ) : (
+                                  <div className="text-green-500/80 text-xs font-black uppercase tracking-widest flex items-center justify-end gap-2 px-5">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                    Done
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
                     )}
                   </tbody>
                 </table>

@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { sendEnrollmentEmail } from "../utils/mail.js";
+import notificationService from "./notificationService.js";
 
 const createUser = async (data, creatorRole) => {
    const existingUser = await User.findOne({
@@ -57,6 +58,17 @@ const updateUser = async (id, data) => {
    if (data.password) delete data.password;
 
    const user = await User.findByIdAndUpdate(id, data, { new: true }).select('-password');
+
+   // Create Notification
+   if (user && user.role.includes('MEMBER')) {
+      await notificationService.createNotification(
+         id,
+         "Profile Updated",
+         "Your profile information has been updated successfully.",
+         "profile"
+      );
+   }
+
    return user;
 };
 
@@ -95,6 +107,16 @@ const changePassword = async (userId, currentPassword, newPassword) => {
    user.password = bcrypt.hashSync(newPassword);
    user.mustChangePassword = false;
    await user.save();
+
+   // Create Notification
+   if (user.role.includes('MEMBER')) {
+      await notificationService.createNotification(
+         userId,
+         "Password Changed",
+         "Your account password has been changed successfully.",
+         "profile"
+      );
+   }
 
    return { message: "Password updated successfully" };
 };

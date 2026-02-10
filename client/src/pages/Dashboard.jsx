@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../utils/api';
 import UserMenu from '../components/UserMenu';
+import NotificationBell from '../components/NotificationBell';
 
 // StatCard component for Member Dashboard
 const StatCard = ({ title, value, subtext, color = 'blue' }) => {
@@ -22,14 +23,15 @@ const StatCard = ({ title, value, subtext, color = 'blue' }) => {
     );
 };
 
-// Progress bar for attendance
-const AttendanceProgress = ({ completed, total }) => {
-    const percentage = total > 0 ? Math.min(Math.round((completed / total) * 100), 100) : 0;
+// Progress bar for attendance consistency (days attended this month vs 30 days)
+const AttendanceProgress = ({ completedThisMonth }) => {
+    const totalDays = 30; // Target days per month
+    const percentage = Math.min(Math.round((completedThisMonth / totalDays) * 100), 100);
 
     return (
         <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700 shadow-lg">
             <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">Attendance Progress</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">Regular Gym Attendance</h3>
                 <span className="text-cyan-400 font-bold">{percentage}%</span>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-3 mb-4">
@@ -39,7 +41,7 @@ const AttendanceProgress = ({ completed, total }) => {
                 ></div>
             </div>
             <p className="text-xs text-gray-500 font-medium">
-                You have completed <span className="text-white">{completed}</span> out of <span className="text-white">{total}</span> sessions booked.
+                You have completed <span className="text-white">{completedThisMonth}</span> out of <span className="text-white">30</span> target monthly sessions.
             </p>
         </div>
     );
@@ -47,7 +49,7 @@ const AttendanceProgress = ({ completed, total }) => {
 
 const Dashboard = () => {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [attendanceHistory, setAttendanceHistory] = useState([]);
@@ -67,15 +69,26 @@ const Dashboard = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [bookingsData, attendanceData, plansData] = await Promise.all([
+            const [bookingsData, attendanceData, plansData, profileData] = await Promise.all([
                 apiRequest('/api/bookings/my-bookings'),
                 apiRequest('/api/attendance/my'),
-                user.role?.includes('MEMBER') ? apiRequest('/api/membership/plans') : Promise.resolve([])
+                user.role?.includes('MEMBER') ? apiRequest('/api/membership/plans') : Promise.resolve([]),
+                apiRequest(`/api/users/${user._id || user.id || 'me'}`)
             ]);
 
             setBookings(Array.isArray(bookingsData) ? bookingsData : []);
             setAttendanceHistory(Array.isArray(attendanceData) ? attendanceData : []);
             setPlans(Array.isArray(plansData) ? plansData : []);
+
+            if (profileData && (profileData._id || profileData.id)) {
+                // Ensure we maintain consistency if id was expected elsewhere
+                const updatedUser = {
+                    ...profileData,
+                    id: profileData._id || profileData.id
+                };
+                setUser(updatedUser);
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
         } catch (err) {
             console.error("Failed to load dashboard data", err);
             setError("Failed to sync your dashboard data.");
@@ -116,6 +129,7 @@ const Dashboard = () => {
     // Derived data
     const upcomingBookings = bookings
         .filter(b => {
+            if (b.status !== "Booked") return false;
             if (!b.sessionDetails?.date) return false;
             const sessionDate = new Date(b.sessionDetails.date);
             return sessionDate >= new Date();
@@ -130,6 +144,14 @@ const Dashboard = () => {
     }).length;
 
     const totalAttended = attendanceHistory.filter(r => r.status === 'Present').length;
+
+    // Regular Gym Attendance (Consistency this month)
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const completedThisMonth = attendanceHistory.filter(r => {
+        const rDate = new Date(r.date);
+        return r.status === 'Present' && rDate >= firstDayOfMonth && rDate <= now;
+    }).length;
 
     // Format expiry date
     const expiryDateFormatted = user.membershipExpiryDate
@@ -165,6 +187,7 @@ const Dashboard = () => {
                                     Staff Dashboard
                                 </Link>
                             )}
+                            <NotificationBell />
                             <UserMenu />
                         </div>
                     </div>
@@ -267,9 +290,51 @@ const Dashboard = () => {
                             </div>
                         </div>
 
+                        {/* NEW: Attendance History Section */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                            <div className="px-8 py-6 border-b border-slate-800 bg-slate-800/20">
+                                <h2 className="text-xl font-bold">Attendance History</h2>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-slate-800/30">
+                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date</th>
+                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Marked By</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-800">
+                                        {attendanceHistory.slice(0, 10).map(record => (
+                                            <tr key={record._id} className="hover:bg-slate-800/30 transition-colors">
+                                                <td className="px-8 py-4">
+                                                    <div className="text-sm font-medium text-white">{new Date(record.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                                </td>
+                                                <td className="px-8 py-4">
+                                                    <span className="px-2 py-0.5 bg-green-900/30 text-green-400 rounded text-[10px] font-bold uppercase tracking-wider border border-green-500/20">
+                                                        {record.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-8 py-4 text-sm text-slate-500">
+                                                    {record.markedBy?.name || 'Staff'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {attendanceHistory.length === 0 && (
+                                            <tr>
+                                                <td colSpan="3" className="px-8 py-12 text-center text-slate-500 italic font-medium">
+                                                    No attendance history found.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         {/* Attendance Progress Visual (Mobile/Table) */}
                         <div className="lg:hidden">
-                            <AttendanceProgress completed={totalAttended} total={bookings.length} />
+                            <AttendanceProgress completedThisMonth={completedThisMonth} />
                         </div>
                     </div>
 
@@ -299,7 +364,7 @@ const Dashboard = () => {
 
                         {/* Attendance Progress Visual (Desktop) */}
                         <div className="hidden lg:block">
-                            <AttendanceProgress completed={totalAttended} total={bookings.length} />
+                            <AttendanceProgress completedThisMonth={completedThisMonth} />
                         </div>
 
                         {/* Simple Info Badge */}

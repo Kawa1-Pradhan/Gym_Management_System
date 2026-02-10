@@ -10,9 +10,11 @@ import sessionRoute from "./routes/sessionRoute.js";
 import inventoryRoute from "./routes/inventoryRoute.js";
 import attendanceRoute from "./routes/attendanceRoute.js";
 import membershipRoute from "./routes/membershipRoute.js";
+import notificationRoute from "./routes/notificationRoute.js";
 import connectDB from "./config/database.js";
 import logger from "./middlewares/logger.js";
 import setupDefaultAccounts from "./scripts/setupDefaultAccounts.js";
+import runReminderJobs from "./scripts/reminderJob.js";
 
 
 
@@ -28,6 +30,10 @@ connectDB();
 
 // Setup default accounts after database connection
 setupDefaultAccounts();
+
+// Run reminder jobs every hour
+runReminderJobs(); // Initial run
+setInterval(runReminderJobs, 60 * 60 * 1000);
 
 app.use(bodyParser.json());
 app.use(cookieParser());
@@ -52,6 +58,7 @@ app.use("/api/sessions", sessionRoute);
 app.use("/api/inventory", inventoryRoute);
 app.use("/api/attendance", attendanceRoute);
 app.use("/api/membership", membershipRoute);
+app.use("/api/notifications", notificationRoute);
 
 
 app.listen(config.port, () => {
