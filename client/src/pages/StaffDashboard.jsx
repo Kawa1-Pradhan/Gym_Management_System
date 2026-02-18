@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
 import UserMenu from '../components/UserMenu';
+import NotificationBell from '../components/NotificationBell';
 import InventoryComponent from '../components/InventoryComponent';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -341,10 +342,16 @@ const StaffDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await apiRequest('/api/auth/logout', { method: 'POST' });
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      navigate('/');
+    }
   };
 
   const getStatusColor = (status) => {
@@ -369,6 +376,7 @@ const StaffDashboard = () => {
               Staff Dashboard
             </Link>
             <div className="flex items-center gap-6">
+              <NotificationBell />
               <UserMenu />
             </div>
           </div>

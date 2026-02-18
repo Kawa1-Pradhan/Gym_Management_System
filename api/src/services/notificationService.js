@@ -1,19 +1,44 @@
 import Notification from '../models/Notification.js';
 
-const createNotification = async (userId, title, message, type) => {
+const createNotification = async (userId, title, message, type, relatedId = null, actionUrl = null) => {
     try {
         const notification = new Notification({
             recipient: userId,
             title,
             message,
-            type
+            type,
+            relatedId,
+            actionUrl
         });
         await notification.save();
         return notification;
     } catch (error) {
         console.error('Error creating notification:', error);
-        // We don't necessarily want to crash the main process if a notification fails
         return null;
+    }
+};
+
+const upsertNotification = async (userId, title, message, type, relatedId, actionUrl = null) => {
+    try {
+        const query = { recipient: userId, type };
+        if (relatedId) query.relatedId = relatedId;
+
+        return await Notification.findOneAndUpdate(
+            query,
+            { title, message, actionUrl, isRead: false, createdAt: new Date() },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+    } catch (error) {
+        console.error('Error upserting notification:', error);
+        return null;
+    }
+};
+
+const deleteByRelatedId = async (relatedId) => {
+    try {
+        await Notification.deleteMany({ relatedId });
+    } catch (error) {
+        console.error('Error deleting notifications by relatedId:', error);
     }
 };
 
@@ -44,6 +69,8 @@ const markAllAsRead = async (userId) => {
 
 export default {
     createNotification,
+    upsertNotification,
+    deleteByRelatedId,
     getUserNotifications,
     getUnreadCount,
     markAsRead,

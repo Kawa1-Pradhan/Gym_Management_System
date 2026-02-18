@@ -97,6 +97,18 @@ const register = async (req, res) => {
     }
 };
 
-export default { register, login };
+const logout = async (req, res) => {
+    try {
+        res.clearCookie("token", {
+            httpOnly: true,
+            sameSite: 'lax'
+        });
+        res.json({ message: "Logged out successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error during logout" });
+    }
+};
+
+export default { register, login, logout };
 
 

@@ -42,6 +42,10 @@ const paymentSchema = new mongoose.Schema({
         ref: "MembershipPlan",
         required: true
     },
+    categoryName: {
+        type: String,
+        required: true
+    },
     type: {
         type: String,
         enum: ["New", "Renewal"],

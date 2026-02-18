@@ -1,16 +1,20 @@
 import mongoose from "mongoose";
 import config from "./config.js";
+import dns from "dns";
 
-async function connectDB(){
+// Set Cloudflare DNS servers for reliable database resolution
+dns.setServers(['1.1.1.1', '1.0.0.1']);
 
-    try{
+async function connectDB() {
+
+    try {
         const status = await mongoose.connect(config.mongoDBUrl);
 
-        console.log(`MongoDB Connected: ${status.connection.host}`);     
-    }catch(error){
+        console.log(`MongoDB Connected: ${status.connection.host}`);
+    } catch (error) {
         console.log(error);
         process.exit(1);
-    }    
-}   
+    }
+}
 
 export default connectDB;

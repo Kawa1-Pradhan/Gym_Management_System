@@ -4,85 +4,12 @@ import User from "../models/User.js";
 import { initiateKhaltiPayment, verifyKhaltiPayment } from "../services/khaltiService.js";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
-import nodemailer from "nodemailer"; // Assuming nodemailer is used, need to import or reuse existing email service
-
-// Reuse existing sendEmail function if available, otherwise define minimal one here or import
-// For now, let's assume we can use a helper or just implement simple sending.
-// Better to check if there is an email service. I recall User.js has emailStatus fields.
-// I will implement a basic sender here using env vars, or ideally use a shared service if existed.
-// Let's implement a quick sender helper.
-
-const sendCredentialsEmail = async (email, name, password, planName) => {
-    try {
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
-
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "Welcome to Our Gym! - Your Login Credentials",
-            html: `
-                <div style="font-family: Arial, sans-serif; color: #333;">
-                    <h2>Welcome to the Family, ${name}!</h2>
-                    <p>Thank you for purchasing the <strong>${planName}</strong> membership.</p>
-                    <p>Your account has been created. You can log in to our app using the following credentials:</p>
-                    <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                        <p><strong>Email:</strong> ${email}</p>
-                        <p><strong>Password:</strong> ${password}</p>
-                    </div>
-                    <p>Please change your password after your first login for security.</p>
-                    <p>See you at the gym!</p>
-                </div>
-            `,
-        };
-
-        await transporter.sendMail(mailOptions);
-        console.log(`Credentials sent to ${email}`);
-    } catch (error) {
-        console.error("Email sending failed:", error);
-    }
-};
-
-const sendRenewalEmail = async (email, name, planName, expiryDate) => {
-    try {
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
-
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "Membership Renewed Successfully!",
-            html: `
-                <div style="font-family: Arial, sans-serif; color: #333;">
-                    <h2>Hi ${name},</h2>
-                    <p>Your membership renewal for <strong>${planName}</strong> was successful.</p>
-                    <p>Your new expiry date is: <strong>${new Date(expiryDate).toLocaleDateString()}</strong></p>
-                    <p>Keep up the good work!</p>
-                </div>
-            `,
-        };
-
-        await transporter.sendMail(mailOptions);
-    } catch (error) {
-        console.error("Renewal email failed:", error);
-    }
-}
-
+import { sendCredentialsEmail, sendRenewalEmail } from "../utils/mail.js";
+import notificationService from "../services/notificationService.js";
 
 export const getPlans = async (req, res) => {
     try {
-        // Only show active plans to public
-        const plans = await MembershipPlan.find({ isActive: true }).sort({ price: 1 });
+        const plans = await MembershipPlan.find({}).sort({ price: 1 });
         res.json(plans);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -91,50 +18,64 @@ export const getPlans = async (req, res) => {
 
 export const initiatePurchase = async (req, res) => {
     try {
-        const { planId, name, email, phone } = req.body;
-        const userId = req.user ? req.user.id : null; // If logged in
+        const { planId, categoryName, name, email, phone } = req.body;
+        const userId = req.user ? req.user.id : null;
 
-        // 1. Validate Plan
+        // Make sure the plan they picked actually exists
         const plan = await MembershipPlan.findById(planId);
-        if (!plan) return res.status(404).json({ message: "Plan not found" });
+        if (!plan) return res.status(404).json({ message: "Package not found" });
 
-        // 2. Validate User/Guest
+        // Find the specific category price
+        const category = plan.categories.find(c => c.name === categoryName);
+        if (!category) return res.status(400).json({ message: "Invalid membership category" });
+
+        // Check if we already have this user or if they're checking out as a guest
         let customerInfo = { name, email, phone };
+        let isNewMember = false;
 
         if (userId) {
             const user = await User.findById(userId);
             if (!user) return res.status(404).json({ message: "User not found" });
             customerInfo = { name: user.name, email: user.email, phone: user.phone };
+
+            // New member if they don't have an active or expired membership history
+            if (user.membershipStatus === 'Pending' || user.membershipType === 'None') {
+                isNewMember = true;
+            }
         } else {
             // Guest Validations
             if (!name || !email || !phone) {
-                return res.status(400).json({ message: "Name, email, and phone are required for guest checkout." });
+                return res.status(400).json({ message: "Name, email, and phone are required for checkout." });
             }
-            // Check if user already exists (prevent duplicate active accounts via guest flow if possible, or just link?)
-            // Requirement says "Create new member account". If email exists, we might have a conflict on User creation later.
-            // Let's check now.
+            isNewMember = true; // Guest is always new
+
             const existingUser = await User.findOne({ email });
             if (existingUser) {
-                return res.status(400).json({ message: "User with this email already exists. Please login to renew or purchase." });
+                return res.status(400).json({ message: "An account with this email already exists. Please login to renew." });
             }
         }
 
-        // 3. Calculate Amount (Paisa) with Discount
-        let finalPrice = plan.price;
-        if (plan.discountPercent > 0) {
-            const discountAmount = (plan.price * plan.discountPercent) / 100;
-            finalPrice = plan.price - discountAmount;
-        }
-        const amountPaisa = Math.round(finalPrice * 100); // Ensure integer paisa
+        // Calculate final price: Base + (Optional) New Member Fees
+        let finalPrice = category.price;
+        const ADMISSION_FEE = 1000;
+        const CARD_FEE = 500;
 
-        // 4. Construct Payload
+        if (isNewMember) {
+            finalPrice += (ADMISSION_FEE + CARD_FEE);
+        }
+
+        const amountPaisa = Math.round(finalPrice * 100);
+
+        // Set up Khalti payload
+        // Set up Khalti payload with dynamic return URL for DNS/Local Network support
+        const origin = req.get('origin') || process.env.CLIENT_URL || "http://localhost:5173";
         const purchaseOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const payload = {
-            return_url: `${process.env.CLIENT_URL || "http://localhost:5173"}/payment/success`, // Define CLIENT_URL in env
-            website_url: `${process.env.CLIENT_URL || "http://localhost:5173"}/`,
+            return_url: `${origin}/payment/success`,
+            website_url: `${origin}/`,
             amount: amountPaisa,
             purchase_order_id: purchaseOrderId,
-            purchase_order_name: plan.name,
+            purchase_order_name: `${plan.name} - ${categoryName}`,
             customer_info: {
                 name: customerInfo.name,
                 email: customerInfo.email,
@@ -142,38 +83,23 @@ export const initiatePurchase = async (req, res) => {
             }
         };
 
-        // 5. Initiate Khalti
         const khaltiResponse = await initiateKhaltiPayment(payload);
 
-        // 6. Save Payment Record (Pending)
+        // Save payment record
         const newPayment = new Payment({
             transactionId: khaltiResponse.pidx,
             amount: amountPaisa,
             purchaseOrderId,
-            purchaseOrderName: plan.name,
+            purchaseOrderName: `${plan.name} - ${categoryName}`,
             customerInfo,
-            userId: userId || null, // Null for guest
+            userId: userId || null,
             planId: plan._id,
+            categoryName: categoryName, // We should add this to Payment model or store in order name
             status: "Pending",
-            type: userId ? "Renewal" : "New", // Simple logic: if logged in, it's renewal/upgrade? Or always New? 
-            // Requirement mentions Renewals. If user is logged in and has active membership, it's a renewal. For now let's say:
-            // If they are buying while logged in, treat as Renewal if they have a status, or New if not. 
-            // Actually, let's determine type during verification or just save "New" if no active sub.
-            // Simplified: If userId exists, check current status? Let's just default to New unless explicit renew action?
-            // "When a member clicks 'Renew', initiate...". Let's assume frontend passes a 'type' or we infer it.
-            // We'll stick to 'New' if not specified, 'Renewal' if user has active plan. 
+            type: isNewMember ? "New" : "Renewal"
         });
 
-        // Actually, if userId is present, let's check if they are "Active".
-        if (userId) {
-            const user = await User.findById(userId);
-            if (user.membershipStatus === 'Active') {
-                newPayment.type = 'Renewal';
-            }
-        }
-
         await newPayment.save();
-
         res.json({ payment_url: khaltiResponse.payment_url });
 
     } catch (error) {
@@ -187,7 +113,7 @@ export const verifyPayment = async (req, res) => {
         const { pidx } = req.body;
         if (!pidx) return res.status(400).json({ message: "PIDX is required" });
 
-        // 1. Verify with Khalti
+        // Double check with Khalti to make sure the payment is real
         const khaltiData = await verifyKhaltiPayment(pidx);
 
         if (khaltiData.status !== "Completed") {
@@ -196,7 +122,7 @@ export const verifyPayment = async (req, res) => {
             return res.status(400).json({ message: `Payment status: ${khaltiData.status}` });
         }
 
-        // 2. Find Pending Payment Record
+        // Find the matching payment record in our system
         const payment = await Payment.findOne({ transactionId: pidx });
         if (!payment) return res.status(404).json({ message: "Payment record not found" });
 
@@ -204,13 +130,15 @@ export const verifyPayment = async (req, res) => {
             return res.json({ message: "Payment already processed", payment });
         }
 
-        // 3. Mark Payment Completed
+        // Success! Mark the payment as completed
         payment.status = "Completed";
         payment.gatewayResponse = khaltiData;
         await payment.save();
 
-        // 4. Handle Membership Logic
+        // Now we can update their membership status
         const plan = await MembershipPlan.findById(payment.planId);
+
+        const categoryName = payment.categoryName;
 
         let user;
         let passwordGenerated = null;
@@ -219,32 +147,45 @@ export const verifyPayment = async (req, res) => {
             // Member Renewal/Purchase
             user = await User.findById(payment.userId);
 
-            // Calculate new expiry
+            // Calculate new expiry based on durationMonths
             const currentExpiry = user.membershipExpiryDate && new Date(user.membershipExpiryDate) > new Date()
                 ? new Date(user.membershipExpiryDate)
                 : new Date();
 
             const newExpiry = new Date(currentExpiry);
-            newExpiry.setDate(newExpiry.getDate() + plan.durationDays);
+            newExpiry.setMonth(newExpiry.getMonth() + (plan.durationMonths || 1));
 
             user.membershipStatus = "Active";
             user.membershipExpiryDate = newExpiry;
-            user.membershipType = plan.name; // Simplified
-            user.membershipStartDate = user.membershipStartDate || new Date(); // Set if first time
+            user.membershipType = `${plan.name} (${categoryName})`;
+            user.membershipStartDate = user.membershipStartDate || new Date();
 
             await user.save();
 
             // Send Renewal Email
-            await sendRenewalEmail(user.email, user.name, plan.name, newExpiry);
+            await sendRenewalEmail(user.email, user.name, user.membershipType, newExpiry);
+
+            // Notify Admin about renewal
+            const admins = await User.find({ role: 'ADMIN' });
+            for (const admin of admins) {
+                await notificationService.upsertNotification(
+                    admin._id,
+                    "Membership Renewed",
+                    `Member ${user.name} has renewed their ${user.membershipType} membership.`,
+                    "membership",
+                    user._id,
+                    "/users"
+                );
+            }
 
         } else {
-            // Guest - Create New Account
-            const randomPassword = crypto.randomBytes(4).toString("hex"); // 8 chars
+            // New Guest Account
+            const randomPassword = crypto.randomBytes(4).toString("hex");
             passwordGenerated = randomPassword;
             const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
             const expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + plan.durationDays);
+            expiryDate.setMonth(expiryDate.getMonth() + (plan.durationMonths || 1));
 
             user = new User({
                 name: payment.customerInfo.name,
@@ -254,7 +195,7 @@ export const verifyPayment = async (req, res) => {
                 role: ["MEMBER"],
                 membershipStatus: "Active",
                 membershipExpiryDate: expiryDate,
-                membershipType: plan.name,
+                membershipType: `${plan.name} (${categoryName})`,
                 membershipStartDate: new Date(),
                 mustChangePassword: false
             });
@@ -265,8 +206,21 @@ export const verifyPayment = async (req, res) => {
             payment.userId = user._id;
             await payment.save();
 
+            // Notify Admin about new member
+            const admins = await User.find({ role: 'ADMIN' });
+            for (const admin of admins) {
+                await notificationService.upsertNotification(
+                    admin._id,
+                    "New Member Joined",
+                    `${user.name} has joined as a new member (${user.membershipType}).`,
+                    "membership",
+                    user._id,
+                    "/users"
+                );
+            }
+
             // Send Credentials Email
-            await sendCredentialsEmail(user.email, user.name, randomPassword, plan.name);
+            await sendCredentialsEmail(user.email, user.name, randomPassword, user.membershipType);
         }
 
         res.json({ success: true, message: "Membership activated", user: { name: user.name, email: user.email } });

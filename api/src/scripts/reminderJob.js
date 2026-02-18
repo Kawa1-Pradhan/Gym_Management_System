@@ -1,15 +1,20 @@
 import User from '../models/User.js';
 import Booking from '../models/Booking.js';
 import Attendance from '../models/Attendance.js';
+import Inventory from '../models/Inventory.js';
+import BoxingSession from '../models/BoxingSession.js';
+import SaunaSession from '../models/SaunaSession.js';
 import boxingService from '../services/boxingService.js';
 import saunaService from '../services/saunaService.js';
 import notificationService from '../services/notificationService.js';
+import { toNPT } from '../utils/dateUtils.js';
 
 const runReminderJobs = async () => {
     console.log('🔔 Running background reminder jobs...');
     try {
         await checkMembershipExpiry();
         await checkSessionReminders();
+        await checkInventoryLevels();
         await checkBookingStatus();
         await cleanupOldBookings();
     } catch (error) {
@@ -18,52 +23,38 @@ const runReminderJobs = async () => {
 };
 
 const checkMembershipExpiry = async () => {
-    const today = new Date();
+    const today = toNPT(new Date());
     today.setHours(0, 0, 0, 0);
 
-    // 1. Check for 7-day expiry
-    const sevenDaysFromNow = new Date(today);
-    sevenDaysFromNow.setDate(today.getDate() + 7);
+    // Helper for membership reminders
+    const notifyExpiry = async (days, label) => {
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() + days);
 
-    const sevenDayUsers = await User.find({
-        role: 'MEMBER',
-        membershipExpiryDate: {
-            $gte: sevenDaysFromNow,
-            $lt: new Date(sevenDaysFromNow.getTime() + 24 * 60 * 60 * 1000)
+        const users = await User.find({
+            role: 'MEMBER',
+            membershipExpiryDate: {
+                $gte: targetDate,
+                $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
+            }
+        });
+
+        for (const user of users) {
+            await notificationService.upsertNotification(
+                user._id,
+                `Membership Expiring in ${label}`,
+                `Your membership will expire in ${label}. Please renew to avoid service interruption.`,
+                "membership",
+                user._id,
+                "/profile"
+            );
         }
-    });
+    };
 
-    for (const user of sevenDayUsers) {
-        await notificationService.createNotification(
-            user._id,
-            "Membership Expiring Soon",
-            "Your membership will expire in 7 days. Please renew to avoid service interruption.",
-            "membership"
-        );
-    }
+    await notifyExpiry(7, "7 days");
+    await notifyExpiry(1, "1 day");
 
-    // 2. Check for 3-day expiry
-    const threeDaysFromNow = new Date(today);
-    threeDaysFromNow.setDate(today.getDate() + 3);
-
-    const threeDayUsers = await User.find({
-        role: 'MEMBER',
-        membershipExpiryDate: {
-            $gte: threeDaysFromNow,
-            $lt: new Date(threeDaysFromNow.getTime() + 24 * 60 * 60 * 1000)
-        }
-    });
-
-    for (const user of threeDayUsers) {
-        await notificationService.createNotification(
-            user._id,
-            "Membership Expiring Soon",
-            "Your membership will expire in 3 days. Please renew soon!",
-            "membership"
-        );
-    }
-
-    // 3. Check for expired today
+    // Expired today
     const expiredUsers = await User.find({
         role: 'MEMBER',
         membershipExpiryDate: {
@@ -73,86 +64,203 @@ const checkMembershipExpiry = async () => {
     });
 
     for (const user of expiredUsers) {
-        await notificationService.createNotification(
+        await notificationService.upsertNotification(
             user._id,
             "Membership Expired",
-            "Your membership has expired. Some services may be restricted until renewal.",
-            "membership"
+            "Your membership has expired. Please renew to continue using the gym services.",
+            "membership",
+            user._id,
+            "/profile"
         );
     }
 };
 
 const checkSessionReminders = async () => {
-    const now = new Date();
-    const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    const now = toNPT(new Date());
+    const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-    // Find active bookings
+    // 1. Member Reminders
     const bookings = await Booking.find({ status: 'Booked' }).populate('memberId');
 
     for (const booking of bookings) {
         let session;
         if (booking.sessionType === 'Boxing') {
-            session = await boxingService.getSessionById(booking.sessionId);
+            session = await BoxingSession.findById(booking.sessionId);
         } else {
-            session = await saunaService.getSessionById(booking.sessionId);
+            session = await SaunaSession.findById(booking.sessionId);
         }
 
-        if (!session || !session.date) continue;
+        if (!session || !session.date || session.status !== 'Active') continue;
 
-        // Construct session start time
-        const sessionStartTime = new Date(session.date);
-        const [hours, minutes] = session.startTime.split(':');
-        sessionStartTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        const [sHours, sMinutes] = session.startTime.split(':');
+        const sessionDate = new Date(session.date);
+        const sessionStart = new Date(Date.UTC(
+            sessionDate.getUTCFullYear(),
+            sessionDate.getUTCMonth(),
+            sessionDate.getUTCDate(),
+            parseInt(sHours),
+            parseInt(sMinutes)
+        ));
 
-        const timeUntilSession = sessionStartTime.getTime() - now.getTime();
-        const oneHourMs = 60 * 60 * 1000;
-        const twoHoursMs = 2 * 60 * 60 * 1000;
+        const [eHours, eMinutes] = session.endTime.split(':');
+        const sessionEnd = new Date(Date.UTC(
+            sessionDate.getUTCFullYear(),
+            sessionDate.getUTCMonth(),
+            sessionDate.getUTCDate(),
+            parseInt(eHours),
+            parseInt(eMinutes)
+        ));
 
-        // Notify if between 1 and 2 hours away
-        // We should probably track if they were already notified for this session to avoid spamming
-        // For this simple version, we'll just check if it's within the window.
-        // Ideally we'd add 'notifiedReminders' array to Booking model.
+        const timeUntilStart = sessionStart.getTime() - now.getTime();
+        const timeSinceEnd = now.getTime() - sessionEnd.getTime();
 
-        if (timeUntilSession > 0 && timeUntilSession <= twoHoursMs && timeUntilSession > oneHourMs) {
-            // Send reminder if not already sent (optional enhancement)
-            await notificationService.createNotification(
+        // 24 Hours Before
+        if (timeUntilStart > 0 && timeUntilStart <= 24.5 * 60 * 60 * 1000 && timeUntilStart > 23 * 60 * 60 * 1000) {
+            await notificationService.upsertNotification(
                 booking.memberId._id,
-                "Upcoming Session Reminder",
-                `Your ${booking.sessionType} session "${session.name}" starts in less than 2 hours at ${session.startTime}.`,
-                "session"
+                "Session Tomorrow",
+                `Reminder: Your ${booking.sessionType} session "${session.name}" is scheduled for tomorrow at ${session.startTime}.`,
+                "session",
+                booking._id,
+                "/dashboard"
             );
+        }
+
+        // 1 Hour Before
+        if (timeUntilStart > 0 && timeUntilStart <= 65 * 60 * 1000 && timeUntilStart > 55 * 60 * 1000) {
+            await notificationService.upsertNotification(
+                booking.memberId._id,
+                "Session in 1 Hour",
+                `Your ${booking.sessionType} session "${session.name}" starts in 1 hour!`,
+                "session",
+                booking._id,
+                "/dashboard"
+            );
+
+            // Notify Staff too (1h before)
+            if (session.createdBy) {
+                await notificationService.upsertNotification(
+                    session.createdBy,
+                    "Session Starting Soon",
+                    `The session "${session.name}" you are managing starts in 1 hour.`,
+                    "session",
+                    session._id,
+                    "/dashboard"
+                );
+            }
+        }
+
+        // 5 Minutes Before
+        if (timeUntilStart > 0 && timeUntilStart <= 10 * 60 * 1000 && timeUntilStart > 0) {
+            await notificationService.upsertNotification(
+                booking.memberId._id,
+                "Starting in 5 Minutes!",
+                `Get ready! Your ${booking.sessionType} session "${session.name}" starts in 5 minutes.`,
+                "session",
+                booking._id,
+                "/dashboard"
+            );
+        }
+
+        // Session Just Ended (within 1 hour after completion)
+        if (timeSinceEnd > 0 && timeSinceEnd <= 60 * 60 * 1000) {
+            await notificationService.upsertNotification(
+                booking.memberId._id,
+                "Session has ended",
+                `Your session "${session.name}" has ended. We hope you had a great workout!`,
+                "session",
+                booking._id,
+                "/dashboard"
+            );
+
+            // Clear old reminders/status for this booking is handled in checkBookingStatus
+        }
+    }
+};
+
+const checkInventoryLevels = async () => {
+    const lowStockItems = await Inventory.find({
+        $or: [
+            { quantity: { $lte: 0 } },
+            { $expr: { $lte: ["$quantity", "$lowStockThreshold"] } }
+        ]
+    });
+
+    if (lowStockItems.length > 0) {
+        const staffAndAdmins = await User.find({ role: { $in: ['STAFF', 'ADMIN'] } });
+
+        for (const item of lowStockItems) {
+            const urgency = item.quantity <= 0 ? "OUT OF STOCK" : "Low Stock";
+            const message = `${item.name} is ${urgency.toLowerCase()} (${item.quantity} remaining). Threshold: ${item.lowStockThreshold}.`;
+
+            for (const staff of staffAndAdmins) {
+                await notificationService.upsertNotification(
+                    staff._id,
+                    `Inventory Alert: ${urgency}`,
+                    message,
+                    "inventory",
+                    item._id,
+                    "/inventory"
+                );
+            }
         }
     }
 };
 
 const checkBookingStatus = async () => {
-    const now = new Date();
-
-    // Find all active 'Booked' bookings
+    const now = toNPT(new Date());
     const activeBookings = await Booking.find({ status: 'Booked' });
+    const admins = await User.find({ role: 'ADMIN' });
 
     for (const booking of activeBookings) {
         let session;
         if (booking.sessionType === 'Boxing') {
-            session = await boxingService.getSessionById(booking.sessionId);
+            session = await BoxingSession.findById(booking.sessionId);
         } else {
-            session = await saunaService.getSessionById(booking.sessionId);
+            session = await SaunaSession.findById(booking.sessionId);
         }
 
-        if (!session || !session.date || !session.endTime) continue;
+        if (!session || !session.date || !session.endTime) {
+            if (!session) {
+                booking.status = 'Cancelled';
+                await booking.save();
+            }
+            continue;
+        }
 
-        const sessionEnd = new Date(session.date);
+        const sessionDate = new Date(session.date);
         const [hours, minutes] = session.endTime.split(':');
-        sessionEnd.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        const sessionEnd = new Date(Date.UTC(
+            sessionDate.getUTCFullYear(),
+            sessionDate.getUTCMonth(),
+            sessionDate.getUTCDate(),
+            parseInt(hours),
+            parseInt(minutes)
+        ));
 
         if (sessionEnd < now) {
-            // Check if they attended
             const attended = await Attendance.findOne({
                 member: booking.memberId,
                 date: new Date(session.date).setHours(0, 0, 0, 0)
             });
 
-            booking.status = attended ? 'Completed' : 'Expired';
+            if (attended) {
+                booking.status = 'Completed';
+            } else {
+                booking.status = 'Expired';
+
+                // Notify Admin about missed/expired session
+                for (const admin of admins) {
+                    await notificationService.createNotification(
+                        admin._id,
+                        "Missed Session Alert",
+                        `Member ${booking.memberId} missed their ${booking.sessionType} session: ${session.name}.`,
+                        "system",
+                        booking._id,
+                        "/bookings"
+                    );
+                }
+            }
             await booking.save();
         }
     }
@@ -160,8 +268,6 @@ const checkBookingStatus = async () => {
 
 const cleanupOldBookings = async () => {
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
-
-    // Remove Cancelled or Expired bookings older than 48 hours
     await Booking.deleteMany({
         status: { $in: ['Cancelled', 'Expired'] },
         updatedAt: { $lt: fortyEightHoursAgo }

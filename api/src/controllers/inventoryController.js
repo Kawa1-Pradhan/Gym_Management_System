@@ -104,6 +104,25 @@ const reduceStock = async (req, res) => {
             quantity: item.quantity - amount
         }, req.user.id);
 
+        // Real-time Low Stock Notification
+        if (updatedItem.quantity <= updatedItem.lowStockThreshold) {
+            const urgency = updatedItem.quantity <= 0 ? "OUT OF STOCK" : "Low Stock";
+            const User = (await import('../models/User.js')).default;
+            const notificationService = (await import('../services/notificationService.js')).default;
+
+            const staffAndAdmins = await User.find({ role: { $in: ['STAFF', 'ADMIN'] } });
+            for (const staff of staffAndAdmins) {
+                await notificationService.upsertNotification(
+                    staff._id,
+                    `Inventory Alert: ${urgency}`,
+                    `${updatedItem.name} is now ${urgency.toLowerCase()} (${updatedItem.quantity} left).`,
+                    "inventory",
+                    updatedItem._id,
+                    "/inventory"
+                );
+            }
+        }
+
         res.json(updatedItem);
     } catch (error) {
         console.error("Error reducing stock:", error);

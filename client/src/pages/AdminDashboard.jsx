@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../utils/api';
 import UserMenu from '../components/UserMenu';
+import NotificationBell from '../components/NotificationBell';
 import InventoryComponent from '../components/InventoryComponent';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
@@ -26,70 +27,77 @@ const StatCard = ({ title, value, color = 'blue' }) => {
 
 // Helper component for individual Plan card to manage local state
 const PlanCard = ({ plan, onUpdate }) => {
-  const [price, setPrice] = useState(plan.price);
-  const [discount, setDiscount] = useState(plan.discountPercent);
+  const [categories, setCategories] = useState(plan.categories || []);
   const [loading, setLoading] = useState(false);
+
+  const handlePriceChange = (index, newPrice) => {
+    const updated = [...categories];
+    updated[index].price = Number(newPrice);
+    setCategories(updated);
+  };
+
+  const handleToggleCategory = (index) => {
+    const updated = [...categories];
+    updated[index].isActive = !updated[index].isActive;
+    setCategories(updated);
+  };
 
   const handleSave = async () => {
     setLoading(true);
-    await onUpdate(plan._id, { price: Number(price), discountPercent: Number(discount) });
+    await onUpdate(plan._id, { categories });
     setLoading(false);
   };
 
-  const finalPrice = price - (price * discount / 100);
-
   return (
-    <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg relative">
-      <div className="absolute top-4 right-4">
-        <span className={`px-2 py-1 rounded text-xs font-bold ${plan.isActive ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}`}>
+    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg relative h-full flex flex-col">
+      <div className="flex justify-between items-start mb-4">
+        <h3 className="text-xl font-bold text-white">{plan.name}</h3>
+        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${plan.isActive ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}`}>
           {plan.isActive ? 'Active' : 'Inactive'}
         </span>
       </div>
-      <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-      <div className="space-y-4 mt-4">
-        <div>
-          <label className="text-xs text-gray-500 uppercase font-bold">Price (NPR)</label>
-          <input
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
-            className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white"
-          />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 uppercase font-bold">Discount (%)</label>
-          <input
-            type="number"
-            value={discount}
-            onChange={(e) => setDiscount(Number(e.target.value))}
-            min="0"
-            max="100"
-            className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white"
-          />
-        </div>
-        <div className="pt-4 border-t border-slate-700 flex justify-between items-center">
-          <div className="text-sm">
-            <span className="text-gray-400">Final: </span>
-            <span className="text-green-400 font-bold">
-              NPR {finalPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </span>
+
+      <div className="space-y-4 flex-grow">
+        <div className="text-xs text-slate-500 uppercase font-bold tracking-wider">Category Pricing</div>
+        {categories.map((cat, idx) => (
+          <div key={idx} className="space-y-1 pb-3 border-b border-slate-700/50 last:border-0">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-slate-300">{cat.name}</span>
+              <button
+                onClick={() => handleToggleCategory(idx)}
+                className={`text-[10px] px-2 py-0.5 rounded ${cat.isActive ? 'bg-cyan-900/40 text-cyan-400' : 'bg-slate-700 text-slate-400'}`}
+              >
+                {cat.isActive ? 'Enabled' : 'Disabled'}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-500 text-xs font-mono">Rs.</span>
+              <input
+                type="number"
+                value={cat.price}
+                onChange={(e) => handlePriceChange(idx, e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-white text-sm focus:border-cyan-500 outline-none transition-colors"
+                disabled={!cat.isActive}
+              />
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onUpdate(plan._id, { isActive: !plan.isActive })}
-              className="text-xs underline text-blue-400"
-            >
-              {plan.isActive ? 'Deactivate' : 'Activate'}
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold py-2 px-3 rounded transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </div>
+        ))}
+      </div>
+
+      <div className="pt-4 mt-4 border-t border-slate-700 flex justify-between items-center">
+        <button
+          onClick={() => onUpdate(plan._id, { isActive: !plan.isActive })}
+          className="text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+        >
+          {plan.isActive ? 'Disable Package' : 'Enable Package'}
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all disabled:opacity-50"
+        >
+          {loading ? 'Saving...' : 'Save Category Prices'}
+        </button>
       </div>
     </div>
   );
@@ -378,6 +386,7 @@ const AdminDashboard = () => {
               </Link>
             </div>
             <div className="flex items-center space-x-4">
+              <NotificationBell />
               <UserMenu />
             </div>
           </div>
@@ -596,6 +605,9 @@ const AdminDashboard = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right flex justify-end gap-2">
+                          {u.role.includes('MEMBER') && (
+                            <button onClick={() => navigate('/#pricing')} className="text-xs text-cyan-400 hover:underline">Renew</button>
+                          )}
                           <button onClick={() => handleUserAction(u._id, u.isActive === false ? 'Activate' : 'Deactivate')} className="text-xs text-blue-400 hover:underline">Toggle</button>
                           <button onClick={() => handleUserAction(u._id, 'Reset Password')} className="text-xs text-purple-400 hover:underline">Reset</button>
                         </td>
@@ -787,6 +799,11 @@ const AdminDashboard = () => {
                 {plans.map(plan => (
                   <PlanCard key={plan._id} plan={plan} onUpdate={handleUpdatePlan} />
                 ))}
+                {plans.length === 0 && !loading && (
+                  <div className="col-span-full text-center py-12 bg-slate-800/50 rounded-lg border border-dashed border-slate-700">
+                    <p className="text-gray-500 italic">No membership plans found in the database.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}

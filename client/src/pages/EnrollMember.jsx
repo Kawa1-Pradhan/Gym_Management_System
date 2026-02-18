@@ -12,11 +12,7 @@ const EnrollMember = () => {
         membershipStartDate: new Date().toISOString().split('T')[0]
     });
     const [plans, setPlans] = useState([]);
-    const [selectedPlanId, setSelectedPlanId] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState('');
-    const [error, setError] = useState('');
-    const [tempPassword, setTempPassword] = useState('');
+    const [selectedCategoryId, setSelectedCategoryId] = useState('');
 
     useEffect(() => {
         fetchPlans();
@@ -25,10 +21,25 @@ const EnrollMember = () => {
     const fetchPlans = async () => {
         try {
             const res = await apiRequest('/api/membership/plans');
-            setPlans(Array.isArray(res) ? res : []);
-            if (res.length > 0) setSelectedPlanId(res[0]._id);
+            const fetchedPlans = Array.isArray(res) ? res : [];
+            setPlans(fetchedPlans);
+            if (fetchedPlans.length > 0) {
+                setSelectedPlanId(fetchedPlans[0]._id);
+                if (fetchedPlans[0].categories && fetchedPlans[0].categories.length > 0) {
+                    setSelectedCategoryId(fetchedPlans[0].categories[0]._id);
+                }
+            }
         } catch (err) {
             console.error("Failed to fetch plans");
+        }
+    };
+
+    const handlePlanChange = (e) => {
+        const planId = e.target.value;
+        setSelectedPlanId(planId);
+        const plan = plans.find(p => p._id === planId);
+        if (plan && plan.categories && plan.categories.length > 0) {
+            setSelectedCategoryId(plan.categories[0]._id);
         }
     };
 
@@ -43,21 +54,23 @@ const EnrollMember = () => {
         setSuccess('');
 
         try {
-            // Calculate details
             const selectedPlan = plans.find(p => p._id === selectedPlanId);
+            const selectedCategory = selectedPlan?.categories.find(c => c._id === selectedCategoryId);
+
             if (!selectedPlan && formData.role === 'MEMBER') throw new Error("Please select a valid plan for members");
+            if (!selectedCategory && formData.role === 'MEMBER') throw new Error("Please select a valid category");
 
             let payload = { ...formData };
 
-            if (formData.role === 'MEMBER' && selectedPlan) {
+            if (formData.role === 'MEMBER' && selectedPlan && selectedCategory) {
                 const startDate = new Date(formData.membershipStartDate);
                 const expiryDate = new Date(startDate);
-                expiryDate.setDate(expiryDate.getDate() + selectedPlan.durationDays);
+                expiryDate.setMonth(expiryDate.getMonth() + (selectedPlan.durationMonths || 1));
 
                 payload = {
                     ...payload,
                     membershipStatus: 'Active',
-                    membershipType: selectedPlan.name,
+                    membershipType: `${selectedPlan.name} (${selectedCategory.name})`,
                     membershipExpiryDate: expiryDate,
                     membershipStartDate: startDate
                 };
@@ -162,15 +175,29 @@ const EnrollMember = () => {
                         {formData.role === 'MEMBER' && (
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-400 mb-2">Membership Plan</label>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">Duration Package</label>
                                     <select
                                         value={selectedPlanId}
-                                        onChange={(e) => setSelectedPlanId(e.target.value)}
+                                        onChange={handlePlanChange}
                                         className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                                     >
                                         {plans.map(plan => (
                                             <option key={plan._id} value={plan._id}>
-                                                {plan.name} ({plan.durationDays} days) - NPR {plan.price}
+                                                {plan.name} ({plan.durationMonths} Months)
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">Category & Price</label>
+                                    <select
+                                        value={selectedCategoryId}
+                                        onChange={(e) => setSelectedCategoryId(e.target.value)}
+                                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                                    >
+                                        {plans.find(p => p._id === selectedPlanId)?.categories.map(cat => (
+                                            <option key={cat._id} value={cat._id}>
+                                                {cat.name} - NPR {cat.price}
                                             </option>
                                         ))}
                                     </select>

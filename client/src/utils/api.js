@@ -1,9 +1,8 @@
 // API utility to handle dynamic base URL for different devices
 const getApiBaseUrl = () => {
-  // Temporarily hardcoded for testing - can be changed back to dynamic later
-  return `http://127.0.0.1:5000`;
-  // const { protocol, hostname } = window.location;
-  // return `${protocol}//${hostname}:5000`;
+  const { protocol, hostname } = window.location;
+  // Dynamic host for DNS/Local Network support
+  return `${protocol}//${hostname}:5000`;
 };
 
 export const API_BASE_URL = getApiBaseUrl();

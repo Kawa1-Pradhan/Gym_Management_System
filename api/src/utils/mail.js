@@ -103,3 +103,61 @@ export const sendBookingCancellationEmail = async (userEmail, userName, sessionD
         console.error('❌ Error sending cancellation email:', error.message);
     }
 };
+
+export const sendCredentialsEmail = async (userEmail, userName, password, planName) => {
+    if (!user || !pass || user === 'your-email@gmail.com') return;
+
+    const mailOptions = {
+        from: user,
+        to: userEmail,
+        subject: 'Welcome to Dharan Fitness Club - Your Login Credentials',
+        html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                <h2 style="color: #16a34a;">Welcome to the Family, ${userName}!</h2>
+                <p>Thank you for purchasing the <strong>${planName}</strong> membership.</p>
+                <p>Your account has been created. Use the credentials below to log in:</p>
+                <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p><strong>Email:</strong> ${userEmail}</p>
+                    <p><strong>Password:</strong> ${password}</p>
+                </div>
+                <p style="color: #d32f2f; font-weight: bold;">Note: Please collect your tap door entry card from the gym counter.</p>
+                <p>Please change your password after your first login for security.</p>
+                <p>Best regards,<br>Dharan Fitness Club Team</p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Credentials email sent to:', userEmail);
+    } catch (error) {
+        console.error('❌ Error sending credentials email:', error.message);
+    }
+};
+
+export const sendRenewalEmail = async (userEmail, userName, planName, expiryDate) => {
+    if (!user || !pass || user === 'your-email@gmail.com') return;
+
+    const mailOptions = {
+        from: user,
+        to: userEmail,
+        subject: 'Membership Renewed Successfully! - Dharan Fitness Club',
+        html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                <h2 style="color: #16a34a;">Hi ${userName},</h2>
+                <p>Your membership renewal for <strong>${planName}</strong> was successful.</p>
+                <p>Your new expiry date is: <strong>${new Date(expiryDate).toLocaleDateString()}</strong></p>
+                <p style="color: #d32f2f; font-weight: bold;">Note: Please collect your tap door entry card from the gym counter (if you haven't již).</p>
+                <p>Keep up the good work!</p>
+                <p>Best regards,<br>Dharan Fitness Club Team</p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Renewal email sent to:', userEmail);
+    } catch (error) {
+        console.error('❌ Error sending renewal email:', error.message);
+    }
+};

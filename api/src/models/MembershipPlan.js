@@ -6,14 +6,24 @@ const membershipPlanSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    price: {
+    durationMonths: {
         type: Number,
         required: true
     },
-    durationDays: {
-        type: Number,
-        required: true
-    },
+    categories: [{
+        name: {
+            type: String, // Gym only, Zumba, Cardio only, Gym & Cardio
+            required: true
+        },
+        price: {
+            type: Number,
+            required: true
+        },
+        isActive: {
+            type: Boolean,
+            default: true
+        }
+    }],
     description: {
         type: String,
         required: true
@@ -23,12 +33,8 @@ const membershipPlanSchema = new mongoose.Schema({
         default: []
     },
     highlightTag: {
-        type: String, // e.g., "Best Value", "Popular"
+        type: String,
         default: ""
-    },
-    discountPercent: {
-        type: Number,
-        default: 0
     },
     isActive: {
         type: Boolean,

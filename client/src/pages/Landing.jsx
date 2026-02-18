@@ -11,50 +11,66 @@ const Landing = () => {
   // Guest Checkout Modal State
   const [showModal, setShowModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [guestDetails, setGuestDetails] = useState({ name: '', email: '', phone: '' });
   const [processing, setProcessing] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     fetchPlans();
+    const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+    setUser(storedUser);
+
+    // Handle hash scrolling for #pricing
+    if (window.location.hash === '#pricing') {
+      setTimeout(() => {
+        const element = document.getElementById('pricing');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 500);
+    }
   }, []);
 
   const fetchPlans = async () => {
     try {
+      setLoading(true);
       // Public endpoint, use raw fetch or apiRequest if configured for public
-      const response = await apiRequest('/api/membership/plans'); // apiRequest should handle it
-      setPlans(response);
+      const response = await apiRequest('/api/membership/plans');
+      console.log(`Fetched ${response?.length || 0} plans from API`);
+
+      // Safety check: Make sure we actually got an array back
+      if (Array.isArray(response)) {
+        setPlans(response);
+      } else {
+        console.error("API returned non-array for plans:", response);
+        setPlans([]); // Default to empty array to prevent map crashes
+      }
     } catch (error) {
-      console.error("Failed to fetch plans", error);
+      console.error("Failed to fetch plans:", error);
+      setPlans([]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleBuyNow = (plan) => {
-    // Check if user is logged in
-    const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-    if (storedUser && storedUser.email) {
-      // If logged in, proceed directly with their details
-      setSelectedPlan(plan);
-      setGuestDetails({
-        name: storedUser.name,
-        email: storedUser.email,
-        phone: storedUser.phone
-      });
-      // Trigger payment immediately for logged-in users? 
-      // Or show confirmation? Let's show confirmation/modal pre-filled.
-      setGuestDetails({
-        name: storedUser.name || '',
-        email: storedUser.email || '',
-        phone: storedUser.phone || ''
-      });
-      setShowModal(true);
-    } else {
-      // Guest: Open Modal
-      setSelectedPlan(plan);
-      setGuestDetails({ name: '', email: '', phone: '' });
-      setShowModal(true);
+    setSelectedPlan(plan);
+    // Default to the first category if available
+    if (plan.categories && plan.categories.length > 0) {
+      setSelectedCategory(plan.categories[0].name);
     }
+
+    if (user && user.email) {
+      setGuestDetails({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || ''
+      });
+    } else {
+      setGuestDetails({ name: '', email: '', phone: '' });
+    }
+    setShowModal(true);
   };
 
   const handleProceedPayment = async (e) => {
@@ -69,6 +85,7 @@ const Landing = () => {
         method: 'POST',
         body: {
           planId: selectedPlan._id,
+          categoryName: selectedCategory,
           ...guestDetails
         }
       });
@@ -377,63 +394,76 @@ const Landing = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4 bg-slate-950">
+      <section id="pricing" className="py-20 px-4 bg-slate-950 border-t border-slate-900">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
-              Choose Your Plan
-            </h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              Flexible membership options designed for every fitness journey. All plans include full access to gym facilities, attendance tracking, and booking systems.
+            <h2 className="text-4xl font-bold mb-4 text-white">Membership Plans</h2>
+            <div className="w-20 h-1 bg-cyan-500 mx-auto rounded-full mb-6"></div>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Choose the perfect plan for your fitness journey. All plans provide full access to gym facilities and features.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {plans.map((plan) => (
-              <div key={plan._id} className={`group bg-slate-800/50 backdrop-blur-sm border ${plan.highlightTag ? 'border-2 border-violet-500/50' : 'border-slate-700/50'} rounded-xl p-6 hover:border-cyan-400/50 hover:bg-slate-800/80 transition-all duration-300 relative`}>
+              <div key={plan._id} className={`flex flex-col bg-slate-900 border ${plan.highlightTag ? 'border-cyan-500/50' : 'border-slate-800'} rounded-2xl p-6 hover:border-slate-700 transition-colors duration-300`}>
 
-                {plan.highlightTag && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-violet-500 to-cyan-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                <div className="mb-6">
+                  {plan.highlightTag && (
+                    <span className="inline-block px-3 py-1 bg-cyan-500/10 text-cyan-400 text-[10px] font-bold uppercase tracking-wider rounded-md mb-3">
                       {plan.highlightTag}
                     </span>
-                  </div>
-                )}
-
-                <div className="text-center mb-6 pt-2">
-                  <h3 className="text-2xl font-semibold text-white mb-2">{plan.name}</h3>
-                  <div className="text-3xl font-bold text-cyan-400 mb-1">
-                    NPR {plan.price.toLocaleString()}
-                  </div>
-                  {plan.discountPercent > 0 && (
-                    <div className="text-green-400 text-sm font-bold">{plan.discountPercent}% OFF</div>
                   )}
-                  <div className="text-slate-400">/ {plan.durationDays} days</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">{plan.description || `${plan.durationMonths} Month Unlimited access`}</p>
                 </div>
 
-                <ul className="space-y-3 mb-6 text-sm">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center text-slate-300">
-                      <svg className="w-4 h-4 text-cyan-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      {feature}
-                    </li>
+                {/* Categories & Pricing Table */}
+                <div className="space-y-3 mb-8">
+                  {plan.categories.map((cat, idx) => (
+                    <div key={idx} className="flex justify-between items-center py-2 border-b border-slate-800 last:border-0">
+                      <span className="text-xs text-slate-300">{cat.name}</span>
+                      <span className="text-lg font-bold text-white">Rs. {cat.price.toLocaleString()}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
+
+                {/* Features List */}
+                <div className="flex-grow mb-8">
+                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">What's included</h4>
+                  <ul className="space-y-3">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start text-sm text-slate-400">
+                        <svg className="w-4 h-4 text-cyan-500 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
                 <button
                   onClick={() => handleBuyNow(plan)}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 block text-center shadow-lg"
+                  className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-cyan-900/20 active:scale-[0.98]"
                 >
                   Buy Now
                 </button>
               </div>
             ))}
-            {/* Loading/Empty State */}
+            {/* Loading State */}
             {loading && (
               <div className="col-span-full text-center text-slate-400 py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-                Loading plans...
+                Loading latest plans...
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!loading && plans.length === 0 && (
+              <div className="col-span-full text-center py-12 bg-slate-900/50 rounded-xl border border-slate-800">
+                <p className="text-slate-400 text-lg">No membership plans available at the moment.</p>
+                <p className="text-slate-500 text-sm mt-2">Please check back later or contact us directly.</p>
               </div>
             )}
           </div>
@@ -442,59 +472,116 @@ const Landing = () => {
 
       {/* Guest Checkout Modal */}
       {showModal && selectedPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-slate-800 w-full max-w-md rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
-            <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-700/30">
-              <h3 className="text-xl font-bold text-white">Enroll: {selectedPlan.name}</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white">✕</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75">
+          <div className="bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
+            <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-800">
+              <h3 className="text-xl font-bold text-white">
+                {user && user.membershipType !== 'None' ? 'Renew Membership' : `Enroll: ${selectedPlan.name}`}
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
+                aria-label="Close"
+              >✕</button>
             </div>
             <form onSubmit={handleProceedPayment} className="p-6 space-y-4">
-              <div className="bg-slate-900/50 p-4 rounded-lg mb-4">
-                <div className="flex justify-between text-slate-300 mb-1">
-                  <span>Price</span>
-                  <span>NPR {selectedPlan.price.toLocaleString()}</span>
+              {user && user.membershipType !== 'None' && (
+                <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4 mb-2">
+                  <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1">Your Current Plan</p>
+                  <p className="text-white font-bold">{user.membershipType}</p>
                 </div>
-                {selectedPlan.discountPercent > 0 && (
-                  <div className="flex justify-between text-green-400 text-sm font-bold">
-                    <span>Discount ({selectedPlan.discountPercent}%)</span>
-                    <span>- {(selectedPlan.price * selectedPlan.discountPercent / 100).toLocaleString()}</span>
-                  </div>
+              )}
+              {/* Category Dropdown */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Membership Category</label>
+                <select
+                  required
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-600 transition-colors cursor-pointer appearance-none"
+                  value={selectedCategory}
+                  onChange={e => setSelectedCategory(e.target.value)}
+                >
+                  <option value="" disabled>Select Category</option>
+                  {selectedPlan.categories.map((cat, idx) => (
+                    <option key={idx} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="bg-slate-950 p-5 rounded-xl space-y-3 border border-slate-800">
+                <div className="flex justify-between text-slate-400 text-sm">
+                  <span>Base Price</span>
+                  <span className="text-white font-medium">Rs. {(selectedPlan.categories.find(c => c.name === selectedCategory)?.price || 0).toLocaleString()}</span>
+                </div>
+
+                {(!user || user.membershipStatus === 'Pending' || user.membershipType === 'None') && (
+                  <>
+                    <div className="flex justify-between text-slate-400 text-sm">
+                      <span>Admission Fee</span>
+                      <span className="text-white font-medium">Rs. 1,000</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400 text-sm">
+                      <span>Tap Door Entry Card</span>
+                      <span className="text-white font-medium">Rs. 500</span>
+                    </div>
+                  </>
                 )}
-                <div className="flex justify-between text-white font-bold text-lg mt-2 border-t border-slate-700 pt-2">
-                  <span>Total</span>
-                  <span>NPR {(selectedPlan.price - (selectedPlan.price * selectedPlan.discountPercent / 100)).toLocaleString()}</span>
+
+                <div className="flex justify-between text-white font-bold text-xl mt-4 pt-4 border-t border-slate-800">
+                  <span className="text-slate-300">Total Payable</span>
+                  <span className="text-cyan-500">
+                    Rs. {(
+                      (selectedPlan.categories.find(c => c.name === selectedCategory)?.price || 0) +
+                      ((!user || user.membershipStatus === 'Pending' || user.membershipType === 'None') ? 1500 : 0)
+                    ).toLocaleString()}
+                  </span>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-400 mb-1">Full Name</label>
-                <input required type="text" className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white"
-                  value={guestDetails.name}
-                  onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
-                />
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Full Name</label>
+                  <input required type="text" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-600 outline-none transition-colors"
+                    value={guestDetails.name}
+                    placeholder="Enter your name"
+                    onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Email</label>
+                    <input required type="email" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-600 outline-none transition-colors text-sm"
+                      value={guestDetails.email}
+                      placeholder="Email"
+                      onChange={e => setGuestDetails({ ...guestDetails, email: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Phone</label>
+                    <input required type="tel" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-600 outline-none transition-colors text-sm"
+                      value={guestDetails.phone}
+                      placeholder="Phone"
+                      onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-400 mb-1">Email</label>
-                <input required type="email" className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white"
-                  value={guestDetails.email}
-                  onChange={e => setGuestDetails({ ...guestDetails, email: e.target.value })}
-                />
-                <p className="text-xs text-slate-500 mt-1">Credentials will be sent here.</p>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-400 mb-1">Phone</label>
-                <input required type="tel" className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-white"
-                  value={guestDetails.phone}
-                  onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
-                />
+
+              <div className="text-[10px] text-slate-600 text-center uppercase tracking-wider font-bold pt-2">
+                Secure Payment via Khalti
               </div>
 
               <button
                 type="submit"
                 disabled={processing}
-                className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-lg transition-colors disabled:opacity-50 mt-4"
+                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 rounded-xl transition-all duration-200 disabled:opacity-50 shadow-lg active:scale-[0.98]"
               >
-                {processing ? "Redirecting to Khalti..." : "Pay with Khalti"}
+                {processing ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                    Processing...
+                  </div>
+                ) : "Proceed to Payment"}
               </button>
             </form >
           </div >

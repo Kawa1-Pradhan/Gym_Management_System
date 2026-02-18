@@ -4,7 +4,7 @@ import { apiRequest } from '../utils/api';
 import UserMenu from '../components/UserMenu';
 import NotificationBell from '../components/NotificationBell';
 
-// StatCard component for Member Dashboard
+// Helper component to show the small summary cards at the top
 const StatCard = ({ title, value, subtext, color = 'blue' }) => {
     const colorClasses = {
         blue: 'text-blue-400 border-blue-500/20',
@@ -23,7 +23,7 @@ const StatCard = ({ title, value, subtext, color = 'blue' }) => {
     );
 };
 
-// Progress bar for attendance consistency (days attended this month vs 30 days)
+// This shows a progress bar of how many days the member has visited this month
 const AttendanceProgress = ({ completedThisMonth }) => {
     const totalDays = 30; // Target days per month
     const percentage = Math.min(Math.round((completedThisMonth / totalDays) * 100), 100);
@@ -109,13 +109,16 @@ const Dashboard = () => {
         }
     };
 
-    const handleRenew = async (plan) => {
-        if (!window.confirm(`Renew with ${plan.name} for NPR ${plan.price}?`)) return;
+    const handleRenew = async (plan, category) => {
+        if (!window.confirm(`Renew with ${plan.name} (${category.name}) for NPR ${category.price.toLocaleString()}?`)) return;
         setRenewing(true);
         try {
             const res = await apiRequest('/api/membership/purchase', {
                 method: 'POST',
-                body: { planId: plan._id }
+                body: {
+                    planId: plan._id,
+                    categoryName: category.name
+                }
             });
             if (res.payment_url) {
                 window.location.href = res.payment_url;
@@ -126,7 +129,7 @@ const Dashboard = () => {
         }
     };
 
-    // Derived data
+    // Filter and sort the bookings to find upcoming ones
     const upcomingBookings = bookings
         .filter(b => {
             if (b.status !== "Booked") return false;
@@ -145,7 +148,7 @@ const Dashboard = () => {
 
     const totalAttended = attendanceHistory.filter(r => r.status === 'Present').length;
 
-    // Regular Gym Attendance (Consistency this month)
+    // Check how many times they've been to the gym this month
     const now = new Date();
     const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const completedThisMonth = attendanceHistory.filter(r => {
@@ -153,7 +156,7 @@ const Dashboard = () => {
         return r.status === 'Present' && rDate >= firstDayOfMonth && rDate <= now;
     }).length;
 
-    // Format expiry date
+    // Make the expiry date look nice and readable
     const expiryDateFormatted = user.membershipExpiryDate
         ? new Date(user.membershipExpiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : 'N/A';
@@ -196,9 +199,17 @@ const Dashboard = () => {
 
             <main className="max-w-7xl mx-auto px-4 py-12">
                 {/* Header Section */}
-                <div className="mb-12">
-                    <h1 className="text-4xl font-extrabold text-white mb-2">Welcome back, {user.name}!</h1>
-                    <p className="text-slate-400 font-medium">Here's what's happening with your membership today.</p>
+                <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <h1 className="text-4xl font-extrabold text-white mb-2">Welcome back, {user.name}!</h1>
+                        <p className="text-slate-400 font-medium">Here's what's happening with your membership today.</p>
+                    </div>
+                    {user.membershipType && (
+                        <div className="bg-cyan-500/10 border border-cyan-500/20 px-6 py-4 rounded-2xl">
+                            <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-[0.2em] mb-1">Current Plan</p>
+                            <p className="text-xl font-bold text-white">{user.membershipType}</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Status Messages */}
@@ -380,7 +391,7 @@ const Dashboard = () => {
                 </div>
             </main>
 
-            {/* Renewal Modal - Reusing logic but styled better */}
+            {/* The popup window for renewing a membership */}
             {showRenewModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
@@ -399,28 +410,45 @@ const Dashboard = () => {
                         </div>
 
                         <div className="p-8 max-h-[70vh] overflow-y-auto">
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
                                 {plans.map(plan => (
-                                    <div key={plan._id} className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6 transition-all hover:border-cyan-500/50 group flex flex-col">
-                                        <div className="mb-4">
-                                            <h3 className="text-lg font-bold text-white mb-1">{plan.name}</h3>
-                                            <div className="text-2xl font-black text-cyan-400">NPR {plan.price.toLocaleString()}</div>
+                                    <div key={plan._id} className="bg-slate-800/50 border border-slate-700/50 rounded-3xl p-8 transition-all hover:border-slate-600 group flex flex-col">
+                                        <div className="mb-6 pb-6 border-b border-slate-700/50">
+                                            <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
+                                            <p className="text-slate-400 text-sm">{plan.description || `${plan.durationMonths} Month Unlimited access`}</p>
                                         </div>
-                                        <ul className="mb-8 space-y-3 flex-grow">
-                                            {plan.features.map((f, i) => (
-                                                <li key={i} className="text-sm text-slate-400 flex items-center gap-2">
-                                                    <svg className="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                                                    {f}
-                                                </li>
+
+                                        <div className="space-y-4 mb-8">
+                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Select Category</p>
+                                            {plan.categories.map((cat, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => handleRenew(plan, cat)}
+                                                    disabled={renewing}
+                                                    className="w-full bg-slate-900 border border-slate-700 hover:border-cyan-500/50 p-4 rounded-2xl flex justify-between items-center group/btn transition-all hover:bg-slate-800"
+                                                >
+                                                    <span className="text-sm font-bold text-slate-300 group-hover/btn:text-white">{cat.name}</span>
+                                                    <div className="text-right">
+                                                        <span className="text-cyan-400 font-black">NPR {cat.price.toLocaleString()}</span>
+                                                        <div className="text-[10px] text-slate-500 font-bold group-hover/btn:text-cyan-500 transition-colors uppercase mt-0.5">Select & Renew</div>
+                                                    </div>
+                                                </button>
                                             ))}
-                                        </ul>
-                                        <button
-                                            onClick={() => handleRenew(plan)}
-                                            disabled={renewing}
-                                            className="w-full bg-slate-800 group-hover:bg-cyan-600 border border-slate-700 group-hover:border-cyan-500 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
-                                        >
-                                            {renewing ? 'Processing...' : 'Choose Plan'}
-                                        </button>
+                                        </div>
+
+                                        <div className="mt-auto">
+                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Features Included</p>
+                                            <ul className="space-y-3">
+                                                {plan.features.map((f, i) => (
+                                                    <li key={i} className="text-sm text-slate-400 flex items-center gap-3">
+                                                        <div className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                                                            <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                                        </div>
+                                                        {f}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

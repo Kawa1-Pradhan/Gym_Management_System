@@ -16,8 +16,16 @@ const NotificationSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['membership', 'booking', 'session', 'profile'],
+        enum: ['membership', 'booking', 'session', 'profile', 'inventory', 'system'],
         required: true
+    },
+    relatedId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: false
+    },
+    actionUrl: {
+        type: String,
+        required: false
     },
     isRead: {
         type: Boolean,

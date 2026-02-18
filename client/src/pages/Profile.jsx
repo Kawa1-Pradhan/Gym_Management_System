@@ -233,6 +233,12 @@ const Profile = () => {
                                 {isMember && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
+                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Current Membership Plan</label>
+                                            <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-3 text-cyan-400 font-bold">
+                                                {user.membershipType || 'None'}
+                                            </div>
+                                        </div>
+                                        <div>
                                             <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Membership Status</label>
                                             <div className={`bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-3 font-bold ${user.membershipStatus === 'Active' ? 'text-green-400' : 'text-red-400'}`}>
                                                 {user.membershipStatus}
@@ -240,8 +246,16 @@ const Profile = () => {
                                         </div>
                                         <div>
                                             <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Membership Expiry</label>
-                                            <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-3 text-gray-300 font-medium">
-                                                {user.membershipExpiryDate ? new Date(user.membershipExpiryDate).toLocaleDateString() : 'N/A'}
+                                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                                <div className="flex-1 bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-3 text-gray-300 font-medium">
+                                                    {user.membershipExpiryDate ? new Date(user.membershipExpiryDate).toLocaleDateString() : 'N/A'}
+                                                </div>
+                                                <button
+                                                    onClick={() => navigate('/#pricing')}
+                                                    className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold py-3 px-6 rounded-lg transition-all duration-200 active:scale-95 shadow-lg"
+                                                >
+                                                    Renew Membership
+                                                </button>
                                             </div>
                                         </div>
                                     </div>

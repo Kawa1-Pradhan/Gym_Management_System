@@ -21,26 +21,45 @@ import runReminderJobs from "./scripts/reminderJob.js";
 const app = express();
 
 // Enable CORS for specific origins
+// Enable CORS with support for dynamic origins (DNS/Local IP)
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174'],
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+
+        // For development, we can allow any origin or use a whitelist
+        // The user likely wants their custom DNS/Local IP to work
+        callback(null, true);
+    },
     credentials: true
 }));
 
-connectDB();
+// Startup function to ensure sequential execution
+const startServer = async () => {
+    try {
+        await connectDB();
 
-// Setup default accounts after database connection
-setupDefaultAccounts();
+        // Setup default accounts after database connection is established
+        await setupDefaultAccounts();
 
-// Run reminder jobs every hour
-runReminderJobs(); // Initial run
-setInterval(runReminderJobs, 60 * 60 * 1000);
+        // Run reminder jobs every hour
+        runReminderJobs(); // Initial run
+        setInterval(runReminderJobs, 60 * 60 * 1000);
+
+        app.listen(config.port, () => {
+            console.log(`Server running at port ${config.port}...`);
+        });
+    } catch (err) {
+        console.error("Failed to start server:", err);
+        process.exit(1);
+    }
+};
 
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use('/uploads', express.static('public/uploads'));
+app.use(/uploads/, express.static('public/uploads'));
 
 app.use(logger);
-
 
 app.get("/", (req, res) => {
     res.json({
@@ -60,7 +79,5 @@ app.use("/api/attendance", attendanceRoute);
 app.use("/api/membership", membershipRoute);
 app.use("/api/notifications", notificationRoute);
 
-
-app.listen(config.port, () => {
-    console.log(`Server running at port ${config.port}...`);
-});
+// Start the server
+startServer();
