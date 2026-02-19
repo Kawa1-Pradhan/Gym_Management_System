@@ -7,7 +7,7 @@ import SaunaSession from '../models/SaunaSession.js';
 import boxingService from '../services/boxingService.js';
 import saunaService from '../services/saunaService.js';
 import notificationService from '../services/notificationService.js';
-import { toNPT } from '../utils/dateUtils.js';
+import { toNPT, getNPTDateFromParts } from '../utils/dateUtils.js';
 
 const runReminderJobs = async () => {
     console.log('🔔 Running background reminder jobs...');
@@ -76,104 +76,102 @@ const checkMembershipExpiry = async () => {
 };
 
 const checkSessionReminders = async () => {
-    const now = toNPT(new Date());
-    const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const now = new Date();
+    console.log(`[Job] Checking session reminders at ${now.toISOString()}`);
 
-    // 1. Member Reminders
+    // Member Reminders
     const bookings = await Booking.find({ status: 'Booked' }).populate('memberId');
 
     for (const booking of bookings) {
-        let session;
-        if (booking.sessionType === 'Boxing') {
-            session = await BoxingSession.findById(booking.sessionId);
-        } else {
-            session = await SaunaSession.findById(booking.sessionId);
-        }
+        try {
+            if (!booking.memberId) continue;
 
-        if (!session || !session.date || session.status !== 'Active') continue;
-
-        const [sHours, sMinutes] = session.startTime.split(':');
-        const sessionDate = new Date(session.date);
-        const sessionStart = new Date(Date.UTC(
-            sessionDate.getUTCFullYear(),
-            sessionDate.getUTCMonth(),
-            sessionDate.getUTCDate(),
-            parseInt(sHours),
-            parseInt(sMinutes)
-        ));
-
-        const [eHours, eMinutes] = session.endTime.split(':');
-        const sessionEnd = new Date(Date.UTC(
-            sessionDate.getUTCFullYear(),
-            sessionDate.getUTCMonth(),
-            sessionDate.getUTCDate(),
-            parseInt(eHours),
-            parseInt(eMinutes)
-        ));
-
-        const timeUntilStart = sessionStart.getTime() - now.getTime();
-        const timeSinceEnd = now.getTime() - sessionEnd.getTime();
-
-        // 24 Hours Before
-        if (timeUntilStart > 0 && timeUntilStart <= 24.5 * 60 * 60 * 1000 && timeUntilStart > 23 * 60 * 60 * 1000) {
-            await notificationService.upsertNotification(
-                booking.memberId._id,
-                "Session Tomorrow",
-                `Reminder: Your ${booking.sessionType} session "${session.name}" is scheduled for tomorrow at ${session.startTime}.`,
-                "session",
-                booking._id,
-                "/dashboard"
-            );
-        }
-
-        // 1 Hour Before
-        if (timeUntilStart > 0 && timeUntilStart <= 65 * 60 * 1000 && timeUntilStart > 55 * 60 * 1000) {
-            await notificationService.upsertNotification(
-                booking.memberId._id,
-                "Session in 1 Hour",
-                `Your ${booking.sessionType} session "${session.name}" starts in 1 hour!`,
-                "session",
-                booking._id,
-                "/dashboard"
-            );
-
-            // Notify Staff too (1h before)
-            if (session.createdBy) {
-                await notificationService.upsertNotification(
-                    session.createdBy,
-                    "Session Starting Soon",
-                    `The session "${session.name}" you are managing starts in 1 hour.`,
-                    "session",
-                    session._id,
-                    "/dashboard"
-                );
+            let session;
+            if (booking.sessionType === 'Boxing') {
+                session = await BoxingSession.findById(booking.sessionId);
+            } else {
+                session = await SaunaSession.findById(booking.sessionId);
             }
-        }
 
-        // 5 Minutes Before
-        if (timeUntilStart > 0 && timeUntilStart <= 10 * 60 * 1000 && timeUntilStart > 0) {
-            await notificationService.upsertNotification(
-                booking.memberId._id,
-                "Starting in 5 Minutes!",
-                `Get ready! Your ${booking.sessionType} session "${session.name}" starts in 5 minutes.`,
-                "session",
-                booking._id,
-                "/dashboard"
-            );
-        }
+            if (!session || !session.date || session.status !== 'Active') continue;
 
-        // Session Just Ended (within 1 hour after completion)
-        if (timeSinceEnd > 0 && timeSinceEnd <= 60 * 60 * 1000) {
-            await notificationService.upsertNotification(
-                booking.memberId._id,
-                "Session has ended",
-                `Your session "${session.name}" has ended. We hope you had a great workout!`,
-                "session",
-                booking._id,
-                "/dashboard"
-            );
+            if (!booking.remindersSent) booking.remindersSent = [];
 
-            // Clear old reminders/status for this booking is handled in checkBookingStatus
+            // Get absolute UTC timestamp for session start
+            const nptDate = toNPT(session.date);
+            const dateStr = nptDate.toISOString().split('T')[0];
+            const sessionStart = getNPTDateFromParts(dateStr, session.startTime);
+
+            if (!sessionStart || isNaN(sessionStart.getTime())) {
+                console.error(`Invalid session start for booking ${booking._id}: ${dateStr} ${session.startTime}`);
+                continue;
+            }
+
+            const timeUntilStart = sessionStart.getTime() - now.getTime();
+
+            // 24 Hours Before Reminder
+            if (timeUntilStart > 2 * 60 * 60 * 1000 && timeUntilStart <= 24 * 60 * 60 * 1000) {
+                if (!booking.remindersSent.includes('24h')) {
+                    await notificationService.createNotification(
+                        booking.memberId._id,
+                        "Session Tomorrow",
+                        `Reminder: Your ${booking.sessionType} session "${session.name}" is scheduled for tomorrow at ${session.startTime} (NPT).`,
+                        "session",
+                        booking._id,
+                        "/dashboard"
+                    );
+                    booking.remindersSent.push('24h');
+                    await booking.save();
+                }
+            }
+
+            // 1 Hour Before Reminder (Up to 70m before to be safe)
+            if (timeUntilStart > 10 * 60 * 1000 && timeUntilStart <= 70 * 60 * 1000) {
+                if (!booking.remindersSent.includes('1h')) {
+                    console.log(`[Job] Sending 1h reminder for booking ${booking._id}, session ${session.name}`);
+                    await notificationService.createNotification(
+                        booking.memberId._id,
+                        "Session in 1 Hour",
+                        `Your ${booking.sessionType} session "${session.name}" starts in 1 hour at ${session.startTime}!`,
+                        "session",
+                        booking._id,
+                        "/dashboard"
+                    );
+
+                    // Notify Staff
+                    if (session.createdBy) {
+                        await notificationService.upsertNotification(
+                            session.createdBy,
+                            "Session Starting Soon",
+                            `The session "${session.name}" you are managing starts in 1 hour.`,
+                            "session",
+                            session._id,
+                            "/dashboard"
+                        );
+                    }
+                    booking.remindersSent.push('1h');
+                    await booking.save();
+                }
+            }
+
+            // Session Started Notification (Triggered at exactly start time or slightly after)
+            if (timeUntilStart <= 0 && timeUntilStart > -15 * 60 * 1000) {
+                if (!booking.remindersSent.includes('started')) {
+                    console.log(`[Job] Sending start notification for booking ${booking._id}`);
+                    await notificationService.createNotification(
+                        booking.memberId._id,
+                        "Session Started",
+                        `Your session "${session.name}" has started. Join fast!`,
+                        "session",
+                        booking._id,
+                        "/dashboard"
+                    );
+                    booking.remindersSent.push('started');
+                    await booking.save();
+                }
+            }
+        } catch (err) {
+            console.error(`Error processing reminder for booking ${booking._id}:`, err);
         }
     }
 };
@@ -208,60 +206,83 @@ const checkInventoryLevels = async () => {
 };
 
 const checkBookingStatus = async () => {
-    const now = toNPT(new Date());
+    const now = new Date(); // Actual current UTC time
     const activeBookings = await Booking.find({ status: 'Booked' });
     const admins = await User.find({ role: 'ADMIN' });
 
     for (const booking of activeBookings) {
-        let session;
-        if (booking.sessionType === 'Boxing') {
-            session = await BoxingSession.findById(booking.sessionId);
-        } else {
-            session = await SaunaSession.findById(booking.sessionId);
-        }
+        try {
+            let session;
+            if (booking.sessionType === 'Boxing') {
+                session = await BoxingSession.findById(booking.sessionId);
+            } else {
+                session = await SaunaSession.findById(booking.sessionId);
+            }
 
-        if (!session || !session.date || !session.endTime) {
             if (!session) {
                 booking.status = 'Cancelled';
                 await booking.save();
+                continue;
             }
-            continue;
-        }
 
-        const sessionDate = new Date(session.date);
-        const [hours, minutes] = session.endTime.split(':');
-        const sessionEnd = new Date(Date.UTC(
-            sessionDate.getUTCFullYear(),
-            sessionDate.getUTCMonth(),
-            sessionDate.getUTCDate(),
-            parseInt(hours),
-            parseInt(minutes)
-        ));
+            if (!session.date || !session.endTime) continue;
 
-        if (sessionEnd < now) {
-            const attended = await Attendance.findOne({
-                member: booking.memberId,
-                date: new Date(session.date).setHours(0, 0, 0, 0)
-            });
+            // Get the absolute UTC timestamp for the session end
+            const nptDate = toNPT(session.date);
+            const dateStr = nptDate.toISOString().split('T')[0];
+            const sessionEnd = getNPTDateFromParts(dateStr, session.endTime);
 
-            if (attended) {
-                booking.status = 'Completed';
-            } else {
-                booking.status = 'Expired';
+            if (!sessionEnd || isNaN(sessionEnd.getTime())) continue;
 
-                // Notify Admin about missed/expired session
-                for (const admin of admins) {
+            if (now >= sessionEnd) {
+                console.log(`[Job] Marking booking ${booking._id} as completed/expired`);
+                const attended = await Attendance.findOne({
+                    member: booking.memberId,
+                    date: new Date(session.date).setHours(0, 0, 0, 0)
+                });
+
+                if (!booking.remindersSent) booking.remindersSent = [];
+
+                if (attended) {
+                    booking.status = 'Completed';
                     await notificationService.createNotification(
-                        admin._id,
-                        "Missed Session Alert",
-                        `Member ${booking.memberId} missed their ${booking.sessionType} session: ${session.name}.`,
-                        "system",
+                        booking.memberId,
+                        "Session Completed",
+                        `Your ${booking.sessionType} session "${session.name}" on ${new Date(session.date).toDateString()} has ended. We hope you enjoyed it!`,
+                        "session",
                         booking._id,
-                        "/bookings"
+                        "/dashboard"
                     );
+                } else {
+                    booking.status = 'Expired';
+
+                    // Member Expiry Notification
+                    await notificationService.createNotification(
+                        booking.memberId,
+                        "Session Expired",
+                        `Your ${booking.sessionType} session "${session.name}" on ${new Date(session.date).toDateString()} at ${session.startTime} has expired.`,
+                        "session",
+                        booking._id,
+                        "/dashboard"
+                    );
+
+                    // Notify Admin
+                    for (const admin of admins) {
+                        await notificationService.createNotification(
+                            admin._id,
+                            "Missed Session Alert",
+                            `Member ${booking.memberId} missed their ${booking.sessionType} session: ${session.name}.`,
+                            "system",
+                            booking._id,
+                            "/bookings"
+                        );
+                    }
                 }
+                booking.remindersSent.push('expiry');
+                await booking.save();
             }
-            await booking.save();
+        } catch (err) {
+            console.error(`Error checking booking status for ${booking._id}:`, err);
         }
     }
 };

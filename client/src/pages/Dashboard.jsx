@@ -129,15 +129,29 @@ const Dashboard = () => {
         }
     };
 
-    // Filter and sort the bookings to find upcoming ones
+    // Filter and sort the bookings
     const upcomingBookings = bookings
         .filter(b => {
             if (b.status !== "Booked") return false;
             if (!b.sessionDetails?.date) return false;
             const sessionDate = new Date(b.sessionDetails.date);
-            return sessionDate >= new Date();
+            const now = new Date();
+            // Session is in future or today
+            return sessionDate >= new Date(now.setHours(0, 0, 0, 0));
         })
         .sort((a, b) => new Date(a.sessionDetails.date) - new Date(b.sessionDetails.date));
+
+    const pastBookings = bookings
+        .filter(b => {
+            if (["Completed", "Expired", "Cancelled"].includes(b.status)) return true;
+            // Also include "Booked" sessions that have already passed but not yet marked by cron
+            if (b.status === "Booked" && b.sessionDetails?.date) {
+                const sessionDate = new Date(b.sessionDetails.date);
+                return sessionDate < new Date(new Date().setHours(0, 0, 0, 0));
+            }
+            return false;
+        })
+        .sort((a, b) => new Date(b.sessionDetails?.date || b.bookingDate) - new Date(a.sessionDetails?.date || a.bookingDate));
 
     const countUpcomingNext7Days = upcomingBookings.filter(b => {
         const sessionDate = new Date(b.sessionDetails.date);
@@ -149,11 +163,11 @@ const Dashboard = () => {
     const totalAttended = attendanceHistory.filter(r => r.status === 'Present').length;
 
     // Check how many times they've been to the gym this month
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nowLocal = new Date();
+    const firstDayOfMonth = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1);
     const completedThisMonth = attendanceHistory.filter(r => {
         const rDate = new Date(r.date);
-        return r.status === 'Present' && rDate >= firstDayOfMonth && rDate <= now;
+        return r.status === 'Present' && rDate >= firstDayOfMonth && rDate <= nowLocal;
     }).length;
 
     // Make the expiry date look nice and readable
@@ -293,6 +307,54 @@ const Dashboard = () => {
                                             <tr>
                                                 <td colSpan="4" className="px-8 py-12 text-center text-slate-500 italic font-medium">
                                                     No upcoming sessions booked. Time to hit the gym!
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* NEW: Booking History Section */}
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                            <div className="px-8 py-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/20">
+                                <h2 className="text-xl font-bold">Booking History</h2>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Past & Expired</p>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-slate-800/30">
+                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Session</th>
+                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date</th>
+                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-800">
+                                        {pastBookings.slice(0, 10).map(booking => (
+                                            <tr key={booking._id} className="hover:bg-slate-800/30 transition-colors group">
+                                                <td className="px-8 py-4">
+                                                    <div className="font-bold text-white text-sm">{booking.sessionDetails?.name || booking.sessionType}</div>
+                                                    <div className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">{booking.sessionType} Session</div>
+                                                </td>
+                                                <td className="px-8 py-4 text-sm text-slate-400">
+                                                    {booking.sessionDetails?.date ? new Date(booking.sessionDetails.date).toLocaleDateString() : new Date(booking.bookingDate).toLocaleDateString()}
+                                                </td>
+                                                <td className="px-8 py-4">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${booking.status === 'Completed' ? 'bg-green-900/30 text-green-400' :
+                                                            booking.status === 'Expired' ? 'bg-red-900/30 text-red-400' :
+                                                                booking.status === 'Cancelled' ? 'bg-slate-800 text-slate-400' :
+                                                                    'bg-orange-900/30 text-orange-400'
+                                                        }`}>
+                                                        {booking.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {pastBookings.length === 0 && (
+                                            <tr>
+                                                <td colSpan="3" className="px-8 py-12 text-center text-slate-500 italic font-medium">
+                                                    No past bookings found.
                                                 </td>
                                             </tr>
                                         )}

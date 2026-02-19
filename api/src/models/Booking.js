@@ -34,6 +34,11 @@ const bookingSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    remindersSent: {
+        type: [String],
+        enum: ['24h', '1h', '5m', 'expiry'],
+        default: [],
+    },
 });
 
 // Compound index to prevent duplicate ACTIVE bookings

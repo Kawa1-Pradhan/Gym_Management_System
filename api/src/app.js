@@ -43,9 +43,9 @@ const startServer = async () => {
         // Setup default accounts after database connection is established
         await setupDefaultAccounts();
 
-        // Run reminder jobs every hour
+        // Run reminder jobs every minute to support precise session reminders
         runReminderJobs(); // Initial run
-        setInterval(runReminderJobs, 60 * 60 * 1000);
+        setInterval(runReminderJobs, 60 * 1000);
 
         app.listen(config.port, () => {
             console.log(`Server running at port ${config.port}...`);

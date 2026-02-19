@@ -27,8 +27,29 @@ export const toNPT = (date) => {
  * Gets a Date object for a specific YYYY-MM-DD and HH:mm in NPT.
  */
 export const getNPTDateFromParts = (dateStr, timeStr) => {
+    if (!dateStr || !timeStr) return null;
+
     const [year, month, day] = dateStr.split('-').map(Number);
-    const [hours, minutes] = timeStr.split(':').map(Number);
+
+    // Support AM/PM or 24h
+    let hours, minutes;
+    const timeMatch = timeStr.trim().match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
+
+    if (timeMatch) {
+        hours = parseInt(timeMatch[1]);
+        minutes = parseInt(timeMatch[2]);
+        const ampm = timeMatch[3] ? timeMatch[3].toUpperCase() : null;
+
+        if (ampm === 'PM' && hours < 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+    } else {
+        // Fallback to basic split
+        [hours, minutes] = timeStr.split(':').map(s => parseInt(s));
+    }
+
+    if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hours) || isNaN(minutes)) {
+        return null;
+    }
 
     // Create Date in UTC first
     const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));

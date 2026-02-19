@@ -167,8 +167,7 @@ const getMyBookings = async (req, res) => {
     const memberId = req.user.id;
 
     const bookings = await Booking.find({
-      memberId,
-      status: "Booked"
+      memberId
     })
       .sort({ bookingDate: -1 });
 
