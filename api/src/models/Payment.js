@@ -34,7 +34,7 @@ const paymentSchema = new mongoose.Schema({
     },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "users",
         required: false // Nullable for guest checkouts initially
     },
     planId: {

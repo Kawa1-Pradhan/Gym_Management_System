@@ -12,6 +12,7 @@ import ChangePassword from './pages/ChangePassword';
 import Inventory from './pages/Inventory';
 import Profile from './pages/Profile';
 import PaymentSuccess from './pages/PaymentSuccess';
+import Reports from './pages/Reports';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/reports" element={<Reports />} />
         </Routes>
       </div>
     </Router>

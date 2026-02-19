@@ -4,6 +4,7 @@ import { apiRequest } from '../utils/api';
 import UserMenu from '../components/UserMenu';
 import NotificationBell from '../components/NotificationBell';
 import InventoryComponent from '../components/InventoryComponent';
+import Reports from './Reports';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, Cell
@@ -392,7 +393,8 @@ const StaffDashboard = () => {
             { id: 'boxing', label: 'Boxing', icon: '🥊' },
             { id: 'sauna', label: 'Sauna', icon: '🏊‍♂️' },
             { id: 'attendance', label: 'Attendance', icon: '📋' },
-            { id: 'inventory', label: 'Inventory', icon: '📦' }
+            { id: 'inventory', label: 'Inventory', icon: '📦' },
+            { id: 'reports', label: 'Reports', icon: '📊' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -1081,6 +1083,11 @@ const StaffDashboard = () => {
         {/* Inventory Tab */}
         {activeTab === 'inventory' && (
           <InventoryComponent />
+        )}
+
+        {/* Reports Tab */}
+        {activeTab === 'reports' && (
+          <Reports />
         )}
       </div>
     </div>

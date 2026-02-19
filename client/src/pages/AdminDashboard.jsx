@@ -4,6 +4,7 @@ import { apiRequest } from '../utils/api';
 import UserMenu from '../components/UserMenu';
 import NotificationBell from '../components/NotificationBell';
 import InventoryComponent from '../components/InventoryComponent';
+import Reports from './Reports';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // StatCard component for summary metrics
@@ -396,7 +397,7 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Tab Navigation */}
         <div className="flex flex-wrap mb-8 bg-slate-800 rounded-lg p-1 border border-slate-700">
-          {['home', 'users', 'bookings', 'sessions', 'attendance', 'plans', 'inventory'].map((tab) => (
+          {['home', 'users', 'bookings', 'sessions', 'attendance', 'plans', 'inventory', 'reports'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -410,7 +411,8 @@ const AdminDashboard = () => {
                   tab === 'attendance' ? 'Attendance' :
                     tab === 'plans' ? 'Plans' :
                       tab === 'inventory' ? 'Inventory' :
-                        tab === 'home' ? 'Dashboard' : 'Users'}
+                        tab === 'reports' ? 'Reports' :
+                          tab === 'home' ? 'Dashboard' : 'Users'}
             </button>
           ))}
         </div>
@@ -812,6 +814,9 @@ const AdminDashboard = () => {
             <InventoryComponent />
           )}
 
+          {activeTab === 'reports' && (
+            <Reports />
+          )}
         </div>
       </div>
 
