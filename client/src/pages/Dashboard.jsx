@@ -63,6 +63,15 @@ const Dashboard = () => {
     const isStaff = user.role && user.role.includes('STAFF');
 
     useEffect(() => {
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        if (userData.role?.includes('ADMIN')) {
+            navigate('/admin-dashboard');
+            return;
+        }
+        if (userData.role?.includes('STAFF')) {
+            navigate('/staff-dashboard');
+            return;
+        }
         loadData();
     }, []);
 
@@ -195,7 +204,7 @@ const Dashboard = () => {
             <nav className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
-                        <Link to="/" className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                        <Link to="/dashboard" className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                             Dharan Fitness Club
                         </Link>
                         <div className="flex items-center gap-6">
@@ -342,9 +351,9 @@ const Dashboard = () => {
                                                 </td>
                                                 <td className="px-8 py-4">
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${booking.status === 'Completed' ? 'bg-green-900/30 text-green-400' :
-                                                            booking.status === 'Expired' ? 'bg-red-900/30 text-red-400' :
-                                                                booking.status === 'Cancelled' ? 'bg-slate-800 text-slate-400' :
-                                                                    'bg-orange-900/30 text-orange-400'
+                                                        booking.status === 'Expired' ? 'bg-red-900/30 text-red-400' :
+                                                            booking.status === 'Cancelled' ? 'bg-slate-800 text-slate-400' :
+                                                                'bg-orange-900/30 text-orange-400'
                                                         }`}>
                                                         {booking.status}
                                                     </span>

@@ -138,18 +138,28 @@ const Reports = () => {
                     String(b.status || 'N/A')
                 ]);
             } else if (activeTab === 'revenue') {
-                columns = ["Plan", "Category", "Qty", "Revenue", "%"];
                 const filtered = (revenueData.details || []).filter(d =>
-                    filters.category === 'All' ||
-                    (d._id?.category || 'Gym').toLowerCase().includes(filters.category.toLowerCase())
+                    filters.category === 'All' || (d._id?.category || 'Gym') === filters.category
                 );
-                const totalRev = revenueData.summary?.totalRevenue || 1;
+
+                columns = ["Plan", "Category", "Qty", "Revenue", "%"];
+
+                const reportTotalRev = filtered.reduce((acc, curr) => acc + (curr.totalRevenue || 0), 0);
+                const overallTotalRev = revenueData.summary?.totalRevenue || 1;
+
                 tableData = filtered.map(d => [
                     String(d.planName || 'Unknown'),
                     String(d._id?.category || 'Gym'),
                     String(d.count || '0'),
                     `Rs. ${(d.totalRevenue || 0).toLocaleString()}`,
-                    `${(((d.totalRevenue || 0) / totalRev) * 100).toFixed(1)}%`
+                    `${(((d.totalRevenue || 0) / overallTotalRev) * 100).toFixed(1)}%`
+                ]);
+
+                // Add Summary Row
+                tableData.push([
+                    { content: 'TOTAL REVENUE', colSpan: 3, styles: { halign: 'right', fontStyle: 'bold', fillColor: [241, 245, 249] } },
+                    { content: `Rs. ${reportTotalRev.toLocaleString()}`, styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } },
+                    { content: filters.category === 'All' ? '100%' : `${((reportTotalRev / overallTotalRev) * 100).toFixed(1)}%`, styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } }
                 ]);
             } else if (activeTab === 'members') {
                 columns = ["Rank", "Member Name", "Plan Type", "Visits"];
@@ -232,7 +242,7 @@ const Reports = () => {
     const getSortedRevenue = () => {
         if (!revenueData.details) return [];
         return [...revenueData.details]
-            .filter(d => filters.category === 'All' || (d._id.category || 'Gym').toLowerCase().includes(filters.category.toLowerCase()))
+            .filter(d => filters.category === 'All' || (d._id.category || 'Gym') === filters.category)
             .sort((a, b) => {
                 let valA, valB;
                 if (sortConfig.key === 'plan') {

@@ -57,7 +57,7 @@ const updateUser = async (id, data) => {
    // Prevent password update through this method
    if (data.password) delete data.password;
 
-   const user = await User.findByIdAndUpdate(id, data, { new: true }).select('-password');
+   const user = await User.findByIdAndUpdate(id, data, { returnDocument: 'after' }).select('-password');
 
    // Create Notification
    if (user && user.role.includes('MEMBER')) {

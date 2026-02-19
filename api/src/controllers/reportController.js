@@ -67,10 +67,21 @@ const getTopMembersReport = async (req, res) => {
     }
 };
 
+const getPublicAnalytics = async (req, res) => {
+    try {
+        const data = await reportService.getPublicAnalytics();
+        res.status(200).json(data);
+    } catch (error) {
+        console.error("Error in getPublicAnalytics:", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+
 export default {
     getDailyAttendance,
     getMonthlyAttendance,
     getSessionReport,
     getRevenueReport,
-    getTopMembersReport
+    getTopMembersReport,
+    getPublicAnalytics
 };

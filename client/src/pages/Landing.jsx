@@ -15,22 +15,45 @@ const Landing = () => {
   const [guestDetails, setGuestDetails] = useState({ name: '', email: '', phone: '' });
   const [processing, setProcessing] = useState(false);
   const [user, setUser] = useState(null);
+  const [analytics, setAnalytics] = useState({
+    totalMembers: 0,
+    membershipsSold: 0,
+    monthlyBookings: 0,
+    attendanceRate: 0,
+    popularSession: null
+  });
 
   useEffect(() => {
     fetchPlans();
+    fetchAnalytics();
     const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
     setUser(storedUser);
 
     // Handle hash scrolling for #pricing
     if (window.location.hash === '#pricing') {
-      setTimeout(() => {
-        const element = document.getElementById('pricing');
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 500);
+      scrollToSection('pricing');
     }
   }, []);
+
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      window.scrollTo({
+        top: element.offsetTop - 80, // Offset for fixed nav
+        behavior: 'smooth'
+      });
+    }
+    setIsMenuOpen(false);
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      const data = await apiRequest('/api/reports/public-analytics');
+      if (data) setAnalytics(data);
+    } catch (error) {
+      console.error("Failed to fetch analytics:", error);
+    }
+  };
 
   const fetchPlans = async () => {
     try {
@@ -107,9 +130,9 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
+              <Link to={user ? (user.role?.includes('ADMIN') ? '/admin-dashboard' : (user.role?.includes('STAFF') ? '/staff-dashboard' : '/dashboard')) : '/'} className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent">
                 Dharan Fitness Club
-              </h1>
+              </Link>
             </div>
 
             {/* Desktop Navigation */}
@@ -139,10 +162,10 @@ const Landing = () => {
                 About
               </button>
               <Link
-                to="/login"
+                to={user ? (user.role?.includes('ADMIN') ? '/admin-dashboard' : (user.role?.includes('STAFF') ? '/staff-dashboard' : '/dashboard')) : '/login'}
                 className="bg-gradient-to-r from-cyan-500 to-violet-600 hover:from-cyan-600 hover:to-violet-700 px-6 py-2 rounded-lg text-sm font-semibold transition duration-300 shadow-lg hover:shadow-xl"
               >
-                Member Login
+                {user ? 'Go to Dashboard' : 'Member Login'}
               </Link>
             </div>
 
@@ -193,10 +216,10 @@ const Landing = () => {
                   About
                 </button>
                 <Link
-                  to="/login"
+                  to={user ? (user.role?.includes('ADMIN') ? '/admin-dashboard' : (user.role?.includes('STAFF') ? '/staff-dashboard' : '/dashboard')) : '/login'}
                   className="block w-full bg-gradient-to-r from-cyan-500 to-violet-600 hover:from-cyan-600 hover:to-violet-700 px-3 py-2 rounded-lg text-base font-semibold transition duration-300 text-center mt-3"
                 >
-                  Member Login
+                  {user ? 'Go to Dashboard' : 'Member Login'}
                 </Link>
               </div>
             </div>
@@ -228,57 +251,63 @@ const Landing = () => {
                   Contact to Enroll
                 </button>
                 <Link
-                  to="/login"
+                  to={user ? (user.role?.includes('ADMIN') ? '/admin-dashboard' : (user.role?.includes('STAFF') ? '/staff-dashboard' : '/dashboard')) : '/login'}
                   className="border-2 border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-slate-950 px-8 py-4 rounded-lg text-lg font-semibold transition duration-300"
                 >
-                  Member Login
+                  {user ? 'Go to Dashboard' : 'Member Login'}
                 </Link>
               </div>
             </div>
 
             {/* Right Content - Dashboard Preview */}
             <div className="relative">
-              <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-8 shadow-2xl">
-                <div className="bg-slate-800 rounded-lg p-6 mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-cyan-400">Gym Analytics</h3>
-                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-violet-400">247</div>
-                      <div className="text-sm text-slate-400">Members</div>
+              <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl">
+                <div className="bg-slate-800/50 rounded-xl p-6 mb-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-cyan-400">Gym Performance</h3>
+                    <div className="flex gap-2">
+                      <div className="px-2 py-1 rounded bg-cyan-400/10 text-cyan-400 text-xs font-bold">LIVE</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-cyan-400">89%</div>
-                      <div className="text-sm text-slate-400">Attendance</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-400">23</div>
-                      <div className="text-sm text-slate-400">Bookings</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-cyan-500/20 to-violet-500/20 border border-cyan-500/30 rounded-lg p-4">
-                    <div className="w-8 h-8 bg-cyan-400 rounded-lg mb-2 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-slate-950" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h4 className="text-sm font-semibold text-cyan-400 mb-1">Check-ins Today</h4>
-                    <p className="text-lg font-bold text-white">156</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-violet-500/20 to-cyan-500/20 border border-violet-500/30 rounded-lg p-4">
-                    <div className="w-8 h-8 bg-violet-400 rounded-lg mb-2 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-slate-950" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
-                      </svg>
+                  {/* Top Section - 3 Summary Cards */}
+                  <div className="grid grid-cols-3 gap-4 mb-8">
+                    <div className="text-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                      <div className="text-2xl font-bold text-violet-400">{analytics.totalMembers}</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">Total Members</div>
                     </div>
-                    <h4 className="text-sm font-semibold text-violet-400 mb-1">Active Sessions</h4>
-                    <p className="text-lg font-bold text-white">12</p>
+                    <div className="text-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                      <div className="text-2xl font-bold text-green-400">{analytics.attendanceRate}%</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">Monthly Attendance (%)</div>
+                    </div>
+                    <div className="text-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                      <div className="text-2xl font-bold text-cyan-400">{analytics.membershipsSold}</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">Memberships Sold</div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Section - 2 Detail Cards */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-slate-700/50 rounded-xl p-5">
+                      <h4 className="text-xs font-bold text-blue-400 mb-2 uppercase tracking-widest">Monthly Bookings</h4>
+                      <p className="text-2xl font-bold text-white">{analytics.monthlyBookings}</p>
+                      <p className="text-[10px] text-slate-500 mt-1">Total historical activity this month</p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 border border-slate-700/50 rounded-xl p-5 flex flex-col justify-between">
+                      <div>
+                        <h4 className="text-xs font-bold text-violet-400 mb-1 uppercase tracking-widest">Popular Class</h4>
+                        <div className="text-sm font-semibold text-slate-200">
+                          {analytics.popularSession ? analytics.popularSession.type : 'No Data'}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="w-2 h-2 rounded-full bg-violet-400"></div>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase">
+                          {analytics.popularSession ? `${analytics.popularSession.count} Bookings` : 'Historical Top'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

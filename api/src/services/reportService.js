@@ -306,10 +306,67 @@ const getTopMembers = async (limit = 10) => {
     return topMembers;
 };
 
+/**
+ * PUBLIC ANALYTICS
+ * Fetch live stats for the landing page with daily-weighted attendance logic.
+ */
+const getPublicAnalytics = async () => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const dayOfMonth = now.getDate(); // e.g., 19 if today is Feb 19
+
+    const [
+        totalMembers,
+        membershipsSold,
+        monthlyBookings,
+        actualAttendancesThisMonth,
+        popularSessions
+    ] = await Promise.all([
+        // 1. Total Members
+        User.countDocuments({ role: "MEMBER" }),
+        // 2. Memberships Sold (Historical)
+        Payment.countDocuments({ status: "Completed" }),
+        // 3. Total Completed Bookings This Month (Historical activity)
+        Booking.countDocuments({
+            status: "Completed",
+            bookingDate: { $gte: startOfMonth }
+        }),
+        // 4. Total actual attendances of all members this month (Staff-marked)
+        Attendance.countDocuments({
+            date: { $gte: startOfMonth }
+        }),
+        // 5. Popular Classes (Top 1)
+        Booking.aggregate([
+            { $group: { _id: "$sessionType", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 1 }
+        ])
+    ]);
+
+    // Daily Weighted Attendance Logic:
+    // Eligibility = Total Members * Days Elapsed This Month
+    // This assumes 1 attendance opportunity per member per day.
+    const totalOpportunities = totalMembers * dayOfMonth;
+
+    // Monthly Attendance % = (Total actual attendances ÷ Total opportunities) * 100
+    const attendanceRate = totalOpportunities > 0
+        ? Math.round((actualAttendancesThisMonth / totalOpportunities) * 100)
+        : (actualAttendancesThisMonth > 0 ? 100 : 0);
+
+    return {
+        totalMembers,
+        membershipsSold,
+        monthlyBookings,
+        popularSession: popularSessions[0] ? { type: popularSessions[0]._id, count: popularSessions[0].count } : null,
+        attendanceRate
+    };
+};
+
 export default {
     getDailyAttendance,
     getMonthlyAttendance,
     getSessionReports,
     getRevenueReports,
-    getTopMembers
+    getTopMembers,
+    getPublicAnalytics
 };

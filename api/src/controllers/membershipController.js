@@ -253,7 +253,7 @@ export const updatePlan = async (req, res) => {
             }
         }
 
-        const plan = await MembershipPlan.findByIdAndUpdate(id, updates, { new: true });
+        const plan = await MembershipPlan.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
         if (!plan) return res.status(404).json({ message: "Plan not found" });
 
         res.json(plan);

@@ -10,7 +10,7 @@ import notificationService from '../services/notificationService.js';
 import { toNPT, getNPTDateFromParts } from '../utils/dateUtils.js';
 
 const runReminderJobs = async () => {
-    console.log('🔔 Running background reminder jobs...');
+    // console.log("🔔 Running background reminder jobs...");
     try {
         await checkMembershipExpiry();
         await checkSessionReminders();
@@ -77,7 +77,7 @@ const checkMembershipExpiry = async () => {
 
 const checkSessionReminders = async () => {
     const now = new Date();
-    console.log(`[Job] Checking session reminders at ${now.toISOString()}`);
+    // console.log(`[Job] Checking session reminders at ${now.toISOString()}`);
 
     // Member Reminders
     const bookings = await Booking.find({ status: 'Booked' }).populate('memberId');
@@ -128,7 +128,7 @@ const checkSessionReminders = async () => {
             // 1 Hour Before Reminder (Up to 70m before to be safe)
             if (timeUntilStart > 10 * 60 * 1000 && timeUntilStart <= 70 * 60 * 1000) {
                 if (!booking.remindersSent.includes('1h')) {
-                    console.log(`[Job] Sending 1h reminder for booking ${booking._id}, session ${session.name}`);
+                    // console.log(`[Job] Sending 1h reminder for booking ${booking._id}, session ${session.name}`);
                     await notificationService.createNotification(
                         booking.memberId._id,
                         "Session in 1 Hour",
@@ -157,7 +157,7 @@ const checkSessionReminders = async () => {
             // Session Started Notification (Triggered at exactly start time or slightly after)
             if (timeUntilStart <= 0 && timeUntilStart > -15 * 60 * 1000) {
                 if (!booking.remindersSent.includes('started')) {
-                    console.log(`[Job] Sending start notification for booking ${booking._id}`);
+                    // console.log(`[Job] Sending start notification for booking ${booking._id}`);
                     await notificationService.createNotification(
                         booking.memberId._id,
                         "Session Started",
@@ -235,7 +235,7 @@ const checkBookingStatus = async () => {
             if (!sessionEnd || isNaN(sessionEnd.getTime())) continue;
 
             if (now >= sessionEnd) {
-                console.log(`[Job] Marking booking ${booking._id} as completed/expired`);
+                // console.log(`[Job] Marking booking ${booking._id} as completed/expired`);
                 const attended = await Attendance.findOne({
                     member: booking.memberId,
                     date: new Date(session.date).setHours(0, 0, 0, 0)

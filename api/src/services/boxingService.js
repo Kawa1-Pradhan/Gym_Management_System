@@ -42,7 +42,7 @@ const updateSession = async (sessionId, updates) => {
     const session = await BoxingSession.findByIdAndUpdate(
         sessionId,
         { ...validUpdates, updatedAt: new Date() },
-        { new: true }
+        { returnDocument: 'after' }
     ).populate("createdBy", "name email");
 
     if (!session) {
@@ -55,7 +55,7 @@ const cancelSession = async (sessionId) => {
     const session = await BoxingSession.findByIdAndUpdate(
         sessionId,
         { status: "Cancelled", updatedAt: new Date() },
-        { new: true }
+        { returnDocument: 'after' }
     ).populate("createdBy", "name email");
 
     if (!session) {

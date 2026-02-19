@@ -373,7 +373,7 @@ const StaffDashboard = () => {
       <nav className="bg-slate-800 shadow-lg border-b border-slate-700 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <Link to="/dashboard" className="text-2xl font-bold text-green-400">
+            <Link to="/staff-dashboard" className="text-2xl font-bold text-green-400">
               Staff Dashboard
             </Link>
             <div className="flex items-center gap-6">

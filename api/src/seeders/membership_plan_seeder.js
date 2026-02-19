@@ -1,8 +1,10 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import MembershipPlan from './api/src/models/MembershipPlan.js';
+import path from 'path';
+import MembershipPlan from '../../src/models/MembershipPlan.js';
 
-dotenv.config({ path: './api/.env' });
+// Load .env from the api directory relative to this script
+dotenv.config({ path: path.join(process.cwd(), 'api', '.env') });
 
 const defaultPlans = [
     {
@@ -63,14 +65,16 @@ const defaultPlans = [
 
 async function forceSeed() {
     try {
-        const mongoUri = process.env.MONGODB_URI;
+        const mongoUri = process.env.MONGODB_URL;
+        if (!mongoUri) throw new Error("MONGODB_URL is not defined in .env");
+
         console.log(`Connecting to MongoDB...`);
         await mongoose.connect(mongoUri);
 
         console.log(`Deleting old plans...`);
         await MembershipPlan.deleteMany({});
 
-        console.log(`Inserting new plans...`);
+        console.log(`Inserting 4 new duration packages...`);
         await MembershipPlan.insertMany(defaultPlans);
 
         console.log(`✅ Success: 4 Membership plans updated!`);

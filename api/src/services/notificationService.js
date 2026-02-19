@@ -26,7 +26,7 @@ const upsertNotification = async (userId, title, message, type, relatedId, actio
         return await Notification.findOneAndUpdate(
             query,
             { title, message, actionUrl, isRead: false, createdAt: new Date() },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
+            { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
         );
     } catch (error) {
         console.error('Error upserting notification:', error);
@@ -56,7 +56,7 @@ const markAsRead = async (notificationId, userId) => {
     return await Notification.findOneAndUpdate(
         { _id: notificationId, recipient: userId },
         { isRead: true },
-        { new: true }
+        { returnDocument: 'after' }
     );
 };
 

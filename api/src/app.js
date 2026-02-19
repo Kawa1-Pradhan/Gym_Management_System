@@ -48,7 +48,7 @@ const startServer = async () => {
         setInterval(runReminderJobs, 60 * 1000);
 
         app.listen(config.port, () => {
-            console.log(`Server running at port ${config.port}...`);
+            // console.log(`Server running at port ${config.port}...`);
         });
     } catch (err) {
         console.error("Failed to start server:", err);

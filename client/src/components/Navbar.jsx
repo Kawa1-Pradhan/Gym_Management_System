@@ -1,12 +1,21 @@
 import { Link } from 'react-router-dom';
 
 const Navbar = () => {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+  const getDashboardLink = () => {
+    if (!user) return "/";
+    if (user.role?.includes('ADMIN')) return "/admin-dashboard";
+    if (user.role?.includes('STAFF')) return "/staff-dashboard";
+    return "/dashboard";
+  };
+
   return (
     <nav className="bg-slate-800 shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link to="/" className="text-2xl font-bold text-green-400 hover:text-green-300 transition duration-300">
+            <Link to={getDashboardLink()} className="text-2xl font-bold text-green-400 hover:text-green-300 transition duration-300">
               Dharan Fitness Club
             </Link>
           </div>

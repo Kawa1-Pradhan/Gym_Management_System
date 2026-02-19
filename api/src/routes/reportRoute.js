@@ -4,7 +4,10 @@ import { requireAuth, requireStaffOrAdmin } from "../middlewares/authMiddleware.
 
 const router = express.Router();
 
-// All reporting routes require Staff or Admin role
+// Public route - No auth required
+router.get("/public-analytics", reportController.getPublicAnalytics);
+
+// Protected routes - Require Staff or Admin role
 router.use(requireAuth, requireStaffOrAdmin);
 
 router.get("/attendance/daily", reportController.getDailyAttendance);
