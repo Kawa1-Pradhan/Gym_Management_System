@@ -34,6 +34,7 @@ const StaffDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   const [activeTab, setActiveTab] = useState('home');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -359,46 +360,100 @@ const StaffDashboard = () => {
     }
   };
 
+  const TABS = [
+    { id: 'home', label: 'Dashboard', icon: '🏠' },
+    { id: 'bookings', label: 'Member Booking', icon: '📅' },
+    { id: 'boxing', label: 'Boxing', icon: '🥊' },
+    { id: 'sauna', label: 'Sauna', icon: '🏊' },
+    { id: 'attendance', label: 'Attendance', icon: '📋' },
+    { id: 'inventory', label: 'Inventory', icon: '📦' },
+    { id: 'reports', label: 'Reports', icon: '📊' }
+  ];
+
   if (!user) return null;
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       <nav className="bg-slate-800 shadow-lg border-b border-slate-700 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <Link to="/staff-dashboard" className="text-2xl font-bold text-green-400">
+            <Link to="/staff-dashboard" className="text-xl font-bold text-green-400 truncate">
               Staff Dashboard
             </Link>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
               <NotificationBell />
               <UserMenu />
+              <button
+                className="md:hidden p-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle navigation"
+              >
+                {isMobileMenuOpen ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                )}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile slide-down nav */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-700 bg-slate-800">
+            <div className="px-3 py-2 space-y-1">
+              {TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === tab.id
+                      ? 'bg-red-600 text-white'
+                      : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                    }`}
+                >
+                  <span>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="flex flex-wrap mb-8 bg-slate-800 rounded-lg p-1 border border-slate-700">
-          {[
-            { id: 'home', label: 'Dashboard', icon: '🏠' },
-            { id: 'bookings', label: 'Member Booking', icon: '📅' },
-            { id: 'boxing', label: 'Boxing', icon: '🥊' },
-            { id: 'sauna', label: 'Sauna', icon: '🏊‍♂️' },
-            { id: 'attendance', label: 'Attendance', icon: '📋' },
-            { id: 'inventory', label: 'Inventory', icon: '📦' },
-            { id: 'reports', label: 'Reports', icon: '📊' }
-          ].map(tab => (
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-10">
+        {/* Desktop Tab Bar */}
+        <div className="hidden md:flex flex-wrap mb-8 bg-slate-800 rounded-lg p-1 border border-slate-700">
+          {TABS.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 flex items-center justify-center gap-2 ${activeTab === tab.id
-                ? 'bg-red-600 text-white shadow-lg'
-                : 'text-gray-300 hover:text-white hover:bg-slate-700'
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex-1 py-2.5 px-3 rounded-md font-medium transition duration-200 flex items-center justify-center gap-1.5 text-sm ${activeTab === tab.id
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:text-white hover:bg-slate-700'
                 }`}
             >
+              <span className="hidden lg:inline">{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           ))}
+        </div>
+
+        {/* Mobile active tab indicator */}
+        <div className="md:hidden flex items-center justify-between mb-6 bg-slate-800 rounded-lg px-4 py-3 border border-slate-700">
+          <span className="font-semibold text-white">
+            {TABS.find(t => t.id === activeTab)?.icon} {TABS.find(t => t.id === activeTab)?.label}
+          </span>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-xs text-slate-400 hover:text-white transition-colors"
+          >
+            Switch tab ▾
+          </button>
         </div>
 
         {error && <div className="bg-red-600 text-white p-4 rounded-lg mb-6 shadow-xl animate-in slide-in-from-top duration-300">{error}</div>}
@@ -407,7 +462,7 @@ const StaffDashboard = () => {
         {activeTab === 'home' && (
           <div className="space-y-12 animate-in fade-in duration-500">
             <div>
-              <h1 className="text-4xl font-extrabold text-white mb-2">Welcome back, {user.name}!</h1>
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-2">Welcome back, {user.name}!</h1>
               <p className="text-slate-400 font-medium">Here's an overview of your assigned tasks and sessions.</p>
             </div>
 

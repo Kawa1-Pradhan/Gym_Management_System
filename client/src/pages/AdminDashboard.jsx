@@ -103,7 +103,8 @@ const PlanCard = ({ plan, onUpdate }) => {
 };
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('home'); // renamed from overview
+  const [activeTab, setActiveTab] = useState('home');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -366,44 +367,97 @@ const AdminDashboard = () => {
     }
   };
 
+  const ADMIN_TABS = [
+    { id: 'home', label: 'Dashboard' },
+    { id: 'users', label: 'Users' },
+    { id: 'bookings', label: 'Bookings' },
+    { id: 'sessions', label: 'Sessions' },
+    { id: 'attendance', label: 'Attendance' },
+    { id: 'plans', label: 'Plans' },
+    { id: 'inventory', label: 'Inventory' },
+    { id: 'reports', label: 'Reports' }
+  ];
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-12">
-      <nav className="bg-slate-800 shadow-lg">
+      <nav className="bg-slate-800 shadow-lg sticky top-0 z-50 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link to="/admin-dashboard" className="text-2xl font-bold text-green-400">
+              <Link to="/admin-dashboard" className="text-xl font-bold text-green-400">
                 Admin Dashboard
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <NotificationBell />
               <UserMenu />
+              <button
+                className="md:hidden p-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle navigation"
+              >
+                {isMobileMenuOpen ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                )}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile slide-down nav */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-700 bg-slate-800">
+            <div className="px-3 py-2 space-y-1">
+              {ADMIN_TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === tab.id
+                      ? 'bg-red-600 text-white'
+                      : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                    }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex flex-wrap mb-8 bg-slate-800 rounded-lg p-1 border border-slate-700">
-          {['home', 'users', 'bookings', 'sessions', 'attendance', 'plans', 'inventory', 'reports'].map((tab) => (
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+        {/* Desktop Tab Bar */}
+        <div className="hidden md:flex flex-wrap mb-8 bg-slate-800 rounded-lg p-1 border border-slate-700">
+          {ADMIN_TABS.map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 px-4 rounded-md font-medium transition duration-300 capitalize ${activeTab === tab
-                ? 'bg-red-600 text-white shadow-lg'
-                : 'text-gray-300 hover:text-white hover:bg-slate-700'
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex-1 py-2.5 px-3 rounded-md font-medium transition duration-200 text-sm capitalize ${activeTab === tab.id
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:text-white hover:bg-slate-700'
                 }`}
             >
-              {tab === 'bookings' ? 'Bookings' :
-                tab === 'sessions' ? 'Sessions' :
-                  tab === 'attendance' ? 'Attendance' :
-                    tab === 'plans' ? 'Plans' :
-                      tab === 'inventory' ? 'Inventory' :
-                        tab === 'reports' ? 'Reports' :
-                          tab === 'home' ? 'Dashboard' : 'Users'}
+              {tab.label}
             </button>
           ))}
+        </div>
+
+        {/* Mobile active tab indicator */}
+        <div className="md:hidden flex items-center justify-between mb-6 bg-slate-800 rounded-lg px-4 py-3 border border-slate-700">
+          <span className="font-semibold text-white capitalize">{activeTab === 'home' ? 'Dashboard' : activeTab}</span>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-xs text-slate-400 hover:text-white transition-colors"
+          >
+            Switch tab ▾
+          </button>
         </div>
 
         {/* Messages */}

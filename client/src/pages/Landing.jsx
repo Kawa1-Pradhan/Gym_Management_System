@@ -250,8 +250,8 @@ const Landing = () => {
 
             {/* Right Content - Dashboard Preview */}
             <div className="relative">
-              <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl">
-                <div className="bg-slate-800/50 rounded-xl p-6 mb-6">
+              <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-4 md:p-8 shadow-2xl">
+                <div className="bg-slate-800/50 rounded-xl p-4 sm:p-6 mb-6">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-semibold text-cyan-400">Gym Performance</h3>
                     <div className="flex gap-2">
@@ -260,23 +260,23 @@ const Landing = () => {
                   </div>
 
                   {/* Top Section - 3 Summary Cards */}
-                  <div className="grid grid-cols-3 gap-4 mb-8">
-                    <div className="text-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
-                      <div className="text-2xl font-bold text-violet-400">{analytics.totalMembers}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">Total Members</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                    <div className="text-center p-3 sm:p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                      <div className="text-xl sm:text-2xl font-bold text-violet-400">{analytics.totalMembers}</div>
+                      <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">Total Members</div>
                     </div>
-                    <div className="text-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
-                      <div className="text-2xl font-bold text-green-400">{analytics.attendanceRate}%</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">Monthly Attendance (%)</div>
+                    <div className="text-center p-3 sm:p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                      <div className="text-xl sm:text-2xl font-bold text-green-400">{analytics.attendanceRate}%</div>
+                      <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">Attendance</div>
                     </div>
-                    <div className="text-center p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
-                      <div className="text-2xl font-bold text-cyan-400">{analytics.membershipsSold}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">Memberships Sold</div>
+                    <div className="col-span-2 sm:col-span-1 text-center p-3 sm:p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                      <div className="text-xl sm:text-2xl font-bold text-cyan-400">{analytics.membershipsSold}</div>
+                      <div className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">Memberships Sold</div>
                     </div>
                   </div>
 
                   {/* Bottom Section - 2 Detail Cards */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-slate-700/50 rounded-xl p-5">
                       <h4 className="text-xs font-bold text-blue-400 mb-2 uppercase tracking-widest">Monthly Bookings</h4>
                       <p className="text-2xl font-bold text-white">{analytics.monthlyBookings}</p>

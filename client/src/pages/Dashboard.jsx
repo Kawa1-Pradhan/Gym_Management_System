@@ -217,17 +217,17 @@ const Dashboard = () => {
                 </div>
             </nav>
 
-            <main className="max-w-7xl mx-auto px-4 py-12">
+            <main className="max-w-7xl mx-auto px-4 py-6 sm:py-12">
                 {/* Header Section */}
                 <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                        <h1 className="text-4xl font-extrabold text-white mb-2">Welcome back, {user.name}!</h1>
+                        <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-2">Welcome back, {user.name}!</h1>
                         <p className="text-slate-400 font-medium">Here's what's happening with your membership today.</p>
                     </div>
                     {user.membershipType && (
-                        <div className="bg-cyan-500/10 border border-cyan-500/20 px-6 py-4 rounded-2xl">
+                        <div className="bg-cyan-500/10 border border-cyan-500/20 px-4 sm:px-6 py-4 rounded-2xl flex-shrink-0">
                             <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-[0.2em] mb-1">Current Plan</p>
-                            <p className="text-xl font-bold text-white">{user.membershipType}</p>
+                            <p className="text-lg sm:text-xl font-bold text-white">{user.membershipType}</p>
                         </div>
                     )}
                 </div>
@@ -276,29 +276,29 @@ const Dashboard = () => {
                                 <table className="w-full">
                                     <thead>
                                         <tr className="bg-slate-800/30">
-                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Session</th>
-                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date & Time</th>
-                                            <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Instructor</th>
-                                            <th className="px-8 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Actions</th>
+                                            <th className="px-3 sm:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Session</th>
+                                            <th className="px-3 sm:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date &amp; Time</th>
+                                            <th className="hidden sm:table-cell px-3 sm:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Instructor</th>
+                                            <th className="px-3 sm:px-8 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-800">
                                         {upcomingBookings.slice(0, 7).map(booking => (
                                             <tr key={booking._id} className="hover:bg-slate-800/30 transition-colors group">
-                                                <td className="px-8 py-5">
+                                                <td className="px-3 sm:px-8 py-5">
                                                     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1 ${booking.sessionType === 'Boxing' ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/30 text-blue-400'}`}>
                                                         {booking.sessionType}
                                                     </span>
                                                     <div className="font-bold text-white group-hover:text-cyan-400 transition-colors">{booking.sessionDetails?.name}</div>
                                                 </td>
-                                                <td className="px-8 py-5 text-sm text-slate-300">
+                                                <td className="px-3 sm:px-8 py-5 text-sm text-slate-300">
                                                     <div className="font-medium">{new Date(booking.sessionDetails?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
                                                     <div className="text-slate-500 text-xs">{booking.sessionDetails?.startTime} - {booking.sessionDetails?.endTime}</div>
                                                 </td>
-                                                <td className="px-8 py-5 text-sm text-slate-400 font-medium">
+                                                <td className="hidden sm:table-cell px-3 sm:px-8 py-5 text-sm text-slate-400 font-medium">
                                                     {booking.sessionDetails?.instructor || 'Staff'}
                                                 </td>
-                                                <td className="px-8 py-5 text-right">
+                                                <td className="px-3 sm:px-8 py-5 text-right">
                                                     <button
                                                         onClick={() => handleCancelBooking(booking._id)}
                                                         className="text-slate-500 hover:text-red-500 transition-colors p-2"
@@ -461,7 +461,7 @@ const Dashboard = () => {
 
             {showRenewModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
+                    <div className="bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-800 flex flex-col max-h-[90vh]">
                         <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-800/20">
                             <div>
                                 <h2 className="text-2xl font-bold">Renew Membership</h2>
@@ -476,7 +476,7 @@ const Dashboard = () => {
                             </button>
                         </div>
 
-                        <div className="p-8 max-h-[70vh] overflow-y-auto">
+                        <div className="p-4 sm:p-8 overflow-y-auto flex-1">
                             <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
                                 {plans.map(plan => (
                                     <div key={plan._id} className="bg-slate-800/50 border border-slate-700/50 rounded-3xl p-8 transition-all hover:border-slate-600 group flex flex-col">
