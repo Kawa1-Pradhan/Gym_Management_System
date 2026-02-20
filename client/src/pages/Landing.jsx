@@ -487,9 +487,9 @@ const Landing = () => {
       </section>
 
       {showModal && selectedPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75">
-          <div className="bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
-            <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75">
+          <div className="bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-800 flex flex-col max-h-[95vh]">
+            <div className="p-4 sm:p-5 border-b border-slate-800 flex justify-between items-center bg-slate-800 flex-shrink-0">
               <h3 className="text-xl font-bold text-white">
                 {user && user.membershipType !== 'None' ? 'Renew Membership' : `Enroll: ${selectedPlan.name}`}
               </h3>
@@ -499,7 +499,7 @@ const Landing = () => {
                 aria-label="Close"
               >✕</button>
             </div>
-            <form onSubmit={handleProceedPayment} className="p-6 space-y-4">
+            <form onSubmit={handleProceedPayment} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               {user && user.membershipType !== 'None' && (
                 <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl p-4 mb-2">
                   <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1">Your Current Plan</p>
@@ -562,20 +562,20 @@ const Landing = () => {
                     onChange={e => setGuestDetails({ ...guestDetails, name: e.target.value })}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1">
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Email</label>
-                    <input required type="email" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-600 outline-none transition-colors text-sm"
+                    <input required type="email" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-white focus:border-cyan-600 outline-none transition-colors text-sm"
                       value={guestDetails.email}
-                      placeholder="Email"
+                      placeholder="Email address"
                       onChange={e => setGuestDetails({ ...guestDetails, email: e.target.value })}
                     />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Phone</label>
-                    <input required type="tel" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:border-cyan-600 outline-none transition-colors text-sm"
+                    <input required type="tel" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-white focus:border-cyan-600 outline-none transition-colors text-sm"
                       value={guestDetails.phone}
-                      placeholder="Phone"
+                      placeholder="Phone number"
                       onChange={e => setGuestDetails({ ...guestDetails, phone: e.target.value })}
                     />
                   </div>
@@ -598,9 +598,9 @@ const Landing = () => {
                   </div>
                 ) : "Proceed to Payment"}
               </button>
-            </form >
-          </div >
-        </div >
+            </form>
+          </div>
+        </div>
       )}
       {/* About & Location Section */}
       < section id="about" className="py-20 px-4 bg-slate-900" >

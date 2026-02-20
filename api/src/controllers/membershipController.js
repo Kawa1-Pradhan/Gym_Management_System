@@ -67,8 +67,7 @@ export const initiatePurchase = async (req, res) => {
         const amountPaisa = Math.round(finalPrice * 100);
 
         // Set up Khalti payload
-        // Set up Khalti payload with dynamic return URL for DNS/Local Network support
-        const origin = req.get('origin') || process.env.CLIENT_URL || "http://localhost:5173";
+        const origin = process.env.CLIENT_URL || req.get('origin') || "http://localhost:5173";
         const purchaseOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const payload = {
             return_url: `${origin}/payment/success`,
@@ -179,30 +178,76 @@ export const verifyPayment = async (req, res) => {
             }
 
         } else {
-            // New Guest Account
-            const randomPassword = crypto.randomBytes(4).toString("hex");
-            passwordGenerated = randomPassword;
-            const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
-            const expiryDate = new Date();
-            expiryDate.setMonth(expiryDate.getMonth() + (plan.durationMonths || 1));
-
-            user = new User({
-                name: payment.customerInfo.name,
-                email: payment.customerInfo.email,
-                phone: payment.customerInfo.phone,
-                password: hashedPassword,
-                role: ["MEMBER"],
-                membershipStatus: "Active",
-                membershipExpiryDate: expiryDate,
-                membershipType: `${plan.name} (${categoryName})`,
-                membershipStartDate: new Date(),
-                mustChangePassword: false
+            // New Guest Account — use findOneAndUpdate with upsert to avoid
+            // duplicate key errors if Khalti sends multiple callbacks (e.g. on mobile retry)
+            const existingUser = await User.findOne({
+                $or: [
+                    { email: payment.customerInfo.email },
+                    { phone: payment.customerInfo.phone }
+                ]
             });
 
-            await user.save();
+            if (existingUser) {
+                // User already created by a previous callback — just update membership
+                user = existingUser;
+                const currentExpiry = user.membershipExpiryDate && new Date(user.membershipExpiryDate) > new Date()
+                    ? new Date(user.membershipExpiryDate)
+                    : new Date();
+                const newExpiry = new Date(currentExpiry);
+                newExpiry.setMonth(newExpiry.getMonth() + (plan.durationMonths || 1));
 
-            // Link payment to new user
+                user.membershipStatus = "Active";
+                user.membershipExpiryDate = newExpiry;
+                user.membershipType = `${plan.name} (${categoryName})`;
+                user.membershipStartDate = user.membershipStartDate || new Date();
+                await user.save();
+            } else {
+                const randomPassword = crypto.randomBytes(4).toString("hex");
+                passwordGenerated = randomPassword;
+                const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+                const expiryDate = new Date();
+                expiryDate.setMonth(expiryDate.getMonth() + (plan.durationMonths || 1));
+
+                user = new User({
+                    name: payment.customerInfo.name,
+                    email: payment.customerInfo.email,
+                    phone: payment.customerInfo.phone,
+                    password: hashedPassword,
+                    role: ["MEMBER"],
+                    membershipStatus: "Active",
+                    membershipExpiryDate: expiryDate,
+                    membershipType: `${plan.name} (${categoryName})`,
+                    membershipStartDate: new Date(),
+                    mustChangePassword: false
+                });
+
+                try {
+                    await user.save();
+                } catch (dupErr) {
+                    if (dupErr.code === 11000) {
+                        // Race condition — another request created the user. Fetch and update.
+                        user = await User.findOne({ email: payment.customerInfo.email });
+                        if (!user) user = await User.findOne({ phone: payment.customerInfo.phone });
+                        if (user) {
+                            user.membershipStatus = "Active";
+                            user.membershipType = `${plan.name} (${categoryName})`;
+                            await user.save();
+                        } else {
+                            throw dupErr;
+                        }
+                    } else {
+                        throw dupErr;
+                    }
+                }
+
+                // Send Credentials Email only for truly new users
+                if (passwordGenerated) {
+                    await sendCredentialsEmail(user.email, user.name, passwordGenerated, user.membershipType);
+                }
+            }
+
+            // Link payment to user account
             payment.userId = user._id;
             await payment.save();
 
@@ -218,9 +263,6 @@ export const verifyPayment = async (req, res) => {
                     "/users"
                 );
             }
-
-            // Send Credentials Email
-            await sendCredentialsEmail(user.email, user.name, randomPassword, user.membershipType);
         }
 
         res.json({ success: true, message: "Membership activated", user: { name: user.name, email: user.email } });
