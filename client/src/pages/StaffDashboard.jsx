@@ -10,7 +10,6 @@ import {
   LineChart, Line, Cell
 } from 'recharts';
 
-// StatCard component for Staff Dashboard (Aligned with Admin)
 const StatCard = ({ title, value, subtext, color = 'blue' }) => {
   const colorClasses = {
     blue: 'text-blue-400',
@@ -39,7 +38,6 @@ const StaffDashboard = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Data state
   const [boxingSessions, setBoxingSessions] = useState([]);
   const [saunaSessions, setSaunaSessions] = useState([]);
   const [allBookings, setAllBookings] = useState([]);
@@ -48,7 +46,6 @@ const StaffDashboard = () => {
   const [activeMembers, setActiveMembers] = useState([]);
   const [attendanceFilters, setAttendanceFilters] = useState({ onlyBooked: true });
 
-  // Stats state
   const [stats, setStats] = useState({
     activeMembersToday: 0,
     sessionsToday: 0,
@@ -57,7 +54,6 @@ const StaffDashboard = () => {
     conductedThisWeek: []
   });
 
-  // Form states
   const [boxingForm, setBoxingForm] = useState({
     name: '', instructor: '', date: '', startTime: '', endTime: '', maxCapacity: '', description: ''
   });
@@ -66,7 +62,6 @@ const StaffDashboard = () => {
     name: '', date: '', startTime: '', endTime: '', maxCapacity: '', temperature: '85', description: ''
   });
 
-  // Booking form state
   const [bookingForm, setBookingForm] = useState({
     memberId: '',
     sessionId: '',
@@ -121,7 +116,6 @@ const StaffDashboard = () => {
       setMembers(memberUsers);
       setActiveMembers(memberUsers);
 
-      // Calculate Stats
       const mySessionsToday = [...boxers, ...saunas].filter(s => {
         if (!s || !s.date) return false;
         const creatorId = (s.createdBy?._id || s.createdBy || '').toString();
@@ -369,7 +363,6 @@ const StaffDashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
-      {/* Navigation */}
       <nav className="bg-slate-800 shadow-lg border-b border-slate-700 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
@@ -385,7 +378,6 @@ const StaffDashboard = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Tab Navigation */}
         <div className="flex flex-wrap mb-8 bg-slate-800 rounded-lg p-1 border border-slate-700">
           {[
             { id: 'home', label: 'Dashboard', icon: '🏠' },
@@ -409,11 +401,9 @@ const StaffDashboard = () => {
           ))}
         </div>
 
-        {/* Global Messages */}
         {error && <div className="bg-red-600 text-white p-4 rounded-lg mb-6 shadow-xl animate-in slide-in-from-top duration-300">{error}</div>}
         {success && <div className="bg-green-600 text-white p-4 rounded-lg mb-6 shadow-xl animate-in slide-in-from-top duration-300">{success}</div>}
 
-        {/* Dashboard Home */}
         {activeTab === 'home' && (
           <div className="space-y-12 animate-in fade-in duration-500">
             <div>
@@ -421,7 +411,6 @@ const StaffDashboard = () => {
               <p className="text-slate-400 font-medium">Here's an overview of your assigned tasks and sessions.</p>
             </div>
 
-            {/* 4 Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <StatCard title="Active Members Today" value={stats.activeMembersToday} subtext="Booked your sessions" color="blue" />
               <StatCard title="Sessions Today" value={stats.sessionsToday} subtext="Total to conduct today" color="purple" />
@@ -430,7 +419,6 @@ const StaffDashboard = () => {
             </div>
 
             <div className="grid lg:grid-cols-3 gap-8">
-              {/* Left Side: Upcoming Sessions Table */}
               <div className="lg:col-span-2 space-y-8">
                 <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
                   <div className="px-8 py-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/20">
@@ -492,7 +480,6 @@ const StaffDashboard = () => {
                 </div>
               </div>
 
-              {/* Right Side: Charts & Performance */}
               <div className="space-y-8">
                 <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 shadow-xl">
                   <h2 className="text-lg font-bold mb-6 text-white">Conducting Performance</h2>
@@ -523,7 +510,6 @@ const StaffDashboard = () => {
           </div>
         )}
 
-        {/* Book for Member Tab */}
         {activeTab === 'bookings' && (
           <div className="space-y-8 animate-in fade-in duration-500">
             <h1 className="text-3xl font-bold text-white">Book Session for Member</h1>
@@ -601,7 +587,6 @@ const StaffDashboard = () => {
           </div>
         )}
 
-        {/* Boxing Sessions Management */}
         {activeTab === 'boxing' && (
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex justify-between items-center">
@@ -772,7 +757,6 @@ const StaffDashboard = () => {
           </div>
         )}
 
-        {/* Sauna Sessions Management */}
         {activeTab === 'sauna' && (
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex justify-between items-center">

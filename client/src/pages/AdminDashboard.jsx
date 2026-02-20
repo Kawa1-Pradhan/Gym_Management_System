@@ -7,7 +7,6 @@ import InventoryComponent from '../components/InventoryComponent';
 import Reports from './Reports';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-// StatCard component for summary metrics
 const StatCard = ({ title, value, color = 'blue' }) => {
   const colorClasses = {
     blue: 'text-blue-400',
@@ -26,7 +25,6 @@ const StatCard = ({ title, value, color = 'blue' }) => {
   );
 };
 
-// Helper component for individual Plan card to manage local state
 const PlanCard = ({ plan, onUpdate }) => {
   const [categories, setCategories] = useState(plan.categories || []);
   const [loading, setLoading] = useState(false);
@@ -124,7 +122,6 @@ const AdminDashboard = () => {
   });
   const navigate = useNavigate();
 
-  // Form states
   const [newStaff, setNewStaff] = useState({
     name: '',
     email: '',
@@ -200,7 +197,6 @@ const AdminDashboard = () => {
       const activeMembers = members.filter(m => m.isActive !== false);
       const inactiveMembers = members.filter(m => m.isActive === false);
 
-      // Monthly revenue (current month)
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const monthlyRevenue = members
@@ -218,7 +214,6 @@ const AdminDashboard = () => {
           return sum;
         }, 0);
 
-      // Memberships expiring soon (within 7 days)
       const sevenDaysFromNow = new Date();
       sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
       const expiringSoon = members.filter(m => {
@@ -227,7 +222,6 @@ const AdminDashboard = () => {
         return endDate >= now && endDate <= sevenDaysFromNow;
       }).length;
 
-      // Plan distribution
       const planCounts = {};
       fetchedPlans.forEach(p => { planCounts[p.name] = 0; });
       members.forEach(m => {
@@ -241,7 +235,6 @@ const AdminDashboard = () => {
         count
       }));
 
-      // Active sessions today
       const today = new Date();
       const todayStr = today.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
       const activeSessionsToday = fetchedSessions.filter(s => {
@@ -250,14 +243,12 @@ const AdminDashboard = () => {
         return sDate === todayStr && s.status === 'Active';
       }).length;
 
-      // New members this month
       const newMembersThisMonth = members.filter(m => {
         if (!m.createdAt) return false;
         const createdDate = new Date(m.createdAt);
         return createdDate >= firstDayOfMonth && createdDate <= now;
       }).length;
 
-      // Most booked session type
       const boxingCount = fetchedBookings.filter(b => b.sessionType === 'Boxing').length;
       const saunaCount = fetchedBookings.filter(b => b.sessionType === 'Sauna').length;
       let mostBookedType = 'N/A';
@@ -377,7 +368,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-12">
-      {/* Navigation */}
       <nav className="bg-slate-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -395,7 +385,6 @@ const AdminDashboard = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Tab Navigation */}
         <div className="flex flex-wrap mb-8 bg-slate-800 rounded-lg p-1 border border-slate-700">
           {['home', 'users', 'bookings', 'sessions', 'attendance', 'plans', 'inventory', 'reports'].map((tab) => (
             <button
@@ -427,7 +416,6 @@ const AdminDashboard = () => {
             <div>
               <h1 className="text-3xl font-bold mb-8 text-gradient bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Admin Dashboard</h1>
 
-              {/* Quick Stats Section */}
               <div className="mb-8">
                 <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Quick Stats</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -454,7 +442,6 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Membership Metrics Section */}
               <div className="mb-8">
                 <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Membership Metrics</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -481,7 +468,6 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Best-selling Plans Graph */}
               <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700 mb-8">
                 <h3 className="text-xl font-bold mb-6 text-white">Best-Selling Membership Plans</h3>
                 <div className="h-80 w-full">
@@ -526,7 +512,6 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Recent Bookings */}
               <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700 mb-8">
                 <h3 className="text-xl font-bold mb-4 text-white">Recent Bookings</h3>
                 <div className="overflow-x-auto">

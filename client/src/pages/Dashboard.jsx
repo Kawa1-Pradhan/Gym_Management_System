@@ -4,7 +4,6 @@ import { apiRequest } from '../utils/api';
 import UserMenu from '../components/UserMenu';
 import NotificationBell from '../components/NotificationBell';
 
-// Helper component to show the small summary cards at the top
 const StatCard = ({ title, value, subtext, color = 'blue' }) => {
     const colorClasses = {
         blue: 'text-blue-400 border-blue-500/20',
@@ -23,7 +22,6 @@ const StatCard = ({ title, value, subtext, color = 'blue' }) => {
     );
 };
 
-// This shows a progress bar of how many days the member has visited this month
 const AttendanceProgress = ({ completedThisMonth }) => {
     const totalDays = 30; // Target days per month
     const percentage = Math.min(Math.round((completedThisMonth / totalDays) * 100), 100);
@@ -200,7 +198,6 @@ const Dashboard = () => {
 
     return (
         <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-cyan-500/30">
-            {/* Navigation */}
             <nav className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
@@ -462,7 +459,6 @@ const Dashboard = () => {
                 </div>
             </main>
 
-            {/* The popup window for renewing a membership */}
             {showRenewModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
