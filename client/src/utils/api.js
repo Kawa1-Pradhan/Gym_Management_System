@@ -1,7 +1,18 @@
-// API utility to handle dynamic base URL for different devices
+
 const getApiBaseUrl = () => {
+  // 1. Check for environment variable (set in Vercel)
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+
   const { protocol, hostname } = window.location;
-  // Dynamic host for DNS/Local Network support
+
+  // 2. If running live (not on localhost), use the Render URL
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    return "https://gym-management-system-gn95.onrender.com";
+  }
+
+  // 3. Fallback to localhost for development
   return `${protocol}//${hostname}:5000`;
 };
 
@@ -10,8 +21,8 @@ export const API_BASE_URL = getApiBaseUrl();
 export const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
 
-  // Log request details for debugging
-  let logBody;
+
+  let logBody
   try {
     logBody = options.body ? JSON.parse(options.body) : undefined;
   } catch {
