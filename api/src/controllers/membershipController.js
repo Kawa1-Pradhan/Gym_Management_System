@@ -67,7 +67,7 @@ export const initiatePurchase = async (req, res) => {
         const amountPaisa = Math.round(finalPrice * 100);
 
         // Set up Khalti payload
-        const origin = process.env.CLIENT_URL || req.get('origin') || "http://localhost:5173";
+        const origin = req.get('origin') || process.env.CLIENT_URL || "http://localhost:5173";
         const purchaseOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const payload = {
             return_url: `${origin}/payment/success`,
