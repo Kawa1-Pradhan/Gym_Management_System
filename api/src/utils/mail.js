@@ -24,7 +24,7 @@ const transporter = nodemailer.createTransport({
 export const sendEnrollmentEmail = async (userEmail, userName, tempPassword) => {
     // Skip if credentials are not configured or are still placeholders
     if (!user || !pass || user === 'your-email@gmail.com') {
-        console.log('Skipping enrollment email: Email credentials not configured.');
+        console.error("❌ FATAL: Cannot send Enrollment Email. EMAIL_USER or EMAIL_PASS environment variables are missing from your deployed Server (Render/Vercel) Environment Settings!");
         return;
     }
 
@@ -74,7 +74,10 @@ export const sendEnrollmentEmail = async (userEmail, userName, tempPassword) => 
     }
 };
 export const sendBookingCancellationEmail = async (userEmail, userName, sessionDetails) => {
-    if (!user || !pass || user === 'your-email@gmail.com') return;
+    if (!user || !pass || user === 'your-email@gmail.com') {
+        console.error("❌ FATAL: Cannot send Cancellation Email. EMAIL_USER or EMAIL_PASS environment variables are missing from your deployed Server (Render/Vercel) Environment Settings!");
+        return;
+    }
 
     const mailOptions = {
         from: user,
@@ -105,7 +108,10 @@ export const sendBookingCancellationEmail = async (userEmail, userName, sessionD
 };
 
 export const sendCredentialsEmail = async (userEmail, userName, password, planName) => {
-    if (!user || !pass || user === 'your-email@gmail.com') return;
+    if (!user || !pass || user === 'your-email@gmail.com') {
+        console.error("❌ FATAL: Cannot send Credentials Email. EMAIL_USER or EMAIL_PASS environment variables are missing from your deployed Server (Render/Vercel) Environment Settings!");
+        return;
+    }
 
     const mailOptions = {
         from: user,
@@ -136,7 +142,10 @@ export const sendCredentialsEmail = async (userEmail, userName, password, planNa
 };
 
 export const sendRenewalEmail = async (userEmail, userName, planName, expiryDate) => {
-    if (!user || !pass || user === 'your-email@gmail.com') return;
+    if (!user || !pass || user === 'your-email@gmail.com') {
+        console.error("❌ FATAL: Cannot send Renewal Email. EMAIL_USER or EMAIL_PASS environment variables are missing from your deployed Server (Render/Vercel) Environment Settings!");
+        return;
+    }
 
     const mailOptions = {
         from: user,
