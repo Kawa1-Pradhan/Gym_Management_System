@@ -7,12 +7,20 @@ const getApiBaseUrl = () => {
 
   const { protocol, hostname } = window.location;
 
-  // 2. If running live (not on localhost), use the Render URL
-  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+  // 2. Identify local network testing subnets (LAN IP addresses)
+  const isLocalNetwork =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname.startsWith('192.168.') ||
+    hostname.startsWith('10.') ||
+    hostname.endsWith('.local');
+
+  // 3. If running live (not local network), use the Render URL
+  if (!isLocalNetwork) {
     return "https://gym-management-system-gn95.onrender.com";
   }
 
-  // 3. Fallback to localhost for development
+  // 4. Fallback to the current hostname for development (works for both localhost and mobile over IP)
   return `${protocol}//${hostname}:5000`;
 };
 
