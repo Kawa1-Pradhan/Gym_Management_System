@@ -32,14 +32,27 @@ export const initiatePurchase = async (req, res) => {
         // Check if we already have this user or if they're checking out as a guest
         let customerInfo = { name, email, phone };
         let isNewMember = false;
+        let finalUserId = null;
 
         if (userId) {
             const user = await User.findById(userId);
             if (!user) return res.status(404).json({ message: "User not found" });
-            customerInfo = { name: user.name, email: user.email, phone: user.phone };
 
-            // New member if they don't have an active or expired membership history
-            if (user.membershipStatus === 'Pending' || user.membershipType === 'None') {
+            // Critical Decoupling: Standardize emails for comparison
+            const inputEmail = (email || "").toLowerCase().trim();
+            const loggedInEmail = (user.email || "").toLowerCase().trim();
+
+            if (inputEmail === loggedInEmail || !inputEmail) {
+                // The user is buying for themselves
+                finalUserId = userId;
+                customerInfo = { name: user.name, email: user.email, phone: user.phone };
+
+                // New member if they don't have an active or expired membership history
+                if (user.membershipStatus === 'Pending' || user.membershipType === 'None') {
+                    isNewMember = true;
+                }
+            } else {
+                // The user is logged in, but purchasing FOR SOMEONE ELSE (Guest Checkout via Admin/Staff proxy).
                 isNewMember = true;
             }
         } else {
@@ -91,7 +104,7 @@ export const initiatePurchase = async (req, res) => {
             purchaseOrderId,
             purchaseOrderName: `${plan.name} - ${categoryName}`,
             customerInfo,
-            userId: userId || null,
+            userId: finalUserId || null,
             planId: plan._id,
             categoryName: categoryName, // We should add this to Payment model or store in order name
             status: "Pending",
@@ -180,12 +193,7 @@ export const verifyPayment = async (req, res) => {
         } else {
             // New Guest Account — use findOneAndUpdate with upsert to avoid
             // duplicate key errors if Khalti sends multiple callbacks (e.g. on mobile retry)
-            const existingUser = await User.findOne({
-                $or: [
-                    { email: payment.customerInfo.email },
-                    { phone: payment.customerInfo.phone }
-                ]
-            });
+            const existingUser = await User.findOne({ email: payment.customerInfo.email.toLowerCase().trim() });
 
             if (existingUser) {
                 // User already created by a previous callback — just update membership
@@ -227,8 +235,7 @@ export const verifyPayment = async (req, res) => {
                 } catch (dupErr) {
                     if (dupErr.code === 11000) {
                         // Race condition — another request created the user. Fetch and update.
-                        user = await User.findOne({ email: payment.customerInfo.email });
-                        if (!user) user = await User.findOne({ phone: payment.customerInfo.phone });
+                        user = await User.findOne({ email: payment.customerInfo.email.toLowerCase().trim() });
                         if (user) {
                             user.membershipStatus = "Active";
                             user.membershipType = `${plan.name} (${categoryName})`;
