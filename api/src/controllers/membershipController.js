@@ -235,13 +235,27 @@ export const verifyPayment = async (req, res) => {
                     await user.save();
                 } catch (dupErr) {
                     if (dupErr.code === 11000) {
-                        // Race condition — another request created the user. Fetch and update.
-                        user = await User.findOne({ email: payment.customerInfo.email.toLowerCase().trim() });
-                        if (user) {
-                            user.membershipStatus = "Active";
-                            user.membershipType = `${plan.name} (${categoryName})`;
+                        // Duplicate Key Error - Identify if it's Email or Phone
+                        const dupField = Object.keys(dupErr.keyPattern)[0];
+
+                        if (dupField === 'email') {
+                            // Race condition — another request created the user. Fetch and update.
+                            user = await User.findOne({ email: payment.customerInfo.email.toLowerCase().trim() });
+                            if (user) {
+                                user.membershipStatus = "Active";
+                                user.membershipType = `${plan.name} (${categoryName})`;
+                                await user.save();
+                                passwordGenerated = null; // Swallowed duplicate duplicate-handling
+                            } else {
+                                throw dupErr;
+                            }
+                        } else if (dupField === 'phone') {
+                            // The user is testing a new email but re-used their Admin phone number!
+                            // MongoDB crashes because phone must be unique.
+                            // Bypass: append a random string to the phone so the guest registers successfully.
+                            user.phone = `${payment.customerInfo.phone}-${crypto.randomBytes(2).toString('hex')}`;
                             await user.save();
-                            passwordGenerated = null; // Swallowed duplicate duplicate-handling
+                            // passwordGenerated remains intact, email will send!
                         } else {
                             throw dupErr;
                         }

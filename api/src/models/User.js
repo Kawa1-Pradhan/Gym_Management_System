@@ -13,7 +13,8 @@ const users = new mongoose.Schema({
     unique: true,
     validate: {
       validator: (value) => {
-        const emailRegex = /^((?!\.)[\w\-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$/;
+        // Updated regex to support + alias addresses common in Gmail and testing
+        const emailRegex = /^((?!\.)[\w\-_.+]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$/;
         return emailRegex.test(value);
       },
       message: "Invalid email address",
