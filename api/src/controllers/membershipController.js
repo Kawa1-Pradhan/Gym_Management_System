@@ -174,8 +174,8 @@ export const verifyPayment = async (req, res) => {
 
             await user.save();
 
-            // Send Renewal Email
-            await sendRenewalEmail(user.email, user.name, user.membershipType, newExpiry);
+            // Send Renewal Email Non-Blocking
+            sendRenewalEmail(user.email, user.name, user.membershipType, newExpiry);
 
             // Notify Admin about renewal
             const admins = await User.find({ role: 'ADMIN' });
@@ -209,6 +209,7 @@ export const verifyPayment = async (req, res) => {
                 user.membershipType = `${plan.name} (${categoryName})`;
                 user.membershipStartDate = user.membershipStartDate || new Date();
                 await user.save();
+                passwordGenerated = null; // Do not send credentials on a re-eval
             } else {
                 const randomPassword = crypto.randomBytes(4).toString("hex");
                 passwordGenerated = randomPassword;
@@ -240,6 +241,7 @@ export const verifyPayment = async (req, res) => {
                             user.membershipStatus = "Active";
                             user.membershipType = `${plan.name} (${categoryName})`;
                             await user.save();
+                            passwordGenerated = null; // Swallowed duplicate duplicate-handling
                         } else {
                             throw dupErr;
                         }
@@ -248,9 +250,9 @@ export const verifyPayment = async (req, res) => {
                     }
                 }
 
-                // Send Credentials Email only for truly new users
+                // Send Credentials Email Non-Blocking only for truly new users
                 if (passwordGenerated) {
-                    await sendCredentialsEmail(user.email, user.name, passwordGenerated, user.membershipType);
+                    sendCredentialsEmail(user.email, user.name, passwordGenerated, user.membershipType);
                 }
             }
 
