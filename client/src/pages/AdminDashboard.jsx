@@ -420,8 +420,8 @@ const AdminDashboard = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === tab.id
-                      ? 'bg-red-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                    ? 'bg-red-600 text-white'
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                     }`}
                 >
                   {tab.label}
@@ -440,8 +440,8 @@ const AdminDashboard = () => {
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className={`flex-1 py-2.5 px-3 rounded-md font-medium transition duration-200 text-sm capitalize ${activeTab === tab.id
-                  ? 'bg-red-600 text-white shadow-lg'
-                  : 'text-gray-300 hover:text-white hover:bg-slate-700'
+                ? 'bg-red-600 text-white shadow-lg'
+                : 'text-gray-300 hover:text-white hover:bg-slate-700'
                 }`}
             >
               {tab.label}
@@ -450,14 +450,8 @@ const AdminDashboard = () => {
         </div>
 
         {/* Mobile active tab indicator */}
-        <div className="md:hidden flex items-center justify-between mb-6 bg-slate-800 rounded-lg px-4 py-3 border border-slate-700">
+        <div className="md:hidden flex items-center mb-6 bg-slate-800 rounded-lg px-4 py-3 border border-slate-700">
           <span className="font-semibold text-white capitalize">{activeTab === 'home' ? 'Dashboard' : activeTab}</span>
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-xs text-slate-400 hover:text-white transition-colors"
-          >
-            Switch tab ▾
-          </button>
         </div>
 
         {/* Messages */}
@@ -468,7 +462,7 @@ const AdminDashboard = () => {
         <div className="min-h-[400px]">
           {activeTab === 'home' && (
             <div>
-              <h1 className="text-3xl font-bold mb-8 text-gradient bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Admin Dashboard</h1>
+              <h1 className="text-xl sm:text-3xl font-bold mb-6 sm:mb-8 text-gradient bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Admin Dashboard</h1>
 
               <div className="mb-8">
                 <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Quick Stats</h2>
@@ -618,52 +612,56 @@ const AdminDashboard = () => {
 
           {activeTab === 'users' && (
             <div>
-              <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold">User Management</h1>
-                <button onClick={() => setActiveTab('create-staff')} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-bold">Add Staff</button>
+              <div className="flex justify-between items-center gap-3 mb-6 sm:mb-8">
+                <h1 className="text-xl sm:text-3xl font-bold">User Management</h1>
+                <button onClick={() => setActiveTab('create-staff')} className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 rounded-md font-bold text-sm whitespace-nowrap">Add Staff</button>
               </div>
               <div className="bg-slate-800 rounded-lg shadow-lg border border-slate-700 overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-slate-900/50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">User</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Role</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Status</th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-700">
-                    {users.map(u => (
-                      <tr key={u._id} className="hover:bg-slate-700/30">
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-white">{u.name}</div>
-                          <div className="text-xs text-gray-500">{u.email}</div>
-                        </td>
-                        <td className="px-6 py-4 text-xs text-gray-300 capitalize">{u.role.join(', ')}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${u.isActive === false ? 'bg-red-900/30 text-red-500' : 'bg-green-900/30 text-green-500'}`}>
-                            {u.isActive === false ? 'Inactive' : 'Active'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right flex justify-end gap-2">
-                          {u.role.includes('MEMBER') && (
-                            <button onClick={() => navigate('/#pricing')} className="text-xs text-cyan-400 hover:underline">Renew</button>
-                          )}
-                          <button onClick={() => handleUserAction(u._id, u.isActive === false ? 'Activate' : 'Deactivate')} className="text-xs text-blue-400 hover:underline">Toggle</button>
-                          <button onClick={() => handleUserAction(u._id, 'Reset Password')} className="text-xs text-purple-400 hover:underline">Reset</button>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-900/50">
+                      <tr>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">User</th>
+                        <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Role</th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Status</th>
+                        <th className="px-3 sm:px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-700">
+                      {users.map(u => (
+                        <tr key={u._id} className="hover:bg-slate-700/30">
+                          <td className="px-3 sm:px-6 py-3">
+                            <div className="text-sm font-medium text-white">{u.name}</div>
+                            <div className="text-xs text-gray-500 hidden sm:block">{u.email}</div>
+                          </td>
+                          <td className="hidden sm:table-cell px-3 sm:px-6 py-3 text-xs text-gray-300 capitalize">{u.role.join(', ')}</td>
+                          <td className="px-3 sm:px-6 py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${u.isActive === false ? 'bg-red-900/30 text-red-500' : 'bg-green-900/30 text-green-500'}`}>
+                              {u.isActive === false ? 'Inactive' : 'Active'}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-6 py-3 text-right">
+                            <div className="flex justify-end gap-2 flex-wrap">
+                              {u.role.includes('MEMBER') && (
+                                <button onClick={() => navigate('/#pricing')} className="text-xs text-cyan-400 hover:underline">Renew</button>
+                              )}
+                              <button onClick={() => handleUserAction(u._id, u.isActive === false ? 'Activate' : 'Deactivate')} className="text-xs text-blue-400 hover:underline">Toggle</button>
+                              <button onClick={() => handleUserAction(u._id, 'Reset Password')} className="text-xs text-purple-400 hover:underline">Reset</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
 
           {activeTab === 'create-staff' && (
             <div>
-              <h1 className="text-3xl font-bold mb-8">Create Staff Member</h1>
-              <div className="bg-slate-800 p-8 rounded-lg shadow-lg border border-slate-700 max-w-2xl mx-auto">
+              <h1 className="text-xl sm:text-3xl font-bold mb-6 sm:mb-8">Create Staff Member</h1>
+              <div className="bg-slate-800 p-4 sm:p-8 rounded-lg shadow-lg border border-slate-700 max-w-2xl mx-auto">
                 <form onSubmit={handleCreateStaff} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
@@ -689,14 +687,14 @@ const AdminDashboard = () => {
 
           {activeTab === 'bookings' && (
             <div>
-              <h1 className="text-3xl font-bold mb-8">Booking Oversight</h1>
+              <h1 className="text-xl sm:text-3xl font-bold mb-6 sm:mb-8">Booking Oversight</h1>
               <div className="bg-slate-800 rounded-lg shadow-lg border border-slate-700 overflow-hidden">
-                <div className="p-6 border-b border-slate-700 bg-slate-700/30">
+                <div className="p-4 sm:p-6 border-b border-slate-700 bg-slate-700/30">
                   <h3 className="font-bold">Active Reservations</h3>
                 </div>
                 <div className="divide-y divide-slate-700">
                   {bookings.filter(b => b.status === "Booked").map(b => (
-                    <div key={b._id} className="p-6 flex justify-between items-center hover:bg-slate-700/20">
+                    <div key={b._id} className="p-4 sm:p-6 flex flex-wrap justify-between items-center gap-2 hover:bg-slate-700/20">
                       <div>
                         <div className="font-bold text-white">{b.memberId?.name || 'Unknown'}</div>
                         <div className="text-sm text-gray-400">{b.sessionType} • {b.sessionDetails?.name}</div>
@@ -730,7 +728,7 @@ const AdminDashboard = () => {
 
           {activeTab === 'sessions' && (
             <div>
-              <h1 className="text-3xl font-bold mb-8">Session Management</h1>
+              <h1 className="text-xl sm:text-3xl font-bold mb-6 sm:mb-8">Session Management</h1>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(s => (
                   <div key={s._id} className="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
@@ -767,7 +765,7 @@ const AdminDashboard = () => {
 
           {activeTab === 'attendance' && (
             <div>
-              <h1 className="text-3xl font-bold mb-8">Attendance Reports</h1>
+              <h1 className="text-xl sm:text-3xl font-bold mb-6 sm:mb-8">Attendance Reports</h1>
               <div className="bg-slate-800 rounded-lg shadow-lg border border-slate-700 overflow-hidden">
                 <div className="p-6 border-b border-slate-700 bg-slate-700/30 flex flex-wrap gap-4 items-end">
                   <div className="flex-1 min-w-[200px]">
@@ -798,22 +796,22 @@ const AdminDashboard = () => {
                   <table className="w-full">
                     <thead className="bg-slate-900/50">
                       <tr>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Date</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Member</th>
-                        <th className="px-12 py-4 text-left text-xs font-bold text-gray-400 uppercase">Marked By</th>
-                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase">Status</th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Date</th>
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Member</th>
+                        <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Marked By</th>
+                        <th className="px-3 sm:px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-700">
                       {attendanceRecords.map(r => (
                         <tr key={r._id} className="hover:bg-slate-700/30">
-                          <td className="px-6 py-4 text-sm text-gray-300">{new Date(r.date).toLocaleDateString()}</td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 sm:px-6 py-3 text-sm text-gray-300">{new Date(r.date).toLocaleDateString()}</td>
+                          <td className="px-3 sm:px-6 py-3">
                             <div className="text-sm font-bold text-white">{r.member?.name}</div>
-                            <div className="text-[10px] text-gray-500">{r.member?.email}</div>
+                            <div className="text-[10px] text-gray-500 hidden sm:block">{r.member?.email}</div>
                           </td>
-                          <td className="px-12 py-4 text-sm text-gray-400">{r.markedBy?.name}</td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="hidden sm:table-cell px-3 sm:px-6 py-3 text-sm text-gray-400">{r.markedBy?.name}</td>
+                          <td className="px-3 sm:px-6 py-3 text-right">
                             <span className="px-2 py-0.5 bg-green-900/40 text-green-400 rounded text-[10px] font-bold uppercase border border-green-500/20">{r.status}</span>
                           </td>
                         </tr>
@@ -835,7 +833,7 @@ const AdminDashboard = () => {
 
           {activeTab === 'plans' && (
             <div>
-              <h1 className="text-3xl font-bold mb-8">Membership Plans</h1>
+              <h1 className="text-xl sm:text-3xl font-bold mb-6 sm:mb-8">Membership Plans</h1>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {plans.map(plan => (
                   <PlanCard key={plan._id} plan={plan} onUpdate={handleUpdatePlan} />

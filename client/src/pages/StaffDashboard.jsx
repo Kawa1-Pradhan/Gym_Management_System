@@ -412,8 +412,8 @@ const StaffDashboard = () => {
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
                   className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === tab.id
-                      ? 'bg-red-600 text-white'
-                      : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                    ? 'bg-red-600 text-white'
+                    : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                     }`}
                 >
                   <span>{tab.icon}</span>
@@ -433,8 +433,8 @@ const StaffDashboard = () => {
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className={`flex-1 py-2.5 px-3 rounded-md font-medium transition duration-200 flex items-center justify-center gap-1.5 text-sm ${activeTab === tab.id
-                  ? 'bg-red-600 text-white shadow-lg'
-                  : 'text-gray-300 hover:text-white hover:bg-slate-700'
+                ? 'bg-red-600 text-white shadow-lg'
+                : 'text-gray-300 hover:text-white hover:bg-slate-700'
                 }`}
             >
               <span className="hidden lg:inline">{tab.icon}</span>
@@ -444,16 +444,10 @@ const StaffDashboard = () => {
         </div>
 
         {/* Mobile active tab indicator */}
-        <div className="md:hidden flex items-center justify-between mb-6 bg-slate-800 rounded-lg px-4 py-3 border border-slate-700">
+        <div className="md:hidden flex items-center mb-6 bg-slate-800 rounded-lg px-4 py-3 border border-slate-700">
           <span className="font-semibold text-white">
             {TABS.find(t => t.id === activeTab)?.icon} {TABS.find(t => t.id === activeTab)?.label}
           </span>
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-xs text-slate-400 hover:text-white transition-colors"
-          >
-            Switch tab ▾
-          </button>
         </div>
 
         {error && <div className="bg-red-600 text-white p-4 rounded-lg mb-6 shadow-xl animate-in slide-in-from-top duration-300">{error}</div>}
@@ -484,10 +478,10 @@ const StaffDashboard = () => {
                     <table className="w-full">
                       <thead>
                         <tr className="bg-slate-800/30">
-                          <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date & Time</th>
-                          <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Session / Type</th>
-                          <th className="px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Bookings</th>
-                          <th className="px-8 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Actions</th>
+                          <th className="px-3 sm:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Date & Time</th>
+                          <th className="px-3 sm:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Session / Type</th>
+                          <th className="hidden sm:table-cell px-3 sm:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Bookings</th>
+                          <th className="px-3 sm:px-8 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
@@ -497,27 +491,27 @@ const StaffDashboard = () => {
                           .slice(0, 7)
                           .map(session => (
                             <tr key={session._id} className="hover:bg-slate-800/30 transition-colors group">
-                              <td className="px-8 py-5 text-sm">
+                              <td className="px-3 sm:px-8 py-4 sm:py-5 text-sm">
                                 <div className="font-bold text-white mb-1">
                                   {new Date(session.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </div>
                                 <div className="text-slate-500 text-xs font-medium">{session.startTime} - {session.endTime}</div>
                               </td>
-                              <td className="px-8 py-5">
-                                <div className="font-bold text-white group-hover:text-red-400 transition-colors">{session.name}</div>
+                              <td className="px-3 sm:px-8 py-4 sm:py-5">
+                                <div className="font-bold text-white group-hover:text-red-400 transition-colors text-sm">{session.name}</div>
                                 <span className={`inline-block px-2 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-wider mt-1 ${session.instructor ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/30 text-blue-400'}`}>
                                   {session.instructor ? 'Boxing' : 'Sauna'}
                                 </span>
                               </td>
-                              <td className="px-8 py-5 text-sm text-slate-300 font-medium">
+                              <td className="hidden sm:table-cell px-3 sm:px-8 py-4 sm:py-5 text-sm text-slate-300 font-medium">
                                 {session.bookings?.length || 0} / {session.maxCapacity}
                               </td>
-                              <td className="px-8 py-5 text-right">
+                              <td className="px-3 sm:px-8 py-4 sm:py-5 text-right">
                                 <button
                                   onClick={() => { setActiveTab('attendance'); loadDashboardData(); }}
-                                  className="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg border border-slate-700 transition-all shadow-sm"
+                                  className="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white px-2 sm:px-4 py-2 rounded-lg border border-slate-700 transition-all shadow-sm whitespace-nowrap"
                                 >
-                                  Manage Attendance
+                                  <span className="hidden sm:inline">Manage </span>Attendance
                                 </button>
                               </td>
                             </tr>
@@ -536,7 +530,7 @@ const StaffDashboard = () => {
               </div>
 
               <div className="space-y-8">
-                <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 shadow-xl">
+                <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 sm:p-8 shadow-xl">
                   <h2 className="text-lg font-bold mb-6 text-white">Conducting Performance</h2>
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -567,8 +561,8 @@ const StaffDashboard = () => {
 
         {activeTab === 'bookings' && (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <h1 className="text-3xl font-bold text-white">Book Session for Member</h1>
-            <div className="bg-slate-800 border border-slate-700 shadow-xl p-8 rounded-lg">
+            <h1 className="text-xl sm:text-3xl font-bold text-white">Book Session for Member</h1>
+            <div className="bg-slate-800 border border-slate-700 shadow-xl p-4 sm:p-8 rounded-lg">
               <h2 className="text-xl font-bold text-white mb-6">Create New Booking</h2>
               <form onSubmit={handleBookingSubmit} className="space-y-8">
                 <div className="grid md:grid-cols-2 gap-8">
@@ -644,8 +638,8 @@ const StaffDashboard = () => {
 
         {activeTab === 'boxing' && (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold text-white text-gradient bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">Boxing Sessions</h1>
+            <div className="flex justify-between items-center gap-3">
+              <h1 className="text-xl sm:text-3xl font-bold text-white text-gradient bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">Boxing Sessions</h1>
               <button
                 onClick={() => {
                   setShowBoxingForm(!showBoxingForm);
@@ -659,7 +653,7 @@ const StaffDashboard = () => {
             </div>
 
             {showBoxingForm && (
-              <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg shadow-xl animate-in slide-in-from-top duration-300">
+              <div className="bg-slate-800 border border-slate-700 p-4 sm:p-8 rounded-lg shadow-xl animate-in slide-in-from-top duration-300">
                 <h2 className="text-xl font-bold text-white mb-6">{editingSession ? 'Edit Boxing Session' : 'Create New Boxing Session'}</h2>
                 <form onSubmit={handleBoxingSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
@@ -749,8 +743,8 @@ const StaffDashboard = () => {
               </div>
             )}
 
-            <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg shadow-xl">
-              <h2 className="text-xl font-bold text-white mb-8">Recent Boxing Sessions</h2>
+            <div className="bg-slate-800 border border-slate-700 p-4 sm:p-8 rounded-lg shadow-xl">
+              <h2 className="text-xl font-bold text-white mb-4 sm:mb-8">Recent Boxing Sessions</h2>
               <div className="grid gap-6">
                 {boxingSessions.map(session => (
                   <div key={session._id} className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 hover:border-red-500/30 transition-all group">
@@ -814,8 +808,8 @@ const StaffDashboard = () => {
 
         {activeTab === 'sauna' && (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="flex justify-between items-center">
-              <h1 className="text-3xl font-bold text-white text-gradient bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Sauna Sessions</h1>
+            <div className="flex justify-between items-center gap-3">
+              <h1 className="text-xl sm:text-3xl font-bold text-white text-gradient bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Sauna Sessions</h1>
               <button
                 onClick={() => {
                   setShowSaunaForm(!showSaunaForm);
@@ -829,7 +823,7 @@ const StaffDashboard = () => {
             </div>
 
             {showSaunaForm && (
-              <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg shadow-xl animate-in slide-in-from-top duration-300">
+              <div className="bg-slate-800 border border-slate-700 p-4 sm:p-8 rounded-lg shadow-xl animate-in slide-in-from-top duration-300">
                 <h2 className="text-xl font-bold text-white mb-6">{editingSession ? 'Edit Sauna Session' : 'Create New Sauna Session'}</h2>
                 <form onSubmit={handleSaunaSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
@@ -918,8 +912,8 @@ const StaffDashboard = () => {
               </div>
             )}
 
-            <div className="bg-slate-800 border border-slate-700 p-8 rounded-lg shadow-xl">
-              <h2 className="text-xl font-bold text-white mb-8">Recent Sauna Sessions</h2>
+            <div className="bg-slate-800 border border-slate-700 p-4 sm:p-8 rounded-lg shadow-xl">
+              <h2 className="text-xl font-bold text-white mb-4 sm:mb-8">Recent Sauna Sessions</h2>
               <div className="grid gap-6">
                 {saunaSessions.map(session => (
                   <div key={session._id} className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 hover:border-blue-500/30 transition-all group">
@@ -985,12 +979,12 @@ const StaffDashboard = () => {
         {activeTab === 'attendance' && (
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden shadow-xl">
-              <div className="p-8 border-b border-slate-800 bg-slate-800/20 flex flex-wrap justify-between items-center gap-4">
+              <div className="p-4 sm:p-8 border-b border-slate-800 bg-slate-800/20 flex flex-wrap justify-between items-center gap-3">
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Daily Attendance</h2>
-                  <p className="text-slate-400 font-medium text-sm mt-1">Mark attendance for active members - {new Date().toLocaleDateString()}</p>
+                  <h2 className="text-lg sm:text-2xl font-bold text-white">Daily Attendance</h2>
+                  <p className="text-slate-400 font-medium text-xs sm:text-sm mt-1">Mark attendance - {new Date().toLocaleDateString()}</p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="bg-slate-900 p-1 rounded-lg border border-slate-700 flex">
                     <button
                       onClick={() => setAttendanceFilters({ ...attendanceFilters, onlyBooked: false })}
@@ -1015,11 +1009,11 @@ const StaffDashboard = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-slate-800/30">
-                      <th className="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Member</th>
-                      <th className="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Contact</th>
-                      <th className="px-8 py-5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Membership</th>
-                      <th className="px-8 py-5 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Status / Note</th>
-                      <th className="px-8 py-5 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Action</th>
+                      <th className="px-3 sm:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Member</th>
+                      <th className="hidden sm:table-cell px-3 sm:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Contact</th>
+                      <th className="hidden md:table-cell px-3 sm:px-8 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Membership</th>
+                      <th className="px-3 sm:px-8 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
+                      <th className="px-3 sm:px-8 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
@@ -1058,25 +1052,25 @@ const StaffDashboard = () => {
 
                           return (
                             <tr key={member._id} className={`transition-colors ${!canMarkInfo ? 'bg-slate-900/50 opacity-60' : 'hover:bg-slate-800/30'}`}>
-                              <td className="px-8 py-5">
+                              <td className="px-3 sm:px-8 py-4">
                                 <div className="flex items-center">
-                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black mr-4 ${canMarkInfo ? 'bg-gradient-to-br from-red-500 to-orange-600 shadow-lg' : 'bg-slate-700 text-slate-500'}`}>
+                                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-sm font-black mr-2 sm:mr-4 flex-shrink-0 ${canMarkInfo ? 'bg-gradient-to-br from-red-500 to-orange-600 shadow-lg' : 'bg-slate-700 text-slate-500'}`}>
                                     {member.name.charAt(0)}
                                   </div>
-                                  <div>
-                                    <div className="text-sm font-bold text-white">{member.name}</div>
-                                    {!isActive && <span className="text-[10px] text-red-400 font-extrabold uppercase">Inactive Account</span>}
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-bold text-white truncate">{member.name}</div>
+                                    {!isActive && <span className="text-[10px] text-red-400 font-extrabold uppercase">Inactive</span>}
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-8 py-5 text-sm text-slate-300 font-medium">{member.phone || '--'}</td>
-                              <td className="px-8 py-5">
+                              <td className="hidden sm:table-cell px-3 sm:px-8 py-4 text-sm text-slate-300 font-medium">{member.phone || '--'}</td>
+                              <td className="hidden md:table-cell px-3 sm:px-8 py-4">
                                 <div className="text-xs font-bold text-slate-400">
                                   {member.membershipExpiryDate ? new Date(member.membershipExpiryDate).toLocaleDateString() : 'No Plan'}
                                   {isExpired && <span className="ml-2 text-red-500 text-[10px] uppercase">(Expired)</span>}
                                 </div>
                               </td>
-                              <td className="px-8 py-5 text-center">
+                              <td className="px-3 sm:px-8 py-4 text-center">
                                 <div className="flex flex-col items-center gap-2">
                                   {isMarked ? (
                                     <span className="px-3 py-1 bg-green-900/30 text-green-400 rounded-lg text-[10px] font-black uppercase tracking-widest border border-green-500/20">PRESENT</span>
@@ -1092,17 +1086,17 @@ const StaffDashboard = () => {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-8 py-5 text-right">
+                              <td className="px-3 sm:px-8 py-4 text-right">
                                 {!isMarked ? (
                                   <button
                                     onClick={() => handleMarkAttendance(member._id)}
                                     disabled={!canMarkInfo}
-                                    className={`text-xs font-bold px-5 py-2.5 rounded-xl transition ${canMarkInfo ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg' : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'}`}
+                                    className={`text-xs font-bold px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl transition whitespace-nowrap ${canMarkInfo ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg' : 'bg-slate-800 text-slate-600 cursor-not-allowed border border-slate-700'}`}
                                   >
                                     {canMarkInfo ? 'Mark Present' : 'Inactive'}
                                   </button>
                                 ) : (
-                                  <div className="text-green-500/80 text-xs font-black uppercase tracking-widest flex items-center justify-end gap-2 px-5">
+                                  <div className="text-green-500/80 text-xs font-black uppercase tracking-widest flex items-center justify-end gap-1 sm:gap-2">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                                     Done
                                   </div>

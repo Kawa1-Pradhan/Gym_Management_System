@@ -261,11 +261,11 @@ const Reports = () => {
     };
 
     return (
-        <div className="p-8 space-y-8 animate-in fade-in duration-500">
-            <div className="flex justify-between items-center">
+        <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-wrap justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-white">Reporting Analytics</h1>
-                    <p className="text-slate-400 mt-1 font-medium">Detailed tracking and insights for your gym.</p>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Reporting Analytics</h1>
+                    <p className="text-slate-400 mt-1 font-medium text-sm sm:text-base">Detailed tracking and insights for your gym.</p>
                 </div>
                 <div className="flex gap-4">
                     <button
@@ -279,7 +279,7 @@ const Reports = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700 max-w-2xl">
+            <div className="flex flex-wrap bg-slate-800 p-1 rounded-xl border border-slate-700 max-w-2xl gap-1">
                 {['attendance', 'sessions', 'revenue', 'members'].map(tab => (
                     <button
                         key={tab}
@@ -293,51 +293,51 @@ const Reports = () => {
             </div>
 
             {/* Filters Section */}
-            <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 flex flex-wrap gap-6 items-end">
+            <div className="bg-slate-800/50 p-4 sm:p-6 rounded-2xl border border-slate-700 flex flex-col sm:flex-row sm:flex-wrap gap-4 sm:gap-6 items-start sm:items-end">
                 {activeTab === 'attendance' && (
-                    <div className="flex gap-4">
-                        <div>
+                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                        <div className="w-full sm:w-auto">
                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Report Type</label>
                             <select
                                 value={attendanceType}
                                 onChange={(e) => setAttendanceType(e.target.value)}
-                                className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
+                                className="w-full sm:w-auto bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
                             >
                                 <option value="daily">Daily Attendance</option>
                                 <option value="monthly">Monthly Summary</option>
                             </select>
                         </div>
                         {attendanceType === 'daily' ? (
-                            <div>
+                            <div className="w-full sm:w-auto">
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Select Date</label>
                                 <input
                                     type="date"
                                     value={filters.date}
                                     onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-                                    className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
+                                    className="w-full sm:w-auto bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
                                 />
                             </div>
                         ) : (
-                            <div className="flex gap-4">
-                                <div>
+                            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                                <div className="w-full sm:w-auto">
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Month</label>
                                     <select
                                         value={filters.month}
                                         onChange={(e) => setFilters({ ...filters, month: e.target.value })}
-                                        className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold"
+                                        className="w-full sm:w-auto bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold"
                                     >
                                         {Array.from({ length: 12 }, (_, i) => (
                                             <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('en', { month: 'long' })}</option>
                                         ))}
                                     </select>
                                 </div>
-                                <div>
+                                <div className="w-full sm:w-auto">
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Year</label>
                                     <input
                                         type="number"
                                         value={filters.year}
                                         onChange={(e) => setFilters({ ...filters, year: e.target.value })}
-                                        className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold w-24"
+                                        className="w-full sm:w-24 bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold"
                                     />
                                 </div>
                             </div>
@@ -346,36 +346,36 @@ const Reports = () => {
                 )}
 
                 {(activeTab === 'sessions' || activeTab === 'revenue') && (
-                    <div className="flex gap-4">
-                        <div>
+                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                        <div className="w-full sm:w-auto">
                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Start Date</label>
                             <input
                                 type="date"
                                 value={filters.startDate}
                                 onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                                className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold"
+                                className="w-full sm:w-auto bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold"
                             />
                         </div>
-                        <div>
+                        <div className="w-full sm:w-auto">
                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">End Date</label>
                             <input
                                 type="date"
                                 value={filters.endDate}
                                 onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                                className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold"
+                                className="w-full sm:w-auto bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold"
                             />
                         </div>
                     </div>
                 )}
 
                 {activeTab === 'revenue' && (
-                    <div className="flex gap-4">
-                        <div>
+                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                        <div className="w-full sm:w-auto">
                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Category</label>
                             <select
                                 value={filters.category || 'All'}
                                 onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                                className="bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
+                                className="w-full sm:w-auto bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
                             >
                                 <option value="All">All Categories</option>
                                 <option value="Gym">Gym Only</option>
@@ -418,9 +418,9 @@ const Reports = () => {
                     {activeTab === 'attendance' && (
                         <div className="space-y-8">
                             <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl">
-                                <div className="px-8 py-6 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center">
-                                    <h3 className="text-xl font-bold text-white">Member Attendance History</h3>
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                <div className="px-4 sm:px-8 py-4 sm:py-6 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center">
+                                    <h3 className="text-lg sm:text-xl font-bold text-white">Member Attendance History</h3>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:block">
                                         Showing {attendanceData.filter(d => (d.memberName?.toLowerCase().includes(searchTerm.toLowerCase()) || d.name?.toLowerCase().includes(searchTerm.toLowerCase()))).length} Members
                                     </span>
                                 </div>
@@ -430,47 +430,47 @@ const Reports = () => {
                                             <tr>
                                                 {attendanceType === 'daily' ? (
                                                     <>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Member Name</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Status</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Visits</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Last Check-in</th>
+                                                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date</th>
+                                                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Member Name</th>
+                                                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Status</th>
+                                                        <th className="hidden sm:table-cell px-3 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Visits</th>
+                                                        <th className="hidden sm:table-cell px-3 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Last Check-in</th>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Member Name</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Attended</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Missed</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Percentage</th>
+                                                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Member Name</th>
+                                                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Attended</th>
+                                                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Missed</th>
+                                                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Percentage</th>
                                                     </>
                                                 )}
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-700/50">
                                             {attendanceData.filter(d => (d.memberName?.toLowerCase().includes(searchTerm.toLowerCase()) || d.name?.toLowerCase().includes(searchTerm.toLowerCase()))).length === 0 ? (
-                                                <tr><td colSpan="5" className="px-6 py-12 text-center text-slate-500 italic">No matching records found.</td></tr>
+                                                <tr><td colSpan="5" className="px-3 sm:px-6 py-8 sm:py-12 text-center text-slate-500 italic">No matching records found.</td></tr>
                                             ) : attendanceData.filter(d => (d.memberName?.toLowerCase().includes(searchTerm.toLowerCase()) || d.name?.toLowerCase().includes(searchTerm.toLowerCase()))).map((d, i) => (
                                                 <tr key={i} className="hover:bg-slate-700/20 transition-colors">
                                                     {attendanceType === 'daily' ? (
                                                         <>
-                                                            <td className="px-6 py-4 text-xs font-medium text-slate-400">{new Date(d.date).toLocaleDateString()}</td>
-                                                            <td className="px-6 py-4 text-xs font-bold text-white">{d.memberName}</td>
-                                                            <td className="px-6 py-4 text-center">
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-medium text-slate-400">{new Date(d.date).toLocaleDateString()}</td>
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-white">{d.memberName}</td>
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
                                                                 <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${d.memberStatus === 'Active' ? 'bg-green-900/30 text-green-400 border border-green-500/20' : 'bg-red-900/30 text-red-500 border border-red-500/20'}`}>
                                                                     {d.memberStatus}
                                                                 </span>
                                                             </td>
-                                                            <td className="px-6 py-4 text-xs font-black text-red-500 text-center">{d.totalPresenceCount}</td>
-                                                            <td className="px-6 py-4 text-xs font-medium text-slate-500 text-right">{new Date(d.checkInTime).toLocaleTimeString()}</td>
+                                                            <td className="hidden sm:table-cell px-3 sm:px-6 py-3 sm:py-4 text-xs font-black text-red-500 text-center">{d.totalPresenceCount}</td>
+                                                            <td className="hidden sm:table-cell px-3 sm:px-6 py-3 sm:py-4 text-xs font-medium text-slate-500 text-right">{new Date(d.checkInTime).toLocaleTimeString()}</td>
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <td className="px-6 py-4 text-xs font-bold text-white">{d.name}</td>
-                                                            <td className="px-6 py-4 text-xs font-bold text-slate-300">{d.daysAttended} days</td>
-                                                            <td className="px-6 py-4 text-xs font-bold text-slate-500">{d.missedDays} days</td>
-                                                            <td className="px-6 py-4 text-right">
-                                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest ${d.attendancePercentage > 75 ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-500'}`}>
-                                                                    {d.attendancePercentage.toFixed(1)}%
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-white">{d.name}</td>
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-slate-300">{d.daysAttended} d</td>
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs font-bold text-slate-500">{d.missedDays} d</td>
+                                                            <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
+                                                                <span className={`px-2 sm:px-3 py-1 rounded-full text-[10px] font-black tracking-widest ${d.attendancePercentage > 75 ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-500'}`}>
+                                                                    {d.attendancePercentage.toFixed(0)}%
                                                                 </span>
                                                             </td>
                                                         </>
@@ -487,28 +487,25 @@ const Reports = () => {
                     {activeTab === 'sessions' && (
                         <div className="space-y-8">
                             {/* Session Summary Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Total Bookings (Today)</h4>
-                                    <p className="text-4xl font-black text-white">{sessionData.summary?.totalToday || 0}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 mt-2">Active participation today</p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                                <div className="bg-slate-800 p-4 sm:p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
+                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 sm:mb-2">Total Bookings</h4>
+                                    <p className="text-2xl sm:text-4xl font-black text-white">{sessionData.summary?.totalToday || 0}</p>
                                 </div>
-                                <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Upcoming Sessions</h4>
-                                    <p className="text-4xl font-black text-red-500">{sessionData.summary?.upcoming || 0}</p>
-                                    <p className="text-[10px] font-bold text-red-400 mt-2 animate-pulse">Action required soon</p>
+                                <div className="bg-slate-800 p-4 sm:p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
+                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 sm:mb-2">Upcoming Sessions</h4>
+                                    <p className="text-2xl sm:text-4xl font-black text-red-500">{sessionData.summary?.upcoming || 0}</p>
                                 </div>
-                                <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Completed Sessions</h4>
-                                    <p className="text-4xl font-black text-green-500">{sessionData.summary?.completed || 0}</p>
-                                    <p className="text-[10px] font-bold text-green-400 mt-2">Successfully closed</p>
+                                <div className="col-span-2 md:col-span-1 bg-slate-800 p-4 sm:p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
+                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 sm:mb-2">Completed Sessions</h4>
+                                    <p className="text-2xl sm:text-4xl font-black text-green-500">{sessionData.summary?.completed || 0}</p>
                                 </div>
                             </div>
 
                             <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl">
-                                <div className="px-8 py-6 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center">
-                                    <h3 className="text-xl font-bold text-white">Detailed Participant Log</h3>
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                <div className="px-4 sm:px-8 py-4 sm:py-6 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center">
+                                    <h3 className="text-lg sm:text-xl font-bold text-white">Detailed Participant Log</h3>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:block">
                                         Showing {(sessionData.bookings || []).filter(b => b.memberName.toLowerCase().includes(searchTerm.toLowerCase())).length} Bookings
                                     </span>
                                 </div>
@@ -516,34 +513,34 @@ const Reports = () => {
                                     <table className="w-full text-left">
                                         <thead className="bg-slate-900/30 sticky top-0 z-10">
                                             <tr>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Member Name</th>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Type</th>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Session Name</th>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date & Time</th>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Status</th>
+                                                <th className="px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Member Name</th>
+                                                <th className="hidden sm:table-cell px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Type</th>
+                                                <th className="px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Session Name</th>
+                                                <th className="px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Date & Time</th>
+                                                <th className="px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-700/50">
                                             {(sessionData.bookings || []).filter(b => b.memberName.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
-                                                <tr><td colSpan="5" className="px-8 py-10 text-center text-slate-500 italic">No matching bookings found for this period.</td></tr>
+                                                <tr><td colSpan="5" className="px-3 sm:px-8 py-8 sm:py-10 text-center text-slate-500 italic">No matching bookings found for this period.</td></tr>
                                             ) : (sessionData.bookings || []).filter(b => b.memberName.toLowerCase().includes(searchTerm.toLowerCase())).map((b, i) => (
                                                 <tr key={i} className="hover:bg-slate-700/20 transition-colors group">
-                                                    <td className="px-8 py-5 text-sm font-bold text-white">{b.memberName}</td>
-                                                    <td className="px-8 py-5 text-center">
+                                                    <td className="px-3 sm:px-8 py-3 sm:py-5 text-sm font-bold text-white">{b.memberName}</td>
+                                                    <td className="hidden sm:table-cell px-3 sm:px-8 py-3 sm:py-5 text-center">
                                                         <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${b.sessionType === 'Boxing' ? 'bg-red-900/20 text-red-500 border border-red-500/20' : 'bg-cyan-900/20 text-cyan-400 border border-cyan-500/20'}`}>
                                                             {b.sessionType}
                                                         </span>
                                                     </td>
-                                                    <td className="px-8 py-5 text-xs text-slate-400 font-medium">{b.sessionName}</td>
-                                                    <td className="px-8 py-5 text-xs text-slate-500 font-medium">
-                                                        {b.date ? new Date(b.date).toLocaleDateString() : 'N/A'} <span className="mx-2 opacity-30">|</span> {b.time}
+                                                    <td className="px-3 sm:px-8 py-3 sm:py-5 text-xs text-slate-400 font-medium">{b.sessionName}</td>
+                                                    <td className="px-3 sm:px-8 py-3 sm:py-5 text-xs text-slate-500 font-medium">
+                                                        {b.date ? new Date(b.date).toLocaleDateString() : 'N/A'} <span className="mx-1 sm:mx-2 opacity-30">|</span> {b.time}
                                                     </td>
-                                                    <td className="px-8 py-5 text-right">
-                                                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase border ${b.status === 'Completed' ? 'bg-green-900/10 text-green-500 border-green-500/20' :
+                                                    <td className="px-3 sm:px-8 py-3 sm:py-5 text-right">
+                                                        <span className={`px-2 sm:px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase border ${b.status === 'Completed' ? 'bg-green-900/10 text-green-500 border-green-500/20' :
                                                             b.status === 'Cancelled' ? 'bg-slate-900/50 text-slate-500 border-slate-700' :
                                                                 'bg-red-900/10 text-red-500 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]'
                                                             }`}>
-                                                            {b.status}
+                                                            {b.status === 'Confirmed' ? 'Conf.' : b.status}
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -554,19 +551,19 @@ const Reports = () => {
                             </div>
 
                             <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl">
-                                <div className="px-8 py-6 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center">
-                                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                <div className="px-4 sm:px-8 py-4 sm:py-6 bg-slate-900/50 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
                                         <span className="p-1.5 bg-red-600/20 text-red-500 rounded-lg">📊</span>
-                                        Session Capacity & Performance
+                                        Session Capacity
                                     </h3>
-                                    <div className="flex gap-4 text-[10px] font-bold">
+                                    <div className="flex flex-wrap gap-2 sm:gap-4 text-[10px] font-bold">
                                         <div className="flex items-center gap-1.5 text-red-500">
                                             <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                                            Low Bookings {'(<20%)'}
+                                            Low {'(<20%)'}
                                         </div>
                                         <div className="flex items-center gap-1.5 text-yellow-500">
                                             <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                                            Near Capacity {'(>90%)'}
+                                            Near Cap {'(>90%)'}
                                         </div>
                                     </div>
                                 </div>
@@ -574,15 +571,15 @@ const Reports = () => {
                                     <table className="w-full text-left">
                                         <thead className="bg-slate-900/30 sticky top-0 z-10">
                                             <tr>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Session Name</th>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Type</th>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Capacity</th>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Performance</th>
+                                                <th className="px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Session Name</th>
+                                                <th className="hidden sm:table-cell px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Type</th>
+                                                <th className="px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Capacity</th>
+                                                <th className="hidden sm:table-cell px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Performance</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-700/50">
                                             {(sessionData.sessions || []).length === 0 ? (
-                                                <tr><td colSpan="4" className="px-8 py-10 text-center text-slate-500 italic">No session stats available for this period.</td></tr>
+                                                <tr><td colSpan="4" className="px-3 sm:px-8 py-8 sm:py-10 text-center text-slate-500 italic">No session stats available for this period.</td></tr>
                                             ) : (sessionData.sessions || []).map((s, i) => {
                                                 const fillPercentage = (s.bookedCount / (s.maxCapacity || 1)) * 100;
                                                 const isLow = fillPercentage < 20 && s.status !== 'Cancelled';
@@ -590,30 +587,30 @@ const Reports = () => {
 
                                                 return (
                                                     <tr key={i} className={`hover:bg-slate-700/20 transition-colors ${isLow ? 'bg-red-900/5' : isFull ? 'bg-yellow-900/5' : ''}`}>
-                                                        <td className="px-8 py-5">
+                                                        <td className="px-3 sm:px-8 py-4 sm:py-5">
                                                             <div>
                                                                 <p className="text-sm font-bold text-white">{s.name}</p>
                                                                 <p className="text-[10px] text-slate-500">{new Date(s.date).toLocaleDateString()} | {s.time}</p>
                                                             </div>
                                                         </td>
-                                                        <td className="px-8 py-5 text-center">
+                                                        <td className="hidden sm:table-cell px-3 sm:px-8 py-4 sm:py-5 text-center">
                                                             <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-slate-900 border border-slate-700 text-slate-400">
                                                                 {s.type}
                                                             </span>
                                                         </td>
-                                                        <td className="px-8 py-5 text-center text-xs font-bold text-white">
+                                                        <td className="px-3 sm:px-8 py-4 sm:py-5 text-center text-xs font-bold text-white">
                                                             {s.bookedCount} / {s.maxCapacity}
                                                         </td>
-                                                        <td className="px-8 py-5 text-right">
+                                                        <td className="hidden sm:table-cell px-3 sm:px-8 py-4 sm:py-5 text-right">
                                                             <div className="flex flex-col items-end gap-1.5">
-                                                                <div className="w-32 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                                                <div className="w-20 sm:w-32 h-1.5 bg-slate-700 rounded-full overflow-hidden">
                                                                     <div
                                                                         className={`h-full transition-all duration-1000 ${isLow ? 'bg-red-500' : isFull ? 'bg-yellow-500' : 'bg-green-500'}`}
                                                                         style={{ width: `${Math.min(fillPercentage, 100)}%` }}
                                                                     ></div>
                                                                 </div>
-                                                                <span className={`text-[10px] font-black tracking-widest ${isLow ? 'text-red-500' : isFull ? 'text-yellow-500' : 'text-green-500'}`}>
-                                                                    {fillPercentage.toFixed(0)}% OCCUPIED
+                                                                <span className={`text-[9px] sm:text-[10px] font-black tracking-widest ${isLow ? 'text-red-500' : isFull ? 'text-yellow-500' : 'text-green-500'}`}>
+                                                                    {fillPercentage.toFixed(0)}% OCC.
                                                                 </span>
                                                             </div>
                                                         </td>
@@ -630,72 +627,59 @@ const Reports = () => {
                     {activeTab === 'revenue' && (
                         <div className="space-y-8">
                             {/* 3 Summary Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                                <div className="bg-slate-800 p-4 sm:p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity hidden sm:block">
                                         <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" /></svg>
                                     </div>
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">New Memberships</h4>
-                                    <p className="text-4xl font-black text-white">{revenueData.summary?.totalNewMemberships || 0}</p>
-                                    <p className="text-[10px] font-bold text-green-400 mt-2 flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                                        Direct Acquisitions
-                                    </p>
+                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest sm:tracking-[0.2em] mb-2">New Members</h4>
+                                    <p className="text-2xl sm:text-4xl font-black text-white">{revenueData.summary?.totalNewMemberships || 0}</p>
                                 </div>
-                                <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <div className="bg-slate-800 p-4 sm:p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity hidden sm:block">
                                         <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" /></svg>
                                     </div>
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Total Renewals</h4>
-                                    <p className="text-4xl font-black text-white">{revenueData.summary?.totalRenewals || 0}</p>
-                                    <p className="text-[10px] font-bold text-blue-400 mt-2 flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
-                                        Member Retention
-                                    </p>
+                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest sm:tracking-[0.2em] mb-2">Renewals</h4>
+                                    <p className="text-2xl sm:text-4xl font-black text-white">{revenueData.summary?.totalRenewals || 0}</p>
                                 </div>
-                                <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <div className="col-span-2 lg:col-span-1 bg-slate-800 p-4 sm:p-8 rounded-2xl border border-slate-700 shadow-xl relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity hidden sm:block">
                                         <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     </div>
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Total Revenue</h4>
-                                    <p className="text-4xl font-black text-red-500">Rs. {(revenueData.summary?.totalRevenue || 0).toLocaleString()}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 mt-2 flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
-                                        All Membership Sales
-                                    </p>
+                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest sm:tracking-[0.2em] mb-2">Total Revenue</h4>
+                                    <p className="text-2xl sm:text-4xl font-black text-red-500">Rs. {(revenueData.summary?.totalRevenue || 0).toLocaleString()}</p>
                                 </div>
                             </div>
 
                             {/* Detailed Membership Card */}
                             <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl">
-                                <div className="px-8 py-6 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center">
-                                    <h3 className="text-xl font-bold text-white">Membership Plan Details</h3>
-                                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex gap-4">
+                                <div className="px-4 sm:px-8 py-4 sm:py-6 bg-slate-900/50 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                    <h3 className="text-lg sm:text-xl font-bold text-white">Plan Details</h3>
+                                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex flex-wrap gap-2 sm:gap-4">
                                         <span>Total Plans: {revenueData.details?.length || 0}</span>
-                                        <span>|</span>
+                                        <span className="hidden sm:inline">|</span>
                                         <span>Total Logs: {revenueData.transactionLogs?.length || 0}</span>
                                     </div>
                                 </div>
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
+                                    <table className="w-full text-left min-w-[500px]">
                                         <thead className="bg-slate-900/30">
                                             <tr>
                                                 <th
-                                                    className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-white transition-colors"
+                                                    className="px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-white transition-colors"
                                                     onClick={() => toggleSort('plan')}
                                                 >
                                                     Plan Name {sortConfig.key === 'plan' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                                 </th>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Category</th>
-                                                <th className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Recent Members</th>
+                                                <th className="hidden sm:table-cell px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Category</th>
                                                 <th
-                                                    className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center cursor-pointer hover:text-white transition-colors"
+                                                    className="px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center cursor-pointer hover:text-white transition-colors"
                                                     onClick={() => toggleSort('purchases')}
                                                 >
                                                     Purchases {sortConfig.key === 'purchases' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                                 </th>
                                                 <th
-                                                    className="px-8 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right cursor-pointer hover:text-white transition-colors"
+                                                    className="px-3 sm:px-8 py-3 sm:py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right cursor-pointer hover:text-white transition-colors"
                                                     onClick={() => toggleSort('revenue')}
                                                 >
                                                     Revenue {sortConfig.key === 'revenue' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
@@ -704,38 +688,24 @@ const Reports = () => {
                                         </thead>
                                         <tbody className="divide-y divide-slate-700/50">
                                             {getSortedRevenue().map((plan, i) => {
-                                                const members = revenueData.transactionLogs
-                                                    ?.filter(t => t.planName === plan.planName)
-                                                    .map(t => t.memberName)
-                                                    .filter((v, idx, self) => self.indexOf(v) === idx)
-                                                    .slice(0, 3);
 
                                                 return (
                                                     <tr key={i} className="hover:bg-slate-700/20 transition-colors">
-                                                        <td className="px-8 py-5 text-sm font-bold text-white">{plan.planName}</td>
-                                                        <td className="px-8 py-5 text-center">
+                                                        <td className="px-3 sm:px-8 py-4 sm:py-5 text-sm font-bold text-white">{plan.planName}</td>
+                                                        <td className="hidden sm:table-cell px-3 sm:px-8 py-4 sm:py-5 text-center">
                                                             <span className="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-[10px] text-slate-400 font-bold uppercase">
                                                                 {plan._id.category || 'Gym'}
                                                             </span>
                                                         </td>
-                                                        <td className="px-8 py-5">
-                                                            <div className="flex flex-col gap-1">
-                                                                <p className="text-xs text-slate-300 font-medium">{members?.join(', ') || 'N/A'}</p>
-                                                                {revenueData.transactionLogs?.filter(t => t.planName === plan.planName).length > 3 && (
-                                                                    <p className="text-[9px] text-slate-500 underline cursor-pointer">View All Members</p>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-8 py-5 text-center">
+                                                        <td className="px-3 sm:px-8 py-4 sm:py-5 text-center">
                                                             <div className="flex flex-col">
-                                                                <span className="text-lg font-black text-white">{plan.count}</span>
-                                                                <span className="text-[9px] font-bold text-slate-500 uppercase">{plan.newMembers} New | {plan.renewals} Renew</span>
+                                                                <span className="text-base sm:text-lg font-black text-white">{plan.count}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-8 py-5 text-right">
+                                                        <td className="px-3 sm:px-8 py-4 sm:py-5 text-right">
                                                             <div className="flex flex-col items-end">
-                                                                <span className="text-lg font-black text-red-500">Rs. {plan.totalRevenue.toLocaleString()}</span>
-                                                                <span className="text-[9px] font-bold text-slate-600">
+                                                                <span className="text-sm sm:text-lg font-black text-red-500">Rs. {plan.totalRevenue.toLocaleString()}</span>
+                                                                <span className="text-[9px] font-bold text-slate-600 hidden sm:block">
                                                                     {((plan.totalRevenue / (revenueData.summary?.totalRevenue || 1)) * 100).toFixed(1)}% of total
                                                                 </span>
                                                             </div>
@@ -751,20 +721,20 @@ const Reports = () => {
                     )}
 
                     {activeTab === 'members' && (
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-2xl space-y-6">
-                                <h3 className="text-lg font-bold text-white">Top Active Members</h3>
+                        <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
+                            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 sm:p-8 shadow-2xl space-y-4 sm:space-y-6">
+                                <h3 className="text-base sm:text-lg font-bold text-white">Top Active Members</h3>
                                 {topMembersData.map((member, i) => (
-                                    <div key={i} className="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-slate-700 hover:border-red-500 transition-all group">
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-lg font-black text-slate-700 group-hover:text-red-500 transition-colors">#{i + 1}</span>
+                                    <div key={i} className="flex justify-between items-center bg-slate-900/50 p-3 sm:p-4 rounded-xl border border-slate-700 hover:border-red-500 transition-all group">
+                                        <div className="flex items-center gap-2 sm:gap-4">
+                                            <span className="text-base sm:text-lg font-black text-slate-700 group-hover:text-red-500 transition-colors">#{i + 1}</span>
                                             <div>
-                                                <p className="text-sm font-bold text-white">{member.name}</p>
-                                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{member.membershipType}</p>
+                                                <p className="text-xs sm:text-sm font-bold text-white">{member.name}</p>
+                                                <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest">{member.membershipType}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-xl font-black text-white">{member.attendanceCount}</p>
+                                            <p className="text-lg sm:text-xl font-black text-white">{member.attendanceCount}</p>
                                             <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">Visits Recorded</p>
                                         </div>
                                     </div>
