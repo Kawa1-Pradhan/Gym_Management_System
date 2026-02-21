@@ -209,7 +209,10 @@ export const verifyPayment = async (req, res) => {
                 user.membershipType = `${plan.name} (${categoryName})`;
                 user.membershipStartDate = user.membershipStartDate || new Date();
                 await user.save();
-                passwordGenerated = null; // Do not send credentials on a re-eval
+                passwordGenerated = null; // Do not send new credentials for an existing user
+
+                // Dispatch Renewal Email for existing accounts testing the guest checkout
+                sendRenewalEmail(user.email, user.name, user.membershipType, newExpiry);
             } else {
                 const randomPassword = crypto.randomBytes(4).toString("hex");
                 passwordGenerated = randomPassword;

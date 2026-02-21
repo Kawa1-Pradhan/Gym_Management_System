@@ -147,6 +147,7 @@ export const sendRenewalEmail = async (userEmail, userName, planName, expiryDate
                 <h2 style="color: #16a34a;">Hi ${userName},</h2>
                 <p>Your membership renewal for <strong>${planName}</strong> was successful.</p>
                 <p>Your new expiry date is: <strong>${new Date(expiryDate).toLocaleDateString()}</strong></p>
+                <p>You can access your account dashboard anytime using your existing login credentials.</p>
                 <p style="color: #d32f2f; font-weight: bold;">Note: Please collect your tap door entry card from the gym counter (if you haven't již).</p>
                 <p>Keep up the good work!</p>
                 <p>Best regards,<br>Dharan Fitness Club Team</p>
