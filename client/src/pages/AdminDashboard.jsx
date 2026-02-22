@@ -121,6 +121,8 @@ const AdminDashboard = () => {
     totalSessions: 0,
     staffMembers: 0
   });
+  const [selectedUserDetail, setSelectedUserDetail] = useState(null);
+  const [showUserDetailModal, setShowUserDetailModal] = useState(false);
   const navigate = useNavigate();
 
   const [newStaff, setNewStaff] = useState({
@@ -350,6 +352,11 @@ const AdminDashboard = () => {
         case 'Resend Credentials':
           endpoint = `/api/users/${userId}/resend-credentials`;
           confirmMsg = 'Resend enrollment credentials to this user?';
+          break;
+        case 'Delete':
+          endpoint = `/api/users/${userId}`;
+          method = 'DELETE';
+          confirmMsg = 'WARNING: This will permanently delete the user and all their associated data. This action CANNOT be undone. Proceed?';
           break;
         default: return;
       }
@@ -611,51 +618,177 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === 'users' && (
-            <div>
-              <div className="flex justify-between items-center gap-3 mb-6 sm:mb-8">
-                <h1 className="text-xl sm:text-3xl font-bold">User Management</h1>
-                <button onClick={() => setActiveTab('create-staff')} className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 rounded-md font-bold text-sm whitespace-nowrap">Add Staff</button>
+            <>
+              <div className="flex justify-between items-center gap-3 mb-8">
+                <div>
+                  <h1 className="text-xl sm:text-3xl font-bold">User Management</h1>
+                  <p className="text-slate-500 text-xs mt-1">Manage system access and member accounts.</p>
+                </div>
+                <button onClick={() => setActiveTab('create-staff')} className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 rounded-md font-bold text-sm whitespace-nowrap shadow-lg transition-all">Add Staff</button>
               </div>
-              <div className="bg-slate-800 rounded-lg shadow-lg border border-slate-700 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-slate-900/50">
-                      <tr>
-                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">User</th>
-                        <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Role</th>
-                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-gray-400 uppercase">Status</th>
-                        <th className="px-3 sm:px-6 py-3 text-right text-xs font-bold text-gray-400 uppercase">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-700">
-                      {users.map(u => (
-                        <tr key={u._id} className="hover:bg-slate-700/30">
-                          <td className="px-3 sm:px-6 py-3">
-                            <div className="text-sm font-medium text-white">{u.name}</div>
-                            <div className="text-xs text-gray-500 hidden sm:block">{u.email}</div>
-                          </td>
-                          <td className="hidden sm:table-cell px-3 sm:px-6 py-3 text-xs text-gray-300 capitalize">{u.role.join(', ')}</td>
-                          <td className="px-3 sm:px-6 py-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${u.isActive === false ? 'bg-red-900/30 text-red-500' : 'bg-green-900/30 text-green-500'}`}>
-                              {u.isActive === false ? 'Inactive' : 'Active'}
-                            </span>
-                          </td>
-                          <td className="px-3 sm:px-6 py-3 text-right">
-                            <div className="flex justify-end gap-2 flex-wrap">
-                              {u.role.includes('MEMBER') && (
-                                <button onClick={() => navigate('/#pricing')} className="text-xs text-cyan-400 hover:underline">Renew</button>
-                              )}
-                              <button onClick={() => handleUserAction(u._id, u.isActive === false ? 'Activate' : 'Deactivate')} className="text-xs text-blue-400 hover:underline">Toggle</button>
-                              <button onClick={() => handleUserAction(u._id, 'Reset Password')} className="text-xs text-purple-400 hover:underline">Reset</button>
-                            </div>
-                          </td>
+
+              {/* Staff Section */}
+              <div className="mb-12">
+                <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-violet-400 uppercase tracking-wider">
+                  <span className="w-1.5 h-6 bg-violet-500 rounded-full"></span>
+                  Staff & Administrators
+                </h2>
+                <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-900/50">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">User Info</th>
+                          <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Role</th>
+                          <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Status</th>
+                          <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700">
+                        {users.filter(u => u.role?.includes('STAFF') && !u.role?.includes('ADMIN')).map(u => (
+                          <tr key={u._id} className="hover:bg-slate-700/30 cursor-pointer group transition-colors" onClick={() => { setSelectedUserDetail(u); setShowUserDetailModal(true); }}>
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">{u.name}</div>
+                              <div className="text-xs text-gray-500">{u.email}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-violet-900/30 text-violet-400 border border-violet-500/20">
+                                {u.role[0]}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase ${u.isActive === false ? 'text-red-500' : 'text-green-500'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${u.isActive === false ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`}></span>
+                                {u.isActive === false ? 'Inactive' : 'Active'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex justify-end gap-2">
+                                <button onClick={() => handleUserAction(u._id, 'Reset Password')} className="p-2 bg-slate-700 hover:bg-slate-600 text-purple-400 rounded-lg border border-slate-600 transition" title="Reset Password">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                                </button>
+                                <button onClick={() => handleUserAction(u._id, u.isActive === false ? 'Activate' : 'Deactivate')} className={`p-2 rounded-lg border transition ${u.isActive === false ? 'bg-green-900/20 text-green-400 border-green-500/20' : 'bg-slate-700 hover:bg-red-900/20 text-orange-400 border-slate-600'}`} title="Toggle Status">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                                </button>
+                                <button onClick={() => handleUserAction(u._id, 'Delete')} className="p-2 bg-slate-700 hover:bg-red-900/40 text-red-500 rounded-lg border border-slate-600 transition" title="Delete User">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              {/* Members Section */}
+              <div>
+                <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-cyan-400 uppercase tracking-wider">
+                  <span className="w-1.5 h-6 bg-cyan-500 rounded-full"></span>
+                  Gym Members
+                </h2>
+                <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-900/50">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">User Info</th>
+                          <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Plan</th>
+                          <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Status</th>
+                          <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700">
+                        {users.filter(u => u.role?.includes('MEMBER') && !u.role?.some(r => ['ADMIN', 'STAFF'].includes(r))).map(u => (
+                          <tr key={u._id} className="hover:bg-slate-700/30 cursor-pointer group transition-colors" onClick={() => { setSelectedUserDetail(u); setShowUserDetailModal(true); }}>
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">{u.name}</div>
+                              <div className="text-xs text-gray-500">{u.email}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-xs text-slate-300 font-medium">{u.membershipType || 'None'}</div>
+                              {u.membershipExpiryDate && <div className="text-[10px] text-slate-500">Exp: {new Date(u.membershipExpiryDate).toLocaleDateString()}</div>}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase ${u.isActive === false ? 'text-red-500' : 'text-green-500'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${u.isActive === false ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`}></span>
+                                {u.isActive === false ? 'Inactive' : 'Active'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex justify-end gap-2">
+                                <button onClick={() => handleUserAction(u._id, 'Reset Password')} className="p-2 bg-slate-700 hover:bg-slate-600 text-purple-400 rounded-lg border border-slate-600 transition" title="Reset Password">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                                </button>
+                                <button onClick={() => handleUserAction(u._id, u.isActive === false ? 'Activate' : 'Deactivate')} className={`p-2 rounded-lg border transition ${u.isActive === false ? 'bg-green-900/20 text-green-400 border-green-500/20' : 'bg-slate-700 hover:bg-red-900/20 text-orange-400 border-slate-600'}`} title="Toggle Status">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                                </button>
+                                <button onClick={() => handleUserAction(u._id, 'Delete')} className="p-2 bg-slate-700 hover:bg-red-900/40 text-red-500 rounded-lg border border-slate-600 transition" title="Delete User">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* User Detail Modal */}
+                {showUserDetailModal && selectedUserDetail && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-300 pointer-events-auto">
+                    <div className="bg-slate-900 w-full max-w-xl rounded-3xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                      <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/30">
+                        <h2 className="text-xl font-bold text-white uppercase tracking-tight">User Details</h2>
+                        <button onClick={() => setShowUserDetailModal(false)} className="bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition-colors text-slate-400">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                      <div className="p-8 space-y-6 text-left">
+                        <div className="grid grid-cols-2 gap-6">
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Name</p>
+                              <p className="text-white font-bold">{selectedUserDetail.name}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Email</p>
+                              <p className="text-white font-bold text-sm break-all">{selectedUserDetail.email}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Phone</p>
+                              <p className="text-white font-bold">{selectedUserDetail.phone || 'N/A'}</p>
+                            </div>
+                          </div>
+                          <div className="space-y-4">
+                            {selectedUserDetail.role?.includes('MEMBER') && (
+                              <div>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Membership Plan</p>
+                                <p className="text-white font-bold">{selectedUserDetail.membershipType || 'No Active Plan'}</p>
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Status</p>
+                              <p className={`text-sm font-black uppercase ${selectedUserDetail.isActive === false ? 'text-red-500' : 'text-green-500'}`}>
+                                {selectedUserDetail.isActive === false ? 'Inactive' : 'Active'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Join Date</p>
+                              <p className="text-white font-bold">{new Date(selectedUserDetail.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {activeTab === 'create-staff' && (

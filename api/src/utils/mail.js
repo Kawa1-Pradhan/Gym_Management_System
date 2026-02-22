@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail', // Native fallback for Render/Vercel
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: Number(process.env.EMAIL_PORT) || 587,
-    secure: process.env.EMAIL_SECURE === "true", // MUST be false for Port 587 (STARTTLS)
+    secure: process.env.EMAIL_SECURE === "false", // MUST be false for Port 587 (STARTTLS)
     auth: {
         user: user,
         pass: pass
