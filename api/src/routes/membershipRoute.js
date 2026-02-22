@@ -22,4 +22,8 @@ router.patch("/plans/:id", requireAuth, requireAdmin, updatePlan);
 // Private routes
 router.get("/my-payments", requireAuth, getUserPayments);
 
+// Diagnostic Route
+import { testEmailConnection } from "../controllers/membershipController.js";
+router.get("/test-email", testEmailConnection);
+
 export default router;

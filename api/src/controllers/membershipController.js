@@ -329,3 +329,49 @@ export const updatePlan = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+import nodemailer from 'nodemailer';
+
+export const testEmailConnection = async (req, res) => {
+    try {
+        const user = process.env.EMAIL_USER;
+        const pass = process.env.EMAIL_PASS;
+
+        if (!user || !pass) {
+            return res.json({
+                success: false,
+                message: "Environment variables EMAIL_USER or EMAIL_PASS are missing on this server."
+            });
+        }
+
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: user,
+                pass: pass
+            }
+        });
+
+        // Use native transporter verification to test if the port is open and credentials work
+        await transporter.verify();
+
+        return res.json({
+            success: true,
+            serverHost: req.get('host'),
+            message: "SMTP Connection Successful! Nodemailer successfully reached Google SMTP on Port 465."
+        });
+
+    } catch (error) {
+        return res.json({
+            success: false,
+            serverHost: req.get('host'),
+            message: "SMTP Connection Failed! Render or Google is blocking the connection.",
+            errorName: error.name,
+            errorMessage: error.message,
+            errorCode: error.code,
+            errorCommand: error.command
+        });
+    }
+};
