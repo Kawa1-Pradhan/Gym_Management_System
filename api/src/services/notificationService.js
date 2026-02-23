@@ -11,6 +11,17 @@ const createNotification = async (userId, title, message, type, relatedId = null
             actionUrl
         });
         await notification.save();
+
+        // Limit to latest 15 notifications per user
+        const oldNotifications = await Notification.find({ recipient: userId })
+            .sort({ createdAt: -1 })
+            .skip(15);
+
+        if (oldNotifications.length > 0) {
+            const idsToDelete = oldNotifications.map(n => n._id);
+            await Notification.deleteMany({ _id: { $in: idsToDelete } });
+        }
+
         return notification;
     } catch (error) {
         console.error('Error creating notification:', error);
@@ -42,10 +53,10 @@ const deleteByRelatedId = async (relatedId) => {
     }
 };
 
-const getUserNotifications = async (userId, limit = 20) => {
+const getUserNotifications = async (userId, limit = 15) => {
     return await Notification.find({ recipient: userId })
         .sort({ createdAt: -1 })
-        .limit(limit);
+        .limit(Number(limit));
 };
 
 const getUnreadCount = async (userId) => {

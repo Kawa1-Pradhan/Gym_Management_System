@@ -36,9 +36,8 @@ const announcementSchema = new mongoose.Schema({
 });
 
 // Automatically update updatedAt on save
-announcementSchema.pre("save", function (next) {
+announcementSchema.pre("save", async function () {
   this.updatedAt = Date.now();
-  next();
 });
 
 const Announcement = mongoose.model("announcements", announcementSchema);
