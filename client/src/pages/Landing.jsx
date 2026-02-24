@@ -157,7 +157,7 @@ const Landing = () => {
                 to={user ? (user.role?.includes('ADMIN') ? '/admin-dashboard' : (user.role?.includes('STAFF') ? '/staff-dashboard' : '/dashboard')) : '/login'}
                 className="bg-gradient-to-r from-cyan-500 to-violet-600 hover:from-cyan-600 hover:to-violet-700 px-6 py-2 rounded-lg text-sm font-semibold transition duration-300 shadow-lg hover:shadow-xl"
               >
-                {user ? 'Go to Dashboard' : 'Member Login'}
+                {user ? 'Go to Dashboard' : 'Login'}
               </Link>
             </div>
 
@@ -209,7 +209,7 @@ const Landing = () => {
                   to={user ? (user.role?.includes('ADMIN') ? '/admin-dashboard' : (user.role?.includes('STAFF') ? '/staff-dashboard' : '/dashboard')) : '/login'}
                   className="block w-full bg-gradient-to-r from-cyan-500 to-violet-600 hover:from-cyan-600 hover:to-violet-700 px-3 py-2 rounded-lg text-base font-semibold transition duration-300 text-center mt-3"
                 >
-                  {user ? 'Go to Dashboard' : 'Member Login'}
+                  {user ? 'Go to Dashboard' : 'Login'}
                 </Link>
               </div>
             </div>
@@ -243,7 +243,7 @@ const Landing = () => {
                   to={user ? (user.role?.includes('ADMIN') ? '/admin-dashboard' : (user.role?.includes('STAFF') ? '/staff-dashboard' : '/dashboard')) : '/login'}
                   className="border-2 border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-slate-950 px-8 py-4 rounded-lg text-lg font-semibold transition duration-300"
                 >
-                  {user ? 'Go to Dashboard' : 'Member Login'}
+                  {user ? 'Go to Dashboard' : 'Login'}
                 </Link>
               </div>
             </div>

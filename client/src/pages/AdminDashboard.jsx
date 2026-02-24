@@ -686,7 +686,7 @@ const AdminDashboard = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-700">
-                        {users.filter(u => u.role?.includes('STAFF') || u.role?.includes('ADMIN')).map(u => (
+                        {users.filter(u => u.role?.includes('STAFF') && !u.role?.includes('ADMIN')).map(u => (
                           <tr key={u._id} className="hover:bg-slate-700/30 cursor-pointer group transition-colors" onClick={() => { setSelectedUserDetail(u); setShowUserDetailModal(true); }}>
                             <td className="px-6 py-4">
                               <div className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">{u.name}</div>

@@ -69,7 +69,7 @@ const UserManagement = () => {
         setShowModal(true);
     };
 
-    const staffUsers = users.filter(u => u.role.some(r => ['ADMIN', 'STAFF'].includes(r)));
+    const staffUsers = users.filter(u => u.role.includes('STAFF') && !u.role.includes('ADMIN'));
     const memberUsers = users.filter(u => u.role.includes('MEMBER') && !u.role.some(r => ['ADMIN', 'STAFF'].includes(r)));
 
     if (loading) return (
@@ -113,8 +113,8 @@ const UserManagement = () => {
                                         </td>
                                         <td className="p-4">
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${user.role.includes('ADMIN') ? 'bg-violet-900/30 text-violet-400 border-violet-500/20' :
-                                                    user.role.includes('STAFF') ? 'bg-cyan-900/30 text-cyan-400 border-cyan-500/20' :
-                                                        'bg-slate-800 text-slate-400 border-slate-700'
+                                                user.role.includes('STAFF') ? 'bg-cyan-900/30 text-cyan-400 border-cyan-500/20' :
+                                                    'bg-slate-800 text-slate-400 border-slate-700'
                                                 }`}>
                                                 {user.role[0]}
                                             </span>
@@ -230,8 +230,8 @@ const UserManagement = () => {
                                     <div>
                                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">System Role</p>
                                         <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border ${selectedUser.role.includes('ADMIN') ? 'bg-violet-900/30 text-violet-400 border-violet-500/20' :
-                                                selectedUser.role.includes('STAFF') ? 'bg-cyan-900/30 text-cyan-400 border-cyan-500/20' :
-                                                    'bg-slate-800 text-slate-400 border-slate-700'
+                                            selectedUser.role.includes('STAFF') ? 'bg-cyan-900/30 text-cyan-400 border-cyan-500/20' :
+                                                'bg-slate-800 text-slate-400 border-slate-700'
                                             }`}>
                                             {selectedUser.role.join(', ')}
                                         </span>
@@ -265,8 +265,8 @@ const UserManagement = () => {
                                 <button
                                     onClick={() => handleDeactivate(selectedUser._id)}
                                     className={`flex-1 min-w-[150px] font-bold py-3 px-6 rounded-xl transition border shadow-lg ${selectedUser.isActive
-                                            ? 'bg-slate-800 hover:bg-red-900/20 text-orange-400 border-slate-700'
-                                            : 'bg-green-600 hover:bg-green-500 text-white border-green-500'
+                                        ? 'bg-slate-800 hover:bg-red-900/20 text-orange-400 border-slate-700'
+                                        : 'bg-green-600 hover:bg-green-500 text-white border-green-500'
                                         }`}
                                 >
                                     {selectedUser.isActive ? 'Deactivate Account' : 'Activate Account'}

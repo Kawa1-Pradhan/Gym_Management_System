@@ -136,7 +136,7 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
                 <NavItem id="inventory" label="Inventory" icon={Package} />
 
                 <NavItem id="reports" label="Reports" icon={BarChart3} />
-                <NavItem id="announcements" label="Announcements" icon={Bell} />
+                {role === 'ADMIN' && <NavItem id="announcements" label="Announcements" icon={Bell} />}
             </nav>
 
             {/* Footer / User Info could go here if needed, but UserMenu is in top bar usually */}
