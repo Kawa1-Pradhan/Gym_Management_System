@@ -59,7 +59,7 @@ const startServer = async () => {
 
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use(/uploads/, express.static('public/uploads'));
+app.use('/uploads', express.static('public/uploads'));
 
 app.use(logger);
 
