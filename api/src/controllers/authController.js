@@ -1,6 +1,7 @@
 
 import authService from "../services/authServices.js";
 import { createJWT } from "../utils/jwt.js";
+import { sendContactEmail } from "../utils/mail.js";
 
 
 const login = async (req, res) => {
@@ -109,6 +110,20 @@ const logout = async (req, res) => {
     }
 };
 
-export default { register, login, logout };
+const contactUs = async (req, res) => {
+    const { name, email, subject, message } = req.body;
 
+    if (!name || !email || !subject || !message) {
+        return res.status(400).json({ message: "All fields are required" });
+    }
 
+    try {
+        await sendContactEmail({ name, email, subject, message });
+        res.status(200).json({ message: "Inquiry sent successfully. Thank you!" });
+    } catch (error) {
+        console.error("Error in contactUs controller:", error);
+        res.status(500).json({ message: "Failed to send inquiry. Please try again later." });
+    }
+};
+
+export default { register, login, logout, contactUs };

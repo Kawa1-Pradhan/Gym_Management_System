@@ -155,3 +155,61 @@ export const sendRenewalEmail = async (userEmail, userName, planName, expiryDate
         console.error('❌ Error sending renewal email:', error.message);
     }
 };
+
+export const sendContactEmail = async (contactData) => {
+    const { name, email, subject, message } = contactData;
+    const recipient = 'dharanfitnessclub@gmail.com';
+
+    if (!user || !pass || user === 'your-email@gmail.com') {
+        console.error("❌ SMS/Email Config Missing: Contact form submission logged but not sent.");
+        console.log("Contact Data:", contactData);
+        return;
+    }
+
+    const mailOptions = {
+        from: user,
+        to: recipient,
+        subject: `Contact Inquiry: ${subject}`,
+        replyTo: email,
+        html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #ef4444; border-bottom: 2px solid #ef4444; padding-bottom: 10px;">New Contact Inquiry</h2>
+                <div style="margin: 20px 0;">
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Subject:</strong> ${subject}</p>
+                </div>
+                <div style="background-color: #f9fafb; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                    <p><strong>Message:</strong></p>
+                    <p style="white-space: pre-wrap;">${message}</p>
+                </div>
+                <p style="font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #ddd; pt-10;">
+                    This email was sent from the Dharan Fitness Club Landing Page Contact Form.
+                </p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Contact inquiry email sent to gym admin.');
+
+        // Also send a thank you email to the user
+        const thankYouOptions = {
+            from: user,
+            to: email,
+            subject: 'Thank you for contacting Dharan Fitness Club',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                    <h2 style="color: #ef4444;">Hi ${name},</h2>
+                    <p>Thank you for reaching out to Dharan Fitness Club!</p>
+                    <p>We have received your message regarding "<strong>${subject}</strong>" and one of our team members will get back to you as soon as possible.</p>
+                    <p>Best regards,<br>Dharan Fitness Club Team</p>
+                </div>
+            `
+        };
+        await transporter.sendMail(thankYouOptions);
+    } catch (error) {
+        console.error('❌ Error sending contact email:', error.message);
+    }
+};

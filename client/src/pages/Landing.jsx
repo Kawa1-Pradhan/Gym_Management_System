@@ -22,6 +22,37 @@ const Landing = () => {
     popularSession: null
   });
 
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+
+  const handleContactChange = (e) => {
+    setContactForm({
+      ...contactForm,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    setProcessing(true);
+    try {
+      await apiRequest('/api/auth/contact', {
+        method: 'POST',
+        body: contactForm
+      });
+      alert("Thank you for reaching out! We will get back to you shortly.");
+      setContactForm({ name: '', email: '', subject: '', message: '' });
+    } catch (err) {
+      alert("Error: " + (err.response?.data?.message || err.message));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   useEffect(() => {
     fetchPlans();
     fetchAnalytics();
@@ -136,6 +167,12 @@ const Landing = () => {
                 Home
               </button>
               <button
+                onClick={() => scrollToSection('services')}
+                className="text-slate-300 hover:text-red-500 px-3 py-2 text-sm font-medium transition duration-300"
+              >
+                Services
+              </button>
+              <button
                 onClick={() => scrollToSection('features')}
                 className="text-slate-300 hover:text-cyan-400 px-3 py-2 text-sm font-medium transition duration-300"
               >
@@ -152,6 +189,12 @@ const Landing = () => {
                 className="text-slate-300 hover:text-cyan-400 px-3 py-2 text-sm font-medium transition duration-300"
               >
                 About
+              </button>
+              <button
+                onClick={() => scrollToSection('contact')}
+                className="text-slate-300 hover:text-red-500 px-3 py-2 text-sm font-medium transition duration-300"
+              >
+                Contact
               </button>
               <Link
                 to={user ? (user.role?.includes('ADMIN') ? '/admin-dashboard' : (user.role?.includes('STAFF') ? '/staff-dashboard' : '/dashboard')) : '/login'}
@@ -188,6 +231,12 @@ const Landing = () => {
                   Home
                 </button>
                 <button
+                  onClick={() => scrollToSection('services')}
+                  className="block w-full text-left text-slate-300 hover:text-red-500 px-3 py-2 text-base font-medium transition duration-300"
+                >
+                  Services
+                </button>
+                <button
                   onClick={() => scrollToSection('features')}
                   className="block w-full text-left text-slate-300 hover:text-cyan-400 px-3 py-2 text-base font-medium transition duration-300"
                 >
@@ -204,6 +253,12 @@ const Landing = () => {
                   className="block w-full text-left text-slate-300 hover:text-cyan-400 px-3 py-2 text-base font-medium transition duration-300"
                 >
                   About
+                </button>
+                <button
+                  onClick={() => scrollToSection('contact')}
+                  className="block w-full text-left text-slate-300 hover:text-red-500 px-3 py-2 text-base font-medium transition duration-300"
+                >
+                  Contact
                 </button>
                 <Link
                   to={user ? (user.role?.includes('ADMIN') ? '/admin-dashboard' : (user.role?.includes('STAFF') ? '/staff-dashboard' : '/dashboard')) : '/login'}
@@ -300,6 +355,123 @@ const Landing = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section id="services" className="py-24 px-4 bg-slate-900 relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent"></div>
+
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-sm font-bold text-red-500 uppercase tracking-[0.2em] mb-4">Our Elite Services</h2>
+            <h3 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+              Fitness Plans & <span className="bg-gradient-to-r from-red-500 to-orange-600 bg-clip-text text-transparent">Services</span>
+            </h3>
+            <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+              Elevate your fitness experience with our premium facilities and expert-led programs designed for peak performance.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Weight Training */}
+            <div className="group p-8 rounded-2xl bg-slate-800 border border-slate-700/50 hover:border-red-500/30 transition-all duration-300 hover:bg-slate-800/80 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity duration-300 text-red-500">
+                <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.57 14.86L22 13.43L20.57 12L17 15.57L8.43 7L12 3.43L10.57 2L9.14 3.43L7.71 2L6.28 3.43L4.86 2L3.43 3.43L2 4.86L3.43 6.28L2 7.71L3.43 9.14L2 10.57L3.43 12L7 8.43L15.57 17L12 20.57L13.43 22L14.86 20.57L16.28 22L17.71 20.57L19.14 22L20.57 20.57L22 19.14L20.57 17.71L22 16.28L20.57 14.86Z" />
+                </svg>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4V2m0 20v-2m8-8h2M2 12h2m15.364-7.364l-1.414 1.414M6.05 17.95l-1.414 1.414m12.728 0l1.414 1.414M6.05 6.05L4.636 4.636M12 12a4 4 0 110-8 4 4 0 010 8z" />
+                </svg>
+              </div>
+              <h4 className="text-xl font-bold text-white mb-3">Weight Training</h4>
+              <p className="text-slate-400 leading-relaxed text-sm">
+                State-of-the-art resistance equipment and free weights for strength and muscle development.
+              </p>
+            </div>
+
+            {/* Cardio Training */}
+            <div className="group p-8 rounded-2xl bg-slate-800 border border-slate-700/50 hover:border-red-500/30 transition-all duration-300 hover:bg-slate-800/80 relative overflow-hidden">
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h4 className="text-xl font-bold text-white mb-3">Cardio Training</h4>
+              <p className="text-slate-400 leading-relaxed text-sm">
+                Boost your endurance with our wide range of treadmills, cycles, and elliptical trainers.
+              </p>
+            </div>
+
+            {/* Sauna & Steam Bath */}
+            <div className="group p-8 rounded-2xl bg-slate-800 border border-slate-700/50 hover:border-red-500/30 transition-all duration-300 hover:bg-slate-800/80 relative overflow-hidden">
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.99 7.99 0 0120 13a7.98 7.98 0 01-2.343 5.657z" />
+                </svg>
+              </div>
+              <h4 className="text-xl font-bold text-white mb-3">Sauna & Steam Bath</h4>
+              <p className="text-slate-400 leading-relaxed text-sm">
+                Relax and detoxify after your workout with our modern sauna and therapeutic steam facilities.
+              </p>
+            </div>
+
+            {/* Zumba & Aerobics */}
+            <div className="group p-8 rounded-2xl bg-slate-800 border border-slate-700/50 hover:border-red-500/30 transition-all duration-300 hover:bg-slate-800/80 relative overflow-hidden">
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h4 className="text-xl font-bold text-white mb-3">Zumba & Aerobics</h4>
+              <p className="text-slate-400 leading-relaxed text-sm">
+                Join our high-energy classes that combine rhythmic motion with fitness for a fun workout.
+              </p>
+            </div>
+
+            {/* Nutritional Counseling */}
+            <div className="group p-8 rounded-2xl bg-slate-800 border border-slate-700/50 hover:border-red-500/30 transition-all duration-300 hover:bg-slate-800/80 relative overflow-hidden">
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h4 className="text-xl font-bold text-white mb-3">Nutritional Counseling</h4>
+              <p className="text-slate-400 leading-relaxed text-sm">
+                Get personalized diet charts and nutrition advice from our experts to complement your training.
+              </p>
+            </div>
+
+            {/* Experienced Trainers */}
+            <div className="group p-8 rounded-2xl bg-slate-800 border border-slate-700/50 hover:border-red-500/30 transition-all duration-300 hover:bg-slate-800/80 relative overflow-hidden">
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <h4 className="text-xl font-bold text-white mb-3">Experienced Trainers</h4>
+              <p className="text-slate-400 leading-relaxed text-sm">
+                Our certified trainers provide personalized guidance to ensure safe and effective workouts.
+              </p>
+            </div>
+
+            {/* Boxing Training */}
+            <div className="group p-8 rounded-2xl bg-slate-900/40 border border-slate-800/50 hover:border-red-500/30 transition-all duration-300 hover:bg-slate-900/60 relative overflow-hidden">
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <circle cx="12" cy="12" r="9" strokeWidth="2" />
+                  <path d="M9 12h6" strokeWidth="2" />
+                </svg>
+              </div>
+              <h4 className="text-xl font-bold text-white mb-3">Boxing Training</h4>
+              <p className="text-slate-400 leading-relaxed text-sm">
+                Learn boxing fundamentals and boost your cardio with our specialized boxing sessions.
+              </p>
             </div>
           </div>
         </div>
@@ -681,11 +853,114 @@ const Landing = () => {
         </div>
       </section >
 
-      {/* Footer */}
-      < footer className="bg-slate-950 border-t border-slate-800/50 py-12 px-4" >
+      {/* Contact Section */}
+      <section id="contact" className="py-24 px-4 bg-slate-900 relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="md:col-span-2">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left Content - Info */}
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-sm font-bold text-red-500 uppercase tracking-[0.2em] mb-4">Contact Us</h2>
+                <h3 className="text-4xl md:text-5xl font-bold mb-6 text-white">
+                  Get in <span className="text-red-500">Touch</span>
+                </h3>
+                <p className="text-lg text-slate-400">
+                  Have questions about our facilities or membership? Reach out to us and start your fitness journey today.
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex items-start gap-5 p-6 rounded-2xl bg-slate-800 border border-slate-700/50 transition-colors hover:border-red-500/30 group">
+                  <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 shrink-0 group-hover:scale-110 transition-transform">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold mb-1">Our Location</h4>
+                    <p className="text-slate-400">Buddha Marga, Dharan-7, Nepal</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-5 p-6 rounded-2xl bg-slate-800 border border-slate-700/50 transition-colors hover:border-red-500/30 group">
+                  <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 shrink-0 group-hover:scale-110 transition-transform">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold mb-1">Call Us</h4>
+                    <a href="tel:9852056919" className="text-red-500 font-bold text-xl hover:text-red-400 transition-colors">9852056919</a>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-5 p-6 rounded-2xl bg-slate-800 border border-slate-700/50 transition-colors hover:border-red-500/30 group">
+                  <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 shrink-0 group-hover:scale-110 transition-transform">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold mb-1">Email Support</h4>
+                    <p className="text-slate-400">info@dharanfitnessclub.com</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-5 p-6 rounded-2xl bg-slate-900/50 border border-slate-800 transition-colors hover:border-red-500/30 group">
+                  <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 shrink-0 group-hover:scale-110 transition-transform">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold mb-1">Opening Hours</h4>
+                    <p className="text-slate-400">5 AM - 9 PM Daily</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <a href="https://www.facebook.com/DharanPhysicalFitnessCentre" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:border-red-500 hover:text-red-500 transition-all"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg></a>
+                <a href="https://www.instagram.com/dharanfitnessclub7" target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:border-red-500 hover:text-red-500 transition-all"><svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg></a>
+              </div>
+            </div>
+
+            {/* Right Content - Form */}
+            <div className="bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl relative">
+              <form onSubmit={handleContactSubmit} className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-2">Full Name</label>
+                    <input required type="text" name="name" value={contactForm.name} onChange={handleContactChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white outline-none focus:border-red-500 transition-colors" placeholder="John Doe" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-2">Email Address</label>
+                    <input required type="email" name="email" value={contactForm.email} onChange={handleContactChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white outline-none focus:border-red-500 transition-colors" placeholder="john@example.com" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Subject</label>
+                  <input required type="text" name="subject" value={contactForm.subject} onChange={handleContactChange} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white outline-none focus:border-red-500 transition-colors" placeholder="How can we help?" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Message</label>
+                  <textarea required name="message" value={contactForm.message} onChange={handleContactChange} rows="5" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white outline-none focus:border-red-500 transition-colors resize-none" placeholder="Your message here..."></textarea>
+                </div>
+                <button type="submit" className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-600/20 active:scale-[0.98] transition-all">Send Message</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Map Section */}
+      <section className="w-full h-[450px] bg-slate-900 border-y border-slate-800">
+        <iframe
+          src="https://www.google.com/maps?q=Dharan%20Fitness%20Club%2C%20Buddha%20Marga%2C%20Dharan-7%2C%20Nepal&t=&z=15&ie=UTF8&iwloc=&output=embed"
+          width="100%"
+          height="100%"
+          style={{ border: 0, filter: 'grayscale(1) invert(0.9) contrast(1.2)' }}
+          allowFullScreen=""
+          loading="lazy"
+        ></iframe>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-slate-900 border-t border-slate-800/50 py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 text-center md:text-left">
+            <div className="md:col-span-1">
               <h3 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-violet-500 bg-clip-text text-transparent mb-4">
                 Dharan Fitness Club
               </h3>
@@ -693,7 +968,7 @@ const Landing = () => {
                 Transforming fitness management through innovative digital solutions.
                 Experience the future of gym operations.
               </p>
-              <div className="flex space-x-4">
+              <div className="flex justify-center md:justify-start space-x-4">
                 <a href="https://www.facebook.com/DharanPhysicalFitnessCentre" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-cyan-400 transition duration-300">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -707,42 +982,31 @@ const Landing = () => {
               </div>
             </div>
 
-            <div>
+            <div className="md:col-span-1">
               <h4 className="text-lg font-semibold text-white mb-4">Quick Links</h4>
               <ul className="space-y-2">
-                <button onClick={() => scrollToSection('home')} className="block text-slate-400 hover:text-cyan-400 transition duration-300 text-left">
+                <button onClick={() => scrollToSection('home')} className="block mx-auto md:mx-0 text-slate-400 hover:text-cyan-400 transition duration-300">
                   Home
                 </button>
-                <button onClick={() => scrollToSection('features')} className="block text-slate-400 hover:text-cyan-400 transition duration-300 text-left">
+                <button onClick={() => scrollToSection('features')} className="block mx-auto md:mx-0 text-slate-400 hover:text-cyan-400 transition duration-300">
                   Features
                 </button>
-                <button onClick={() => scrollToSection('pricing')} className="block text-slate-400 hover:text-cyan-400 transition duration-300 text-left">
+                <button onClick={() => scrollToSection('pricing')} className="block mx-auto md:mx-0 text-slate-400 hover:text-cyan-400 transition duration-300">
                   Pricing
                 </button>
-                <button onClick={() => scrollToSection('about')} className="block text-slate-400 hover:text-cyan-400 transition duration-300 text-left">
+                <button onClick={() => scrollToSection('about')} className="block mx-auto md:mx-0 text-slate-400 hover:text-cyan-400 transition duration-300">
                   About
                 </button>
               </ul>
             </div>
 
-            <div>
-              <h4 className="text-lg font-semibold text-white mb-4">Gym Information</h4>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3 text-slate-400">
-                  <svg className="w-5 h-5 text-cyan-500 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  <span className="text-sm">Buddha Marga, Dharan-7</span>
-                </li>
-                <li className="flex items-start gap-3 text-slate-400">
-                  <svg className="w-5 h-5 text-violet-500 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                  <span className="text-sm">9852056919</span>
-                </li>
-                <li className="flex items-start gap-3 text-slate-400">
-                  <svg className="w-5 h-5 text-cyan-500 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <div>
-                    <p className="font-semibold text-white text-sm">Opening Hours</p>
-                    <p className="text-xs">5 AM - 9 PM Daily</p>
-                  </div>
-                </li>
+            <div className="md:col-span-1">
+              <h4 className="text-lg font-semibold text-white mb-4">Policies</h4>
+              <ul className="space-y-2">
+                <li className="text-slate-400">Privacy Policy</li>
+                <li className="text-slate-400">Terms of Service</li>
+                <li className="text-slate-400 text-sm mt-4">Buddha Marga, Dharan-7</li>
+                <li className="text-slate-400 text-sm">9852056919</li>
               </ul>
             </div>
           </div>
