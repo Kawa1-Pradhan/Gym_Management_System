@@ -4,6 +4,7 @@ import { apiRequest } from '../utils/api';
 import slide1 from '../assets/bau.png';
 import slide2 from '../assets/dfcpariwar.png';
 import slide3 from '../assets/dfcpariwar2.jpeg';
+import aboutImg from '../assets/motheraninene.png';
 
 const slides = [
   {
@@ -21,8 +22,8 @@ const slides = [
     title: "Excellence Since 2014",
     subtitle: "A Legacy of Body Transformation",
     description: "Years of experience in changing lives through dedicated coaching and state-of-the-art facilities.",
-    cta: "Our History",
-    link: "history",
+    cta: "About Us",
+    link: "about",
     positioning: "object-[center_75%]", // Pulls the bottom-heavy group shot up so bodies aren't cut off
     contentPos: "items-start pt-[15vh] md:pt-[20vh]" // Pushes text UP to the top so it doesn't cover faces
   },
@@ -405,10 +406,47 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Dynamic Statistics Section (Dark Theme) */}
-      <section className="bg-[#111111] py-16 px-4 border-t border-b border-black">
+      {/* About Us & Statistics Section */}
+      <section id="about" className="bg-[#111111] py-24 px-4 border-t border-b border-black relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 text-center divide-x-0 md:divide-x divide-slate-800">
+          {/* About Us Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-24">
+            {/* Image Side */}
+            <div className="relative w-full h-[400px] lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl">
+              <img src={aboutImg} alt="About Us" className="w-full h-full object-cover object-[center_35%] grayscale-[20%]" />
+            </div>
+
+            {/* Content Side */}
+            <div className="text-left">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="h-[2px] w-12 bg-red-600"></div>
+                <span className="text-red-500 text-sm font-bold uppercase tracking-widest">About Us</span>
+              </div>
+
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight tracking-tight">
+                Stronger Every Day, <br /> Fitter for Life
+              </h2>
+
+              <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-8">
+                Train hard, fuel smart, and live healthier with expert coaches and programs tailored for real results.
+              </p>
+
+              <div className="space-y-4 text-slate-300 font-medium mb-10">
+                <div className="flex items-center space-x-4 relative before:content-[''] before:absolute before:left-[-1.5rem] before:top-1/2 before:-translate-y-1/2 before:w-4 before:h-[2px] before:bg-red-600 ml-6">
+                  <span>over 20 years of experience</span>
+                </div>
+                <div className="flex items-center space-x-4 relative before:content-[''] before:absolute before:left-[-1.5rem] before:top-1/2 before:-translate-y-1/2 before:w-4 before:h-[2px] before:bg-red-600 ml-6">
+                  <span>certified trainer</span>
+                </div>
+                <div className="flex items-center space-x-4 relative before:content-[''] before:absolute before:left-[-1.5rem] before:top-1/2 before:-translate-y-1/2 before:w-4 before:h-[2px] before:bg-red-600 ml-6">
+                  <span>real results</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Statistics Section Inside About Us panel */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 text-center divide-x-0 md:divide-x divide-slate-800 border-t border-slate-800 pt-16">
             {/* Stat 1: Years Of Experience */}
             <div className="flex flex-col items-center justify-center p-4">
               <div className="flex items-baseline space-x-1 mb-2">
@@ -629,7 +667,7 @@ const Landing = () => {
                 <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
               <h4 className="text-xl font-bold text-slate-900 mb-3 tracking-tight">Transformed Bodies</h4>
-              <p className="text-slate-600 leading-relaxed text-sm">Proof in results. Thousands of members in Dharan have completely redefined their physique and confidence here.</p>
+              <p className="text-slate-600 leading-relaxed text-sm">Proof in results. Hundreds of members in Dharan have completely redefined their physique and confidence here.</p>
             </div>
 
             <div className="bg-white border border-slate-100 p-8 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
@@ -778,7 +816,7 @@ const Landing = () => {
       )}
 
       {/* Integrated About & Contact Section */}
-      <section id="about" className="py-24 px-4 bg-slate-50 relative">
+      <section id="contact" className="py-24 px-4 bg-slate-50 relative">
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-start">
@@ -836,7 +874,7 @@ const Landing = () => {
             </div>
 
             {/* Contact Form Side */}
-            <div id="contact" className="bg-white p-8 md:p-12 rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50">
+            <div className="bg-white p-8 md:p-12 rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50">
               <div className="relative z-10">
                 <h3 className="text-3xl font-black text-slate-900 mb-6 tracking-tight">Get In <span className="text-red-500">Touch</span></h3>
 
