@@ -5,6 +5,7 @@ import slide1 from '../assets/bau.png';
 import slide2 from '../assets/dfcpariwar.png';
 import slide3 from '../assets/dfcpariwar2.jpeg';
 import aboutImg from '../assets/motheraninene.png';
+import baubabal from '../assets/baubabal.jpeg';
 
 const slides = [
   {
@@ -137,10 +138,12 @@ const Landing = () => {
       console.log(`Fetched ${response?.length || 0} plans from API`);
 
       if (Array.isArray(response)) {
-        setPlans(response);
+        // Sort plans by duration: 1 -> 3 -> 6 -> 12 months
+        const sorted = [...response].sort((a, b) => a.durationMonths - b.durationMonths);
+        setPlans(sorted);
       } else {
         console.error("API returned non-array for plans:", response);
-        setPlans([]); // Default to empty array to prevent map crashes
+        setPlans([]);
       }
     } catch (error) {
       console.error("Failed to fetch plans:", error);
@@ -446,41 +449,37 @@ const Landing = () => {
           </div>
 
           {/* Statistics Section Inside About Us panel */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 text-center divide-x-0 md:divide-x divide-slate-800 border-t border-slate-800 pt-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center divide-x-0 md:divide-x divide-slate-800 border-t border-slate-800 pt-10">
             {/* Stat 1: Years Of Experience */}
-            <div className="flex flex-col items-center justify-center p-4">
-              <div className="flex items-baseline space-x-1 mb-2">
-                <span className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter">20</span>
-                <span className="text-4xl md:text-5xl lg:text-6xl font-black text-red-500 tracking-tighter">+</span>
+            <div className="flex flex-col items-center justify-center p-2">
+              <div className="flex items-baseline space-x-1 mb-1">
+                <span className="text-xl md:text-2xl lg:text-3xl font-bold text-white tracking-tight">20</span>
               </div>
-              <span className="text-xs md:text-sm font-semibold text-slate-400 uppercase tracking-widest mt-2 block">Years Of Experience</span>
+              <span className="text-[10px] md:text-xs font-semibold text-red-500 uppercase tracking-widest mt-1 block">Years Of Experience</span>
             </div>
 
             {/* Stat 2: Total Members */}
-            <div className="flex flex-col items-center justify-center p-4">
-              <div className="flex items-baseline space-x-1 mb-2">
-                <span className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter">{analytics.totalMembers || 0}</span>
-                <span className="text-4xl md:text-5xl lg:text-6xl font-black text-red-500 tracking-tighter">+</span>
+            <div className="flex flex-col items-center justify-center p-2">
+              <div className="flex items-baseline space-x-1 mb-1">
+                <span className="text-xl md:text-2xl lg:text-3xl font-bold text-white tracking-tight">{analytics.totalMembers || 0}</span>
               </div>
-              <span className="text-xs md:text-sm font-semibold text-slate-400 uppercase tracking-widest mt-2 block">Total Members</span>
+              <span className="text-[10px] md:text-xs font-semibold text-red-500 uppercase tracking-widest mt-1 block">Total Members</span>
             </div>
 
             {/* Stat 3: Memberships Sold */}
-            <div className="flex flex-col items-center justify-center p-4">
-              <div className="flex items-baseline space-x-1 mb-2">
-                <span className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter">{analytics.membershipsSold || 0}</span>
-                <span className="text-4xl md:text-5xl lg:text-6xl font-black text-red-500 tracking-tighter">+</span>
+            <div className="flex flex-col items-center justify-center p-2">
+              <div className="flex items-baseline space-x-1 mb-1">
+                <span className="text-xl md:text-2xl lg:text-3xl font-bold text-white tracking-tight">{analytics.membershipsSold || 0}</span>
               </div>
-              <span className="text-xs md:text-sm font-semibold text-slate-400 uppercase tracking-widest mt-2 block">Memberships Sold</span>
+              <span className="text-[10px] md:text-xs font-semibold text-red-500 uppercase tracking-widest mt-1 block">Memberships Sold</span>
             </div>
 
             {/* Stat 4: Popular Class */}
-            <div className="flex flex-col items-center justify-center p-4">
-              <div className="flex items-baseline space-x-1 mb-2">
-                <span className="text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tighter uppercase">{analytics.popularSession?.type || "GYM"}</span>
-                <span className="text-4xl md:text-5xl lg:text-6xl font-black text-red-500 tracking-tighter">*</span>
+            <div className="flex flex-col items-center justify-center p-2">
+              <div className="flex items-baseline space-x-1 mb-1">
+                <span className="text-xl md:text-2xl lg:text-3xl font-bold text-white tracking-tight uppercase">{analytics.popularSession?.type || "GYM"}</span>
               </div>
-              <span className="text-xs md:text-sm font-semibold text-slate-400 uppercase tracking-widest mt-2 block">Popular Class</span>
+              <span className="text-[10px] md:text-xs font-semibold text-red-500 uppercase tracking-widest mt-1 block">Popular Class</span>
             </div>
           </div>
         </div>
@@ -488,143 +487,146 @@ const Landing = () => {
 
       {/* Services Section */}
       <section id="services" className="py-24 px-4 bg-slate-50 relative">
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-left mb-16 flex flex-col md:flex-row md:items-end justify-between gap-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-left mb-12 flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div>
               <div className="flex items-center space-x-4 mb-4">
                 <div className="h-[2px] w-12 bg-red-500"></div>
                 <span className="text-red-500 text-sm font-bold uppercase tracking-widest">Our Services</span>
               </div>
-              <h3 className="text-4xl md:text-6xl font-black text-slate-900 leading-tight tracking-tight">
+              <h3 className="text-4xl md:text-5xl font-black text-slate-900 leading-tight tracking-tight">
                 Elite <span className="text-red-500">Training</span>
               </h3>
             </div>
-            <p className="text-slate-600 max-w-md text-base leading-relaxed">
+            <p className="text-slate-500 max-w-md text-sm font-normal leading-relaxed">
               Experience the pinnacle of physical training with our diverse range of elite services and professional guidance.
             </p>
           </div>
 
-          <div className="card-grid">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Weight Training */}
-            <div className="service-card group">
-              <div>
-                <div className="text-red-500 mb-8">
-                  <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.57 14.86L22 13.43L20.57 12L17 15.57L8.43 7L12 3.43L10.57 2L9.14 3.43L7.71 2L6.28 3.43L4.86 2L3.43 3.43L2 4.86L3.43 6.28L2 7.71L3.43 9.14L2 10.57L3.43 12L7 8.43L15.57 17L12 20.57L13.43 22L14.86 20.57L16.28 22L17.71 20.57L19.14 22L20.57 20.57L22 19.14L20.57 17.71L22 16.28L20.57 14.86Z" />
-                  </svg>
-                </div>
-                <h4 className="heading">Weight Training</h4>
-                <p>Industrial-grade resistance equipment and free weights for maximum strength development.</p>
+            <div className="flex flex-col bg-white border border-red-200 hover:border-red-400 hover:shadow-lg hover:shadow-red-500/5 rounded-2xl p-6 transition-all duration-300">
+              <div className="text-red-500 mb-4">
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.57 14.86L22 13.43L20.57 12L17 15.57L8.43 7L12 3.43L10.57 2L9.14 3.43L7.71 2L6.28 3.43L4.86 2L3.43 3.43L2 4.86L3.43 6.28L2 7.71L3.43 9.14L2 10.57L3.43 12L7 8.43L15.57 17L12 20.57L13.43 22L14.86 20.57L16.28 22L17.71 20.57L19.14 22L20.57 20.57L22 19.14L20.57 17.71L22 16.28L20.57 14.86Z" />
+                </svg>
               </div>
-              <p className="cta-text">Explore Space <span>→</span></p>
+              <h4 className="text-base font-bold text-slate-900 tracking-tight mb-2">Weight Training</h4>
+              <p className="text-sm font-normal text-slate-500 leading-relaxed">Industrial-grade resistance equipment and free weights for maximum strength development.</p>
             </div>
 
             {/* Cardio Training */}
-            <div className="service-card group">
-              <div>
-                <div className="text-red-500 mb-8">
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <h4 className="heading">Cardio Training</h4>
-                <p>Boost your endurance with our wide range of treadmills, cycles, and elliptical trainers.</p>
+            <div className="flex flex-col bg-white border border-red-200 hover:border-red-400 hover:shadow-lg hover:shadow-red-500/5 rounded-2xl p-6 transition-all duration-300">
+              <div className="text-red-500 mb-4">
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
               </div>
-              <p className="cta-text">Explore Space <span>→</span></p>
+              <h4 className="text-base font-bold text-slate-900 tracking-tight mb-2">Cardio Training</h4>
+              <p className="text-sm font-normal text-slate-500 leading-relaxed">Boost your endurance with our wide range of treadmills, cycles, and elliptical trainers.</p>
             </div>
 
             {/* Sauna & Steam Bath */}
-            <div className="service-card group">
-              <div>
-                <div className="text-red-500 mb-8">
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.99 7.99 0 0120 13a7.98 7.98 0 01-2.343 5.657z" />
-                  </svg>
-                </div>
-                <h4 className="heading">Sauna & Steam</h4>
-                <p>Relax and detoxify after your workout with our modern sauna and therapeutic steam facilities.</p>
+            <div className="flex flex-col bg-white border border-red-200 hover:border-red-400 hover:shadow-lg hover:shadow-red-500/5 rounded-2xl p-6 transition-all duration-300">
+              <div className="text-red-500 mb-4">
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.99 7.99 0 0120 13a7.98 7.98 0 01-2.343 5.657z" />
+                </svg>
               </div>
-              <p className="cta-text">Explore Space <span>→</span></p>
+              <h4 className="text-base font-bold text-slate-900 tracking-tight mb-2">Sauna & Steam</h4>
+              <p className="text-sm font-normal text-slate-500 leading-relaxed">Relax and detoxify after your workout with our modern sauna and therapeutic steam facilities.</p>
             </div>
 
-            {/* Boxing Training */}
-            <div className="service-card group">
-              <div>
-                <div className="text-red-500 mb-8">
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9" strokeWidth="2" />
-                    <path d="M9 12h6" strokeWidth="2" />
-                  </svg>
-                </div>
-                <h4 className="heading">Boxing Zone</h4>
-                <p>Learn boxing fundamentals and boost your cardio with our specialized boxing sessions.</p>
+            {/* Boxing Zone */}
+            <div className="flex flex-col bg-white border border-red-200 hover:border-red-400 hover:shadow-lg hover:shadow-red-500/5 rounded-2xl p-6 transition-all duration-300">
+              <div className="text-red-500 mb-4">
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" strokeWidth="2" />
+                  <path d="M9 12h6" strokeWidth="2" />
+                </svg>
               </div>
-              <p className="cta-text">Explore Space <span>→</span></p>
+              <h4 className="text-base font-bold text-slate-900 tracking-tight mb-2">Boxing Zone</h4>
+              <p className="text-sm font-normal text-slate-500 leading-relaxed">Learn boxing fundamentals and boost your cardio with our specialized boxing sessions.</p>
             </div>
           </div>
         </div>
       </section>
 
+
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-4 bg-white relative">
+      <section id="pricing" className="py-24 px-4 bg-[#0f0f0f] relative">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
+          <div className="text-center mb-16">
             <div className="flex items-center justify-center space-x-4 mb-4">
               <span className="text-red-500 text-sm font-bold uppercase tracking-widest">Membership Tiers</span>
             </div>
-            <h3 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">
+            <h3 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
               Choose Your <span className="text-red-500">Plan</span>
             </h3>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {plans.map((plan) => {
-              const isRecommended = plan.highlightTag || plan.durationMonths === 3;
+              const isShortTerm = plan.durationMonths <= 3;
+              const isLongTerm = plan.durationMonths >= 6;
+              const tag = isShortTerm ? 'Popular' : 'Best Value';
+              const isBestValue = isLongTerm;
+
+              // Only show sauna feature for long-term plans
+              const saunaFeature = plan.features.find(f => /sauna/i.test(f));
+              const displayFeatures = isLongTerm && saunaFeature ? [saunaFeature] : [];
+
               return (
                 <div
                   key={plan._id}
-                  className={`relative flex flex-col bg-white border rounded-2xl p-8 transition-all duration-300 ${isRecommended ? 'border-red-500 shadow-xl shadow-red-500/10' : 'border-slate-200 hover:border-red-300 hover:shadow-lg'
+                  className={`relative flex flex-col bg-white rounded-2xl p-6 transition-all duration-300 border ${isBestValue
+                    ? 'border-red-500 shadow-xl shadow-red-500/10'
+                    : 'border-red-200 hover:border-red-400 hover:shadow-lg hover:shadow-red-500/5'
                     }`}
                 >
-                  {isRecommended && (
-                    <div className="absolute top-0 right-8 -translate-y-1/2 bg-red-500 text-white px-4 py-1 text-xs font-bold uppercase tracking-wider rounded-full shadow-md">
-                      POPULAR
-                    </div>
-                  )}
-
-                  <div className="mb-8">
-                    <h4 className="text-2xl font-black text-slate-900 mb-1">{plan.name}</h4>
-                    <p className="text-slate-500 text-sm font-medium">
-                      {plan.durationMonths} Months Access
-                    </p>
+                  {/* Tag — red for all, deeper red for Best Value */}
+                  <div className={`absolute top-0 right-5 -translate-y-1/2 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full ${isBestValue
+                    ? 'bg-red-500 text-white'
+                    : 'bg-red-400 text-white'
+                    }`}>
+                    {tag}
                   </div>
 
-                  <div className="space-y-4 mb-8">
+                  {/* Plan Name */}
+                  <div className="mb-5 pt-2">
+                    <h4 className="text-base font-bold text-slate-900 tracking-tight">{plan.name}</h4>
+                    <p className="text-slate-400 text-xs font-normal mt-0.5">{plan.durationMonths} Month{plan.durationMonths > 1 ? 's' : ''} Access</p>
+                  </div>
+
+                  {/* Pricing Tiers */}
+                  <div className="space-y-2 mb-5">
                     {plan.categories.map((cat, idx) => (
-                      <div key={idx} className="border-b border-slate-100 pb-4 last:border-0">
-                        <span className="text-xs font-bold text-red-500 uppercase tracking-widest block mb-1">{cat.name}</span>
-                        <div className="flex items-baseline space-x-1">
-                          <span className="text-4xl font-black text-slate-900 tracking-tight">Rs. {cat.price.toLocaleString()}</span>
-                          <span className="text-sm text-slate-400 font-medium">/term</span>
-                        </div>
+                      <div key={idx} className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                        <span className="text-[11px] text-red-400 uppercase tracking-wider font-medium">{cat.name}</span>
+                        <span className="text-sm font-normal text-slate-800">Rs. {cat.price.toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
 
-                  <div className="flex-grow mb-8">
-                    <ul className="space-y-4">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start text-sm text-slate-600 font-medium">
-                          <svg className="w-5 h-5 text-red-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {/* Sauna Feature (long-term plans only) */}
+                  {displayFeatures.length > 0 && (
+                    <div className="flex-grow mb-5">
+                      <ul className="space-y-1.5">
+                        {displayFeatures.map((feature, i) => (
+                          <li key={i} className="flex items-start text-xs text-slate-500 font-normal">
+                            <svg className="w-3.5 h-3.5 text-red-500 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   <button
                     onClick={() => handleBuyNow(plan)}
-                    className={`w-full py-4 text-sm font-bold uppercase tracking-wide transition-all duration-300 rounded-xl ${isRecommended ? 'bg-red-500 text-white hover:bg-red-600 shadow-md shadow-red-500/20' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
+                    className={`w-full py-2.5 text-xs font-bold uppercase tracking-widest transition-all duration-300 rounded-xl mt-auto ${isBestValue
+                      ? 'bg-red-500 text-white hover:bg-red-600'
+                      : 'bg-slate-900 text-white hover:bg-red-500'
                       }`}
                   >
                     Select Plan
@@ -642,8 +644,8 @@ const Landing = () => {
           )}
 
           {!loading && plans.length === 0 && (
-            <div className="p-12 text-center bg-slate-50 border border-slate-200 rounded-2xl">
-              <p className="text-slate-500 text-lg">No membership plans available currently.</p>
+            <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl">
+              <p className="text-slate-400 text-lg">No membership plans available currently.</p>
             </div>
           )}
         </div>
@@ -708,6 +710,46 @@ const Landing = () => {
               </div>
               <h4 className="text-xl font-bold text-slate-900 mb-3 tracking-tight">Safety First</h4>
               <p className="text-slate-600 leading-relaxed text-sm">A clean, safe, and motivating environment. We strictly adhere to hygiene standards to ensure your focus stays on your gains.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Target Body Goal Section (Customized) */}
+      <section className="py-24 px-4 bg-[#0f0f0f] relative overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Content Side */}
+            <div className="text-left order-2 lg:order-1">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="h-[2px] w-12 bg-red-600"></div>
+                <span className="text-red-500 text-sm font-bold uppercase tracking-widest">Join Our Membership</span>
+              </div>
+
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight tracking-tight">
+                Let's Start Your <br />
+                <span className="text-red-500">Body Goal With Us</span>
+              </h2>
+
+              <p className="text-slate-400 text-base md:text-lg leading-relaxed mb-10 max-w-xl">
+                Elevate your potential with a membership that matches your ambition. Whether you're looking for strength, endurance, or overall wellness, our premier facilities and expert guidance are here to ensure you succeed.
+              </p>
+
+              <button
+                onClick={() => scrollToSection('pricing')}
+                className="inline-flex items-center px-8 py-4 bg-red-600 hover:bg-red-700 text-white font-bold text-lg rounded-xl shadow-lg shadow-red-500/20 transition-all active:scale-[0.98] group"
+              >
+                Join Membership
+                <svg className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                </svg>
+              </button>
+            </div>
+
+            {/* Image Side */}
+            <div className="relative w-full h-[400px] lg:h-[600px] rounded-3xl overflow-hidden shadow-2xl order-1 lg:order-2">
+              <img src={baubabal} alt="Body Goal" className="w-full h-full object-cover object-bottom" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
             </div>
           </div>
         </div>
@@ -862,7 +904,7 @@ const Landing = () => {
               {/* Map Integration */}
               <div className="border border-slate-200 rounded-2xl overflow-hidden relative group h-64 shadow-sm hover:shadow-lg transition-all duration-500">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14164.78652234057!2d87.2721!3d26.8129!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39ef417551ec7379%3A0x7d6c5476a6b8c8d2!2sDharan%20Fitness!5e0!3m2!1sen!2snp!4v1700000000000!5m2!1sen!2snp"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3560.85731974753!2d87.28339130000001!3d26.812678699999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39ef4190ce453239%3A0xa7556d116a1602b0!2z4KSn4KSw4KS-4KSoIOCkueClhOClpOCliCDgpJXgpY3gpLLgpK0!5e0!3m2!1sen!2snp!4v1740835489439!5m2!1sen!2snp&hl=en"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -947,26 +989,26 @@ const Landing = () => {
 
 
       {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 py-16 px-4">
+      <footer className="bg-slate-900 border-t border-slate-800 py-8 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-12 text-white">
-            <div className="col-span-1 md:col-span-2 space-y-6">
-              <h3 className="text-3xl font-black tracking-tight">
+          <div className="grid md:grid-cols-4 gap-10 text-white">
+            <div className="col-span-1 md:col-span-2 space-y-4">
+              <h3 className="text-2xl font-black tracking-tight">
                 Dharan <span className="text-red-500">Fitness</span>
               </h3>
               <p className="text-slate-400 text-sm font-medium max-w-sm leading-relaxed">
                 The only bad workout is the one that didn't happen. Join us and transform your life with premier facilities and expert guidance.
               </p>
               <div className="flex space-x-4">
-                <a href="https://www.facebook.com/DharanPhysicalFitnessCentre" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 hover:bg-red-500 hover:text-white transition-all duration-300">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
+                <a href="https://www.facebook.com/DharanPhysicalFitnessCentre" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 hover:bg-red-500 hover:text-white transition-all duration-300">
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
                 </a>
               </div>
             </div>
 
             <div>
-              <h4 className="font-bold text-slate-200 uppercase tracking-widest text-sm mb-6">Explore</h4>
-              <ul className="space-y-4">
+              <h4 className="font-bold text-slate-200 uppercase tracking-widest text-xs mb-5">Explore</h4>
+              <ul className="space-y-3">
                 {['home', 'services', 'pricing', 'about', 'contact'].map(sec => (
                   <li key={sec}>
                     <button onClick={() => scrollToSection(sec)} className="text-slate-400 text-sm font-medium hover:text-red-500 transition-colors capitalize">
@@ -977,24 +1019,24 @@ const Landing = () => {
               </ul>
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-6">
               <div>
-                <h4 className="font-bold text-slate-200 uppercase tracking-widest text-sm mb-4">Location</h4>
+                <h4 className="font-bold text-slate-200 uppercase tracking-widest text-xs mb-3">Location</h4>
                 <p className="text-slate-400 text-sm leading-relaxed">
                   Buddha Marga, Dharan-7<br />Sunsari, Nepal
                 </p>
               </div>
               <div>
-                <h4 className="font-bold text-slate-200 uppercase tracking-widest text-sm mb-4">Contact</h4>
+                <h4 className="font-bold text-slate-200 uppercase tracking-widest text-xs mb-3">Contact</h4>
                 <p className="text-slate-300 text-lg font-bold">9852056919</p>
                 <p className="text-slate-400 text-sm mt-1">dharanfitnessclub@gmail.com</p>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-slate-800 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="border-t border-slate-800 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-slate-500 text-sm font-medium">
-              © {new Date().getFullYear()} Dharan Fitness Centre. All Rights Reserved.
+              © {new Date().getFullYear()} Dharan Fitness Centre.
             </p>
             <div className="flex space-x-6">
               <span className="text-slate-600 text-xs font-bold uppercase tracking-widest">MERN Platform V2.0</span>
