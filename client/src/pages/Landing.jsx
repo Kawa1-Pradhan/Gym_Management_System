@@ -6,6 +6,8 @@ import slide2 from '../assets/dfcpariwar.png';
 import slide3 from '../assets/dfcpariwar2.jpeg';
 import aboutImg from '../assets/motheraninene.png';
 import baubabal from '../assets/baubabal.jpeg';
+import sagardai from '../assets/sagardai.jpeg';
+
 
 const slides = [
   {
@@ -714,6 +716,37 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Transformation Result Section */}
+      <section className="py-24 px-4 bg-white relative overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Content Side */}
+            <div className="order-2 lg:order-1">
+              <div className="flex flex-col mb-8">
+                <span className="text-red-500 text-sm font-bold uppercase tracking-widest mb-1">Result</span>
+                <div className="h-[2px] w-12 bg-red-600"></div>
+              </div>
+
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 mb-8 leading-tight tracking-tight uppercase">
+                Built to bring <br />
+                best <span className="text-red-500">results</span>
+              </h2>
+
+              <p className="text-slate-600 text-lg leading-relaxed max-w-xl font-medium">
+                At Dharan Fitness Club, we believe in real progress. Our transformation programs are designed to push your limits and deliver tangible results that stay with you. Whether it's weight loss, muscle gain, or overall health, our community leads by example.
+              </p>
+            </div>
+
+            {/* Image Side */}
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl order-1 lg:order-2 group">
+              <img src={sagardai} alt="Transformation Result" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
 
       {/* Target Body Goal Section (Customized) */}
       <section className="py-24 px-4 bg-[#0f0f0f] relative overflow-hidden">
