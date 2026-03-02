@@ -217,6 +217,12 @@ const Landing = () => {
                 Home
               </button>
               <button
+                onClick={() => scrollToSection('about')}
+                className="text-slate-600 hover:text-red-500 px-3 py-2 text-sm font-semibold transition duration-300"
+              >
+                About
+              </button>
+              <button
                 onClick={() => scrollToSection('services')}
                 className="text-slate-600 hover:text-red-500 px-3 py-2 text-sm font-semibold transition duration-300"
               >
@@ -227,12 +233,6 @@ const Landing = () => {
                 className="text-slate-600 hover:text-red-500 px-3 py-2 text-sm font-semibold transition duration-300"
               >
                 Pricing
-              </button>
-              <button
-                onClick={() => scrollToSection('about')}
-                className="text-slate-600 hover:text-red-500 px-3 py-2 text-sm font-semibold transition duration-300"
-              >
-                About
               </button>
               <button
                 onClick={() => scrollToSection('contact')}
@@ -275,28 +275,22 @@ const Landing = () => {
                   Home
                 </button>
                 <button
+                  onClick={() => scrollToSection('about')}
+                  className="block w-full text-left text-slate-600 hover:text-red-500 px-3 py-2 text-base font-semibold transition duration-300"
+                >
+                  About
+                </button>
+                <button
                   onClick={() => scrollToSection('services')}
                   className="block w-full text-left text-slate-600 hover:text-red-500 px-3 py-2 text-base font-semibold transition duration-300"
                 >
                   Services
                 </button>
                 <button
-                  onClick={() => scrollToSection('features')}
-                  className="block w-full text-left text-slate-600 hover:text-red-500 px-3 py-2 text-base font-semibold transition duration-300"
-                >
-                  Features
-                </button>
-                <button
                   onClick={() => scrollToSection('pricing')}
                   className="block w-full text-left text-slate-600 hover:text-red-500 px-3 py-2 text-base font-semibold transition duration-300"
                 >
                   Pricing
-                </button>
-                <button
-                  onClick={() => scrollToSection('about')}
-                  className="block w-full text-left text-slate-600 hover:text-red-500 px-3 py-2 text-base font-semibold transition duration-300"
-                >
-                  About
                 </button>
                 <button
                   onClick={() => scrollToSection('contact')}
@@ -739,8 +733,8 @@ const Landing = () => {
             </div>
 
             {/* Image Side */}
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl order-1 lg:order-2 group">
-              <img src={sagardai} alt="Transformation Result" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl order-1 lg:order-2">
+              <img src={sagardai} alt="Transformation Result" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
             </div>
           </div>
