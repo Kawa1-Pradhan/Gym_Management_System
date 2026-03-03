@@ -75,6 +75,10 @@ const users = new mongoose.Schema({
   emailLastError: {
     type: String,
   },
+  remindersSent: {
+    type: [String], // tracks membership reminders: '7d', '1d', 'expired'
+    default: [],
+  },
   notes: {
     type: String,
   },

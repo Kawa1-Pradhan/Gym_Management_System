@@ -34,11 +34,36 @@ const upsertNotification = async (userId, title, message, type, relatedId, actio
         const query = { recipient: userId, type };
         if (relatedId) query.relatedId = relatedId;
 
-        return await Notification.findOneAndUpdate(
-            query,
-            { title, message, actionUrl, isRead: false, createdAt: new Date() },
-            { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
-        );
+        const existing = await Notification.findOne(query);
+
+        if (existing) {
+            // Only mark as unread and update content if title or message actually changed
+            const isContentSame = existing.title === title && existing.message === message;
+
+            const update = { actionUrl, createdAt: new Date() };
+            if (!isContentSame) {
+                update.title = title;
+                update.message = message;
+                update.isRead = false;
+            }
+
+            return await Notification.findByIdAndUpdate(
+                existing._id,
+                update,
+                { returnDocument: 'after' }
+            );
+        } else {
+            // New notification
+            return await Notification.create({
+                recipient: userId,
+                title,
+                message,
+                type,
+                relatedId,
+                actionUrl,
+                isRead: false
+            });
+        }
     } catch (error) {
         console.error('Error upserting notification:', error);
         return null;

@@ -8,6 +8,7 @@ import boxingService from '../services/boxingService.js';
 import saunaService from '../services/saunaService.js';
 import notificationService from '../services/notificationService.js';
 import { toNPT, getNPTDateFromParts } from '../utils/dateUtils.js';
+import { sendMembershipExpiryWarningEmail, sendSessionReminderEmail } from '../utils/mail.js';
 
 const runReminderJobs = async () => {
     // console.log("🔔 Running background reminder jobs...");
@@ -27,7 +28,7 @@ const checkMembershipExpiry = async () => {
     today.setHours(0, 0, 0, 0);
 
     // Helper for membership reminders
-    const notifyExpiry = async (days, label) => {
+    const notifyExpiry = async (days, label, slug) => {
         const targetDate = new Date(today);
         targetDate.setDate(today.getDate() + days);
 
@@ -40,6 +41,7 @@ const checkMembershipExpiry = async () => {
         });
 
         for (const user of users) {
+            // Push Notification
             await notificationService.upsertNotification(
                 user._id,
                 `Membership Expiring in ${label}`,
@@ -48,11 +50,19 @@ const checkMembershipExpiry = async () => {
                 user._id,
                 "/profile"
             );
+
+            // Email Notification (Only send once per milestone)
+            if (!user.remindersSent) user.remindersSent = [];
+            if (!user.remindersSent.includes(slug)) {
+                await sendMembershipExpiryWarningEmail(user.email, user.name, user.membershipExpiryDate, label);
+                user.remindersSent.push(slug);
+                await user.save();
+            }
         }
     };
 
-    await notifyExpiry(7, "7 days");
-    await notifyExpiry(1, "1 day");
+    await notifyExpiry(7, "7 days", "7d");
+    await notifyExpiry(1, "1 day", "1d");
 
     // Expired today
     const expiredUsers = await User.find({
@@ -72,6 +82,14 @@ const checkMembershipExpiry = async () => {
             user._id,
             "/profile"
         );
+
+        // Email Notification for Expiry
+        if (!user.remindersSent) user.remindersSent = [];
+        if (!user.remindersSent.includes("expired")) {
+            await sendMembershipExpiryWarningEmail(user.email, user.name, user.membershipExpiryDate, "EXPIRED");
+            user.remindersSent.push("expired");
+            await user.save();
+        }
     }
 };
 
@@ -112,6 +130,7 @@ const checkSessionReminders = async () => {
             // 24 Hours Before Reminder
             if (timeUntilStart > 2 * 60 * 60 * 1000 && timeUntilStart <= 24 * 60 * 60 * 1000) {
                 if (!booking.remindersSent.includes('24h')) {
+                    // Push Notification
                     await notificationService.createNotification(
                         booking.memberId._id,
                         "Session Tomorrow",
@@ -120,6 +139,20 @@ const checkSessionReminders = async () => {
                         booking._id,
                         "/dashboard"
                     );
+
+                    // Email Notification
+                    await sendSessionReminderEmail(
+                        booking.memberId.email,
+                        booking.memberId.name,
+                        {
+                            name: session.name,
+                            type: booking.sessionType,
+                            startTime: session.startTime,
+                            endTime: session.endTime
+                        },
+                        "Tomorrow"
+                    );
+
                     booking.remindersSent.push('24h');
                     await booking.save();
                 }
@@ -138,6 +171,19 @@ const checkSessionReminders = async () => {
                         "/dashboard"
                     );
 
+                    // Email Notification to Member
+                    await sendSessionReminderEmail(
+                        booking.memberId.email,
+                        booking.memberId.name,
+                        {
+                            name: session.name,
+                            type: booking.sessionType,
+                            startTime: session.startTime,
+                            endTime: session.endTime
+                        },
+                        "1 Hour"
+                    );
+
                     // Notify Staff
                     if (session.createdBy) {
                         await notificationService.upsertNotification(
@@ -148,6 +194,8 @@ const checkSessionReminders = async () => {
                             session._id,
                             "/dashboard"
                         );
+                        // Optional: Send email to staff as well? The user didn't explicitly ask but it's good practice.
+                        // For now let's stick to the prompt.
                     }
                     booking.remindersSent.push('1h');
                     await booking.save();

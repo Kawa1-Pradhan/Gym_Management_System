@@ -213,3 +213,61 @@ export const sendContactEmail = async (contactData) => {
         console.error('❌ Error sending contact email:', error.message);
     }
 };
+
+export const sendMembershipExpiryWarningEmail = async (userEmail, userName, expiryDate, label) => {
+    if (!user || !pass || user === 'your-email@gmail.com') return;
+
+    const mailOptions = {
+        from: user,
+        to: userEmail,
+        subject: `Membership Expiry Warning: ${label} remaining - Dharan Fitness Club`,
+        html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                <h2 style="color: #ef4444;">Membership Update</h2>
+                <p>Hi ${userName},</p>
+                <p>This is a reminder that your membership at Dharan Fitness Club will expire in <strong>${label}</strong> on <strong>${new Date(expiryDate).toLocaleDateString()}</strong>.</p>
+                <p>To ensure uninterrupted access to the gym and your booked sessions, please visit our portal or counter to renew your plan.</p>
+                <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/dashboard" style="display: inline-block; background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0;">Renew Plan Now</a>
+                <p>Best regards,<br>Dharan Fitness Club Team</p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Expiry warning (${label}) email sent to:`, userEmail);
+    } catch (error) {
+        console.error(`❌ Error sending expiry warning email:`, error.message);
+    }
+};
+
+export const sendSessionReminderEmail = async (userEmail, userName, sessionDetails, label) => {
+    if (!user || !pass || user === 'your-email@gmail.com') return;
+
+    const mailOptions = {
+        from: user,
+        to: userEmail,
+        subject: `Upcoming Session Reminder: ${label} - Dharan Fitness Club`,
+        html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                <h2 style="color: #3b82f6;">Get Ready for Your Session!</h2>
+                <p>Hi ${userName},</p>
+                <p>This is a reminder for your upcoming <strong>${sessionDetails.type}</strong> session:</p>
+                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #3b82f6;">
+                    <p><strong>Session:</strong> ${sessionDetails.name}</p>
+                    <p><strong>Time:</strong> ${sessionDetails.startTime} - ${sessionDetails.endTime}</p>
+                    <p><strong>Starting in:</strong> ${label}</p>
+                </div>
+                <p>We look forward to seeing you there!</p>
+                <p>Best regards,<br>Dharan Fitness Club Team</p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Session reminder (${label}) email sent to:`, userEmail);
+    } catch (error) {
+        console.error(`❌ Error sending session reminder email:`, error.message);
+    }
+};
