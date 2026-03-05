@@ -7,7 +7,7 @@ import InventoryComponent from '../components/InventoryComponent';
 import Sidebar from '../components/Sidebar';
 import Reports from './Reports';
 import { Dumbbell, ChevronRight } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 
 const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
@@ -257,27 +257,56 @@ const AdminDashboard = () => {
         console.error('Error loading announcements:', err);
       }
 
-      // Calculate stats for overview
+      // Build Date Range for current month (stats only)
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toLocaleDateString('en-CA');
+      const todayDateStr = now.toLocaleDateString('en-CA');
+
+      // Build Date Range for TOTAL stats (lifetime)
+      const lifetimeStart = "2000-01-01";
+
+      // Fetch accurate revenue stats
+      let monthRevenue = 0;
+      let consolidatedPlans = [];
+      try {
+        // Fetch current month for the revenue card
+        const monthlyRevData = await apiRequest(`/api/reports/revenue?startDate=${firstDayOfMonth}&endDate=${todayDateStr}`);
+        monthRevenue = monthlyRevData?.summary?.totalRevenue || 0;
+
+        // Fetch LIFETIME stats for the best-selling plans chart
+        const totalRevData = await apiRequest(`/api/reports/revenue?startDate=${lifetimeStart}&endDate=${todayDateStr}`);
+
+        // Process Best Selling Plans (By Total Lifetime Purchase Count)
+        const categoriesMap = {
+          '1 Month': 0,
+          '3 Months': 0,
+          '6 Months': 0,
+          'Yearly': 0
+        };
+
+        (totalRevData?.details || []).forEach(d => {
+          const planName = d.planName || "";
+          if (planName.includes('1 Month')) categoriesMap['1 Month'] += d.count;
+          else if (planName.includes('3 Months')) categoriesMap['3 Months'] += d.count;
+          else if (planName.includes('6 Months')) categoriesMap['6 Months'] += d.count;
+          else if (planName.includes('Yearly')) categoriesMap['Yearly'] += d.count;
+          else {
+            const baseName = planName.split(' - ')[0].split(' (')[0];
+            if (categoriesMap[baseName] !== undefined) categoriesMap[baseName] += d.count;
+            // Don't add unknown plans to the 4 main packages as per request
+          }
+        });
+
+        consolidatedPlans = Object.entries(categoriesMap)
+          .map(([name, count]) => ({ name, count }));
+      } catch (err) {
+        console.error('Error loading revenue reports:', err);
+      }
+
+      // Calculate member stats
       const members = fetchedUsers.filter(u => u.role?.includes('MEMBER'));
       const activeMembers = members.filter(m => m.isActive !== false);
       const inactiveMembers = members.filter(m => m.isActive === false);
-
-      const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const monthlyRevenue = members
-        .filter(m => {
-          if (!m.membershipStartDate) return false;
-          const startDate = new Date(m.membershipStartDate);
-          return startDate >= firstDayOfMonth && startDate <= now;
-        })
-        .reduce((sum, m) => {
-          const plan = fetchedPlans.find(p => p.name === m.membershipType);
-          if (plan) {
-            const finalPrice = plan.price - (plan.price * (plan.discountPercent || 0) / 100);
-            return sum + finalPrice;
-          }
-          return sum;
-        }, 0);
 
       const sevenDaysFromNow = new Date();
       sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
@@ -287,31 +316,18 @@ const AdminDashboard = () => {
         return endDate >= now && endDate <= sevenDaysFromNow;
       }).length;
 
-      const planCounts = {};
-      fetchedPlans.forEach(p => { planCounts[p.name] = 0; });
-      members.forEach(m => {
-        if (m.membershipType && m.membershipType !== 'None') {
-          planCounts[m.membershipType] = (planCounts[m.membershipType] || 0) + 1;
-        }
-      });
-
-      const planDistribution = Object.entries(planCounts).map(([name, count]) => ({
-        name,
-        count
-      }));
-
-      const today = new Date();
-      const todayStr = today.toLocaleDateString('en-CA');
+      const todayStr = now.toLocaleDateString('en-CA');
       const activeSessionsToday = fetchedSessions.filter(s => {
         if (!s || !s.date) return false;
         const sDate = new Date(s.date).toLocaleDateString('en-CA');
         return sDate === todayStr && s.status === 'Active';
       }).length;
 
-      const newMembersThisMonth = members.filter(m => {
+      const newMembersThisMonthCount = members.filter(m => {
         if (!m.createdAt) return false;
         const createdDate = new Date(m.createdAt);
-        return createdDate >= firstDayOfMonth && createdDate <= now;
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        return createdDate >= start && createdDate <= now;
       }).length;
 
       const boxingCount = fetchedBookings.filter(b => b.sessionType === 'Boxing').length;
@@ -326,12 +342,12 @@ const AdminDashboard = () => {
       setStats({
         activeMembers: activeMembers.length,
         inactiveMembers: inactiveMembers.length,
-        monthlyRevenue,
+        monthlyRevenue: monthRevenue,
         expiringSoon,
-        planDistribution,
+        planDistribution: consolidatedPlans,
         totalMembers: members.length,
         activeSessionsToday,
-        newMembersThisMonth,
+        newMembersThisMonth: newMembersThisMonthCount,
         mostBookedType,
         totalUsers: fetchedUsers.length,
         activeBookings: fetchedBookings.filter(b => b.status === 'Booked').length,
@@ -580,21 +596,84 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <div className="bg-neutral-900 p-6 rounded-lg shadow-lg border border-neutral-800 mb-8">
-                  <h3 className="text-xl font-bold mb-6 text-white">Best-Selling Membership Plans</h3>
-                  <div className="h-80 w-full">
-                    {stats.planDistribution && stats.planDistribution.length > 0 ? (
+                <div className="bg-neutral-900 p-6 rounded-2xl border border-neutral-800 shadow-xl mb-8">
+                  <div className="flex justify-between items-center mb-8">
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Total Membership Distribution</h3>
+                      <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mt-1">Lifetime Popularity of Core Packages</p>
+                    </div>
+                    {stats.planDistribution && stats.planDistribution.length > 0 && (
+                      <div className="bg-red-600/10 border border-red-500/20 px-3 py-1.5 rounded-lg">
+                        <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">
+                          Best Seller: {[...stats.planDistribution].sort((a, b) => b.count - a.count)[0].name}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="h-80 w-full bg-black/20 p-4 rounded-xl border border-neutral-800/50">
+                    {stats.planDistribution && stats.planDistribution.some(p => p.count > 0) ? (
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={stats.planDistribution}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
-                          <XAxis dataKey="name" stroke="#525252" fontSize={12} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#525252" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                          <Tooltip contentStyle={{ backgroundColor: '#000', borderColor: '#262626', color: '#fff' }} itemStyle={{ color: '#ef4444' }} cursor={{ stroke: '#262626', strokeWidth: 2 }} />
-                          <Line type="monotone" dataKey="count" stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', r: 6 }} activeDot={{ r: 8, strokeWidth: 0 }} />
-                        </LineChart>
+                        <BarChart data={stats.planDistribution}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#171717" vertical={false} />
+                          <XAxis
+                            dataKey="name"
+                            stroke="#525252"
+                            fontSize={11}
+                            tickLine={false}
+                            axisLine={false}
+                            fontFamily="Inter, sans-serif"
+                            fontWeight={700}
+                          />
+                          <YAxis
+                            stroke="#525252"
+                            fontSize={11}
+                            tickLine={false}
+                            axisLine={false}
+                            fontFamily="Inter, sans-serif"
+                            allowDecimals={false}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: '#0a0a0a',
+                              borderColor: '#262626',
+                              borderRadius: '12px',
+                              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+                              border: '1px solid #404040'
+                            }}
+                            cursor={{ fill: '#262626', opacity: 0.4 }}
+                          />
+                          <Bar
+                            dataKey="count"
+                            radius={[6, 6, 0, 0]}
+                            barSize={60}
+                          >
+                            <LabelList
+                              dataKey="count"
+                              position="top"
+                              fill="#ffffff"
+                              fontSize={12}
+                              fontWeight={900}
+                              offset={10}
+                            />
+                            {stats.planDistribution.map((entry, index) => {
+                              const maxVal = Math.max(...stats.planDistribution.map(p => p.count));
+                              return (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={entry.count === maxVal && entry.count > 0 ? '#ef4444' : '#404040'}
+                                  className="transition-all duration-500"
+                                />
+                              );
+                            })}
+                          </Bar>
+                        </BarChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="flex items-center justify-center h-full text-neutral-500 italic">No plan data available</div>
+                      <div className="flex flex-col items-center justify-center h-full text-neutral-600">
+                        <svg className="w-12 h-12 mb-3 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2" /></svg>
+                        <p className="text-sm font-medium italic">No historical sales data found.</p>
+                      </div>
                     )}
                   </div>
                 </div>
