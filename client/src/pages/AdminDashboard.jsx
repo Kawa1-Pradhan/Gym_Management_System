@@ -109,6 +109,7 @@ const PlanCard = ({ plan, onUpdate }) => {
                 type="number"
                 value={cat.price}
                 onChange={(e) => handlePriceChange(idx, e.target.value)}
+                onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
                 className="w-full bg-black border border-neutral-800 rounded p-1.5 text-white text-sm focus:border-red-500 outline-none transition-colors"
                 disabled={!cat.isActive}
               />
@@ -640,8 +641,8 @@ const AdminDashboard = () => {
                             </td>
                             <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex justify-end gap-2">
-                                <button onClick={() => handleUserAction(u._id, 'Reset Password')} className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 rounded-lg border border-neutral-700 transition" title="Reset Password">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                                <button onClick={(e) => { e.stopPropagation(); setSelectedUserDetail(u); setShowUserDetailModal(true); }} className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 rounded-lg border border-neutral-700 transition" title="View Details">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                 </button>
                                 <button onClick={() => handleUserAction(u._id, u.isActive === false ? 'Activate' : 'Deactivate')} className={`p-2 rounded-lg border transition ${u.isActive === false ? 'bg-green-900/20 text-green-400 border-green-500/20' : 'bg-neutral-800 hover:bg-red-900/20 text-orange-400 border-neutral-700'}`} title="Toggle Status">
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
@@ -707,8 +708,8 @@ const AdminDashboard = () => {
                               <div className="flex justify-end gap-2">
                                 {!u.role?.includes('ADMIN') && (
                                   <>
-                                    <button onClick={() => handleUserAction(u._id, 'Reset Password')} className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 rounded-lg border border-neutral-700 transition" title="Reset Password">
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                                    <button onClick={(e) => { e.stopPropagation(); setSelectedUserDetail(u); setShowUserDetailModal(true); }} className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 rounded-lg border border-neutral-700 transition" title="View Details">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                     </button>
                                     <button onClick={() => handleUserAction(u._id, u.isActive === false ? 'Activate' : 'Deactivate')} className={`p-2 rounded-lg border transition ${u.isActive === false ? 'bg-green-900/20 text-green-400 border-green-500/20' : 'bg-neutral-800 hover:bg-red-900/20 text-orange-400 border-neutral-700'}`} title="Toggle Status">
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>

@@ -374,7 +374,8 @@ const Inventory = () => {
                                     <input
                                         type="number"
                                         value={formData.price}
-                                        onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                                        onChange={(e) => setFormData({ ...formData, price: e.target.value === '' ? '' : e.target.value })}
+                                        onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
                                         className="w-full bg-slate-900 border border-slate-700 rounded px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
                                     />
                                 </div>
@@ -382,23 +383,33 @@ const Inventory = () => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Current Stock</label>
-                                    <input
-                                        required
-                                        type="number"
-                                        value={formData.quantity}
-                                        onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
-                                    />
+                                    <div className="flex items-center bg-slate-900 border border-slate-700 rounded focus-within:ring-2 focus-within:ring-red-600 overflow-hidden transition-all">
+                                        <button type="button" onClick={() => setFormData({ ...formData, quantity: Math.max(0, (parseInt(formData.quantity) || 0) - 1) })} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-slate-700 transition-colors font-bold">-</button>
+                                        <input
+                                            required
+                                            type="number"
+                                            value={formData.quantity}
+                                            onChange={(e) => setFormData({ ...formData, quantity: e.target.value === '' ? '' : e.target.value })}
+                                            onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
+                                            className="w-full bg-transparent text-center text-white outline-none font-medium"
+                                        />
+                                        <button type="button" onClick={() => setFormData({ ...formData, quantity: (parseInt(formData.quantity) || 0) + 1 })} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-slate-700 transition-colors font-bold">+</button>
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Low Stock Alert</label>
-                                    <input
-                                        required
-                                        type="number"
-                                        value={formData.lowStockThreshold}
-                                        onChange={(e) => setFormData({ ...formData, lowStockThreshold: Number(e.target.value) })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
-                                    />
+                                    <div className="flex items-center bg-slate-900 border border-slate-700 rounded focus-within:ring-2 focus-within:ring-red-600 overflow-hidden transition-all">
+                                        <button type="button" onClick={() => setFormData({ ...formData, lowStockThreshold: Math.max(0, (parseInt(formData.lowStockThreshold) || 0) - 1) })} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-slate-700 transition-colors font-bold">-</button>
+                                        <input
+                                            required
+                                            type="number"
+                                            value={formData.lowStockThreshold}
+                                            onChange={(e) => setFormData({ ...formData, lowStockThreshold: e.target.value === '' ? '' : e.target.value })}
+                                            onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
+                                            className="w-full bg-transparent text-center text-white outline-none font-medium"
+                                        />
+                                        <button type="button" onClick={() => setFormData({ ...formData, lowStockThreshold: (parseInt(formData.lowStockThreshold) || 0) + 1 })} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-slate-700 transition-colors font-bold">+</button>
+                                    </div>
                                 </div>
                             </div>
                             <div className="pt-4 flex gap-3">
@@ -424,22 +435,15 @@ const Inventory = () => {
 
                             <form onSubmit={handleReduceStock} className="space-y-6">
                                 <div className="flex items-center justify-center gap-6">
-                                    <button
-                                        type="button"
-                                        onClick={() => setReduceAmount(Math.max(1, reduceAmount - 1))}
-                                        className="w-12 h-12 rounded bg-slate-700 flex items-center justify-center text-2xl font-bold hover:bg-slate-600 transition-colors"
-                                    >-</button>
+                                    <button type="button" onClick={() => setReduceAmount(Math.max(1, (parseInt(reduceAmount) || 1) - 1))} className="w-12 h-12 rounded bg-slate-700 flex items-center justify-center text-2xl font-bold hover:bg-slate-600 transition-colors">-</button>
                                     <input
                                         type="number"
                                         value={reduceAmount}
-                                        onChange={(e) => setReduceAmount(Math.min(itemToReduce?.quantity, Math.max(1, Number(e.target.value))))}
+                                        onChange={(e) => setReduceAmount(e.target.value === '' ? '' : Math.min(itemToReduce?.quantity, Math.max(0, Number(e.target.value))))}
+                                        onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
                                         className="w-20 bg-slate-900 text-center text-3xl font-bold py-2 rounded border border-slate-700 focus:outline-none focus:ring-2 focus:ring-red-600"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => setReduceAmount(Math.min(itemToReduce?.quantity, reduceAmount + 1))}
-                                        className="w-12 h-12 rounded bg-slate-700 flex items-center justify-center text-2xl font-bold hover:bg-slate-600 transition-colors"
-                                    >+</button>
+                                    <button type="button" onClick={() => setReduceAmount(Math.min(itemToReduce?.quantity, (parseInt(reduceAmount) || 0) + 1))} className="w-12 h-12 rounded bg-slate-700 flex items-center justify-center text-2xl font-bold hover:bg-slate-600 transition-colors">+</button>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <button

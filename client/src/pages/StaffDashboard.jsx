@@ -134,8 +134,12 @@ const StaffDashboard = () => {
       });
 
       const uniqueMembersToday = new Set(
-        sessionsBookings
-          .map(b => (b.memberId?._id || b.memberId || '').toString())
+        attendance
+          .filter(a => {
+            const dateStr = new Date(a.date).toLocaleDateString('en-CA');
+            return dateStr === todayStr && a.status === 'Present';
+          })
+          .map(a => (a.member?._id || a.member || '').toString())
           .filter(Boolean)
       );
 
@@ -624,7 +628,7 @@ const StaffDashboard = () => {
                     <button
                       type="submit"
                       disabled={loading || !bookingForm.memberId || !bookingForm.sessionId}
-                      className="w-full md:w-auto bg-red-600 hover:bg-red-700 disabled:bg-slate-700 disabled:text-slate-500 text-white font-black py-4 px-12 rounded-lg shadow-xl transition-all uppercase tracking-widest text-sm"
+                      className={`w-full md:w-auto text-white font-black py-4 px-12 rounded-lg shadow-xl transition-all uppercase tracking-widest text-sm ${(loading || !bookingForm.memberId || !bookingForm.sessionId) ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed border border-neutral-700' : 'bg-red-600 hover:bg-red-700 border border-red-500'}`}
                     >
                       {loading ? 'Processing...' : 'Confirm Member Booking'}
                     </button>
@@ -651,9 +655,9 @@ const StaffDashboard = () => {
               </div>
 
               {showBoxingForm && (
-                <div className="bg-slate-800 border border-slate-700 p-4 sm:p-8 rounded-lg shadow-xl animate-in slide-in-from-top duration-300">
+                <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-8 rounded-lg shadow-xl animate-in slide-in-from-top duration-300">
                   <h2 className="text-xl font-bold text-white mb-6">{editingSession ? 'Edit Boxing Session' : 'Create New Boxing Session'}</h2>
-                  <form onSubmit={handleBoxingSubmit} className="space-y-6">
+                  <form onSubmit={handleBoxingSubmit} className="space-y-6" style={{ colorScheme: 'dark' }}>
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Session Name</label>
@@ -711,14 +715,18 @@ const StaffDashboard = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Max Capacity</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={boxingForm.maxCapacity}
-                          onChange={(e) => setBoxingForm({ ...boxingForm, maxCapacity: e.target.value })}
-                          className="w-full bg-black border border-neutral-800 rounded-md p-3 text-white focus:ring-2 focus:ring-red-600 outline-none"
-                          required
-                        />
+                        <div className="flex items-center bg-black border border-neutral-800 rounded-md focus-within:ring-2 focus-within:ring-red-600 overflow-hidden transition-all">
+                          <button type="button" onClick={() => setBoxingForm({ ...boxingForm, maxCapacity: Math.max(1, (parseInt(boxingForm.maxCapacity) || 1) - 1) })} className="px-4 py-3 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors font-bold">-</button>
+                          <input
+                            type="number"
+                            value={boxingForm.maxCapacity}
+                            onChange={(e) => setBoxingForm({ ...boxingForm, maxCapacity: e.target.value === '' ? '' : e.target.value })}
+                            onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
+                            className="w-full bg-transparent text-center text-white outline-none"
+                            required
+                          />
+                          <button type="button" onClick={() => setBoxingForm({ ...boxingForm, maxCapacity: (parseInt(boxingForm.maxCapacity) || 0) + 1 })} className="px-4 py-3 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors font-bold">+</button>
+                        </div>
                       </div>
                     </div>
                     <div>
@@ -823,7 +831,7 @@ const StaffDashboard = () => {
               {showSaunaForm && (
                 <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-8 rounded-lg shadow-xl animate-in slide-in-from-top duration-300">
                   <h2 className="text-xl font-bold text-white mb-6">{editingSession ? 'Edit Sauna Session' : 'Create New Sauna Session'}</h2>
-                  <form onSubmit={handleSaunaSubmit} className="space-y-6">
+                  <form onSubmit={handleSaunaSubmit} className="space-y-6" style={{ colorScheme: 'dark' }}>
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Session Name</label>
@@ -838,13 +846,18 @@ const StaffDashboard = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Target Temperature (°C)</label>
-                        <input
-                          type="number"
-                          value={saunaForm.temperature}
-                          onChange={(e) => setSaunaForm({ ...saunaForm, temperature: e.target.value })}
-                          className="w-full bg-black border border-neutral-800 rounded-md p-3 text-white focus:ring-2 focus:ring-red-600 outline-none"
-                          required
-                        />
+                        <div className="flex items-center bg-black border border-neutral-800 rounded-md focus-within:ring-2 focus-within:ring-red-600 overflow-hidden transition-all">
+                          <button type="button" onClick={() => setSaunaForm({ ...saunaForm, temperature: (parseInt(saunaForm.temperature) || 0) - 1 })} className="px-4 py-3 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors font-bold">-</button>
+                          <input
+                            type="number"
+                            value={saunaForm.temperature}
+                            onChange={(e) => setSaunaForm({ ...saunaForm, temperature: e.target.value === '' ? '' : e.target.value })}
+                            onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
+                            className="w-full bg-transparent text-center text-white outline-none"
+                            required
+                          />
+                          <button type="button" onClick={() => setSaunaForm({ ...saunaForm, temperature: (parseInt(saunaForm.temperature) || 0) + 1 })} className="px-4 py-3 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors font-bold">+</button>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Date</label>
@@ -880,14 +893,18 @@ const StaffDashboard = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-neutral-500 uppercase mb-2">Max Capacity</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={saunaForm.maxCapacity}
-                          onChange={(e) => setSaunaForm({ ...saunaForm, maxCapacity: e.target.value })}
-                          className="w-full bg-black border border-neutral-800 rounded-md p-3 text-white focus:ring-2 focus:ring-red-600 outline-none"
-                          required
-                        />
+                        <div className="flex items-center bg-black border border-neutral-800 rounded-md focus-within:ring-2 focus-within:ring-red-600 overflow-hidden transition-all">
+                          <button type="button" onClick={() => setSaunaForm({ ...saunaForm, maxCapacity: Math.max(1, (parseInt(saunaForm.maxCapacity) || 1) - 1) })} className="px-4 py-3 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors font-bold">-</button>
+                          <input
+                            type="number"
+                            value={saunaForm.maxCapacity}
+                            onChange={(e) => setSaunaForm({ ...saunaForm, maxCapacity: e.target.value === '' ? '' : e.target.value })}
+                            onKeyDown={(e) => { if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault(); }}
+                            className="w-full bg-transparent text-center text-white outline-none"
+                            required
+                          />
+                          <button type="button" onClick={() => setSaunaForm({ ...saunaForm, maxCapacity: (parseInt(saunaForm.maxCapacity) || 0) + 1 })} className="px-4 py-3 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors font-bold">+</button>
+                        </div>
                       </div>
                     </div>
                     <div>
