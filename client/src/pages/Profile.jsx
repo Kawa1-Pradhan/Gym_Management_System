@@ -135,24 +135,24 @@ const Profile = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+            <div className="min-h-screen bg-black flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-900 text-white p-4 md:p-8">
+        <div className="min-h-screen bg-black text-white p-4 md:p-8">
             <div className="max-w-3xl mx-auto">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-8 bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700">
+                <div className="flex justify-between items-center mb-8 bg-neutral-900 p-6 rounded-lg shadow-xl border border-neutral-800">
                     <div>
                         <h1 className="text-3xl font-bold text-white">Profile Settings</h1>
-                        <p className="text-gray-400 text-sm">Welcome, {user?.name}</p>
+                        <p className="text-neutral-400 text-sm">Welcome, {user?.name}</p>
                     </div>
                     <button
                         onClick={() => navigate(-1)}
-                        className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+                        className="text-neutral-400 hover:text-white transition-colors flex items-center gap-2"
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                         Back
@@ -165,13 +165,13 @@ const Profile = () => {
                 <div className="grid md:grid-cols-3 gap-8">
                     {/* Sidebar / Quick Info */}
                     <div className="space-y-6">
-                        <div className="bg-slate-800 p-6 rounded-lg shadow-xl border border-slate-700 text-center relative group">
+                        <div className="bg-neutral-900 p-6 rounded-lg shadow-xl border border-neutral-800 text-center relative group">
                             <div className="w-32 h-32 mx-auto mb-4 relative">
                                 {user?.profileImageUrls?.[0] ? (
                                     <img
                                         src={`${API_BASE_URL}${user.profileImageUrls[0]}`}
                                         alt={user.name}
-                                        className="w-full h-full rounded-full object-cover border-4 border-slate-700 shadow-xl"
+                                        className="w-full h-full rounded-full object-cover border-4 border-neutral-800 shadow-xl"
                                     />
                                 ) : (
                                     <div className="w-full h-full bg-red-600 rounded-full flex items-center justify-center text-4xl font-bold shadow-xl">
@@ -182,10 +182,10 @@ const Profile = () => {
                                 {isMember && (
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="absolute bottom-0 right-0 bg-red-600 p-2 rounded-full border-2 border-slate-800 hover:bg-red-700 transition-colors shadow-lg"
+                                        className="absolute bottom-0 right-0 bg-red-600 p-2 rounded-full border-2 border-neutral-900 hover:bg-red-700 transition-colors shadow-lg"
                                         title="Change Profile Picture"
                                     >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2-2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                     </button>
                                 )}
                                 <input
@@ -197,8 +197,8 @@ const Profile = () => {
                                 />
                             </div>
                             <h2 className="text-xl font-bold">{user?.name}</h2>
-                            <p className="text-gray-400 text-sm">{user?.email}</p>
-                            <div className="mt-4 inline-block px-3 py-1 rounded-full bg-slate-700 text-xs font-bold text-red-500 border border-red-500/20 uppercase tracking-wider">
+                            <p className="text-neutral-400 text-sm">{user?.email}</p>
+                            <div className="mt-4 inline-block px-3 py-1 rounded-full bg-neutral-800 text-xs font-bold text-red-500 border border-red-500/20 uppercase tracking-wider">
                                 {role}
                             </div>
                         </div>
@@ -208,8 +208,8 @@ const Profile = () => {
                     {/* Main Content */}
                     <div className="md:col-span-2 space-y-8">
                         {/* Details Section */}
-                        <section className="bg-slate-800 p-8 rounded-lg shadow-xl border border-slate-700">
-                            <h3 className="text-xl font-bold mb-8 flex items-center gap-2 border-b border-slate-700 pb-4">
+                        <section className="bg-neutral-900 p-8 rounded-lg shadow-xl border border-neutral-800">
+                            <h3 className="text-xl font-bold mb-8 flex items-center gap-2 border-b border-neutral-800 pb-4">
                                 <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                                 Account Details
                             </h3>
@@ -217,14 +217,14 @@ const Profile = () => {
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Full Name</label>
-                                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-3 text-gray-400 font-medium">
+                                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Full Name</label>
+                                        <div className="bg-black/50 border border-neutral-800/50 rounded-lg px-4 py-3 text-neutral-400 font-medium">
                                             {user?.name}
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Email Address</label>
-                                        <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-3 text-gray-400 font-medium">
+                                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Email Address</label>
+                                        <div className="bg-black/50 border border-neutral-800/50 rounded-lg px-4 py-3 text-neutral-400 font-medium">
                                             {user?.email}
                                         </div>
                                     </div>
@@ -233,26 +233,26 @@ const Profile = () => {
                                 {isMember && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Current Membership Plan</label>
-                                            <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-3 text-cyan-400 font-bold">
+                                            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Current Membership Plan</label>
+                                            <div className="bg-black/50 border border-neutral-800/50 rounded-lg px-4 py-3 text-red-500 font-bold">
                                                 {user.membershipType || 'None'}
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Membership Status</label>
-                                            <div className={`bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-3 font-bold ${user.membershipStatus === 'Active' ? 'text-green-400' : 'text-red-400'}`}>
+                                            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Membership Status</label>
+                                            <div className={`bg-black/50 border border-neutral-800/50 rounded-lg px-4 py-3 font-bold ${user.membershipStatus === 'Active' ? 'text-green-400' : 'text-red-400'}`}>
                                                 {user.membershipStatus}
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Membership Expiry</label>
+                                            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Membership Expiry</label>
                                             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                                                <div className="flex-1 bg-slate-900/50 border border-slate-700/50 rounded-lg px-4 py-3 text-gray-300 font-medium">
+                                                <div className="flex-1 bg-black/50 border border-neutral-800/50 rounded-lg px-4 py-3 text-neutral-300 font-medium">
                                                     {user.membershipExpiryDate ? new Date(user.membershipExpiryDate).toLocaleDateString() : 'N/A'}
                                                 </div>
                                                 <button
                                                     onClick={() => navigate('/#pricing')}
-                                                    className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold py-3 px-6 rounded-lg transition-all duration-200 active:scale-95 shadow-lg"
+                                                    className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold py-3 px-6 rounded-lg transition-all duration-200 active:scale-95 shadow-lg"
                                                 >
                                                     Renew Membership
                                                 </button>
@@ -262,7 +262,7 @@ const Profile = () => {
                                 )}
 
                                 <div>
-                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Phone Number</label>
+                                    <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Phone Number</label>
                                     <form onSubmit={handleUpdateProfile} className="flex gap-3">
                                         <input
                                             type="tel"
@@ -270,7 +270,7 @@ const Profile = () => {
                                             disabled={!isMember || saving}
                                             readOnly={!isMember}
                                             onChange={(e) => setPhone(e.target.value)}
-                                            className={`flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 font-medium transition-all ${isMember ? 'text-white focus:outline-none focus:ring-2 focus:ring-red-600' : 'text-gray-500 cursor-not-allowed'}`}
+                                            className={`flex-1 bg-black border border-neutral-800 rounded-lg px-4 py-3 font-medium transition-all ${isMember ? 'text-white focus:outline-none focus:ring-2 focus:ring-red-600' : 'text-neutral-500 cursor-not-allowed'}`}
                                             placeholder="Enter phone number"
                                         />
                                         {isMember && (
@@ -284,7 +284,7 @@ const Profile = () => {
                                         )}
                                     </form>
                                     {!isMember && (
-                                        <p className="text-[10px] text-gray-500 mt-2 italic">Note: Staff and Admin details are managed by system administrators.</p>
+                                        <p className="text-[10px] text-neutral-500 mt-2 italic">Note: Staff and Admin details are managed by system administrators.</p>
                                     )}
                                 </div>
                             </div>
@@ -292,19 +292,19 @@ const Profile = () => {
 
                         {/* Security Section - Member Only */}
                         {isMember && (
-                            <section className="bg-slate-800 p-8 rounded-lg shadow-xl border border-slate-700">
-                                <h3 className="text-xl font-bold mb-6 flex items-center gap-2 border-b border-slate-700 pb-4">
+                            <section className="bg-neutral-900 p-8 rounded-lg shadow-xl border border-neutral-800">
+                                <h3 className="text-xl font-bold mb-6 flex items-center gap-2 border-b border-neutral-800 pb-4">
                                     <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                                     Security
                                 </h3>
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div>
                                         <h4 className="font-bold text-white">Password</h4>
-                                        <p className="text-gray-400 text-sm">Regularly updating your password keeps your account safe.</p>
+                                        <p className="text-neutral-400 text-sm">Regularly updating your password keeps your account safe.</p>
                                     </div>
                                     <button
                                         onClick={() => setShowPasswordModal(true)}
-                                        className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-6 rounded-lg transition duration-300 whitespace-nowrap"
+                                        className="bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2.5 px-6 rounded-lg transition duration-300 whitespace-nowrap border border-neutral-700"
                                     >
                                         Change Password
                                     </button>
@@ -312,18 +312,18 @@ const Profile = () => {
                             </section>
                         )}
                         {isMember && (
-                            <section className="bg-slate-800 p-8 rounded-lg shadow-xl border border-slate-700">
-                                <h3 className="text-xl font-bold mb-6 flex items-center gap-2 border-b border-slate-700 pb-4">
+                            <section className="bg-neutral-900 p-8 rounded-lg shadow-xl border border-neutral-800">
+                                <h3 className="text-xl font-bold mb-6 flex items-center gap-2 border-b border-neutral-800 pb-4">
                                     <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     Payment History
                                 </h3>
                                 {payments.length === 0 ? (
-                                    <p className="text-gray-400">No payment history found.</p>
+                                    <p className="text-neutral-400">No payment history found.</p>
                                 ) : (
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
-                                                <tr className="text-gray-400 border-b border-slate-700">
+                                                <tr className="text-neutral-400 border-b border-neutral-800">
                                                     <th className="py-3 px-4">Date</th>
                                                     <th className="py-3 px-4">Plan</th>
                                                     <th className="py-3 px-4">Amount</th>
@@ -332,14 +332,14 @@ const Profile = () => {
                                             </thead>
                                             <tbody>
                                                 {payments.map((payment) => (
-                                                    <tr key={payment._id} className="border-b border-slate-700/50 hover:bg-slate-700/30">
+                                                    <tr key={payment._id} className="border-b border-neutral-800/50 hover:bg-neutral-800/30">
                                                         <td className="py-3 px-4 text-white">
                                                             {new Date(payment.createdAt).toLocaleDateString()}
                                                         </td>
                                                         <td className="py-3 px-4 text-white font-medium">
                                                             {payment.purchaseOrderName}
                                                         </td>
-                                                        <td className="py-3 px-4 text-cyan-400 font-bold">
+                                                        <td className="py-3 px-4 text-red-500 font-bold">
                                                             NPR {(payment.amount / 100).toLocaleString()}
                                                         </td>
                                                         <td className="py-3 px-4">
@@ -364,48 +364,48 @@ const Profile = () => {
                 {/* Change Password Modal */}
                 {showPasswordModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                        <div className="bg-slate-800 w-full max-w-md rounded-xl shadow-2xl border border-slate-700 overflow-hidden">
-                            <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-700/30">
+                        <div className="bg-neutral-900 w-full max-w-md rounded-xl shadow-2xl border border-neutral-800 overflow-hidden">
+                            <div className="p-6 border-b border-neutral-800 flex justify-between items-center bg-black/20">
                                 <h2 className="text-xl font-bold text-white">Change Password</h2>
-                                <button onClick={() => setShowPasswordModal(false)} className="text-gray-400 hover:text-white transition-colors">
+                                <button onClick={() => setShowPasswordModal(false)} className="text-neutral-400 hover:text-white transition-colors">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l18 18" /></svg>
                                 </button>
                             </div>
                             <form onSubmit={handleChangePassword} className="p-8 space-y-6">
                                 <div>
-                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Current Password</label>
+                                    <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">Current Password</label>
                                     <input
                                         required
                                         type="password"
                                         value={passwordData.currentPassword}
                                         onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
+                                        className="w-full bg-black border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
                                     />
                                 </div>
                                 <div className="grid gap-6">
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">New Password</label>
+                                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">New Password</label>
                                         <input
                                             required
                                             type="password"
                                             value={passwordData.newPassword}
                                             onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
+                                            className="w-full bg-black border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Confirm New Password</label>
+                                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">Confirm New Password</label>
                                         <input
                                             required
                                             type="password"
                                             value={passwordData.confirmPassword}
                                             onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
+                                            className="w-full bg-black border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition-all font-medium"
                                         />
                                     </div>
                                 </div>
                                 <div className="pt-4 flex gap-3">
-                                    <button type="button" onClick={() => setShowPasswordModal(false)} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 rounded-lg transition duration-300">
+                                    <button type="button" onClick={() => setShowPasswordModal(false)} className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-3.5 rounded-lg transition duration-300 border border-neutral-700">
                                         Cancel
                                     </button>
                                     <button type="submit" disabled={saving} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-lg transition duration-300 disabled:opacity-50">

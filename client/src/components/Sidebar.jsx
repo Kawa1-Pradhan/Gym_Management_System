@@ -45,12 +45,12 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
             <button
                 onClick={onClick || (() => onTabChange(id))}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 group ${isActive
-                    ? 'bg-red-600/10 text-red-500 font-bold border-l-4 border-red-600'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50 border-l-4 border-transparent'
+                    ? 'bg-red-50 text-red-600 font-bold border-l-4 border-red-600'
+                    : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 border-l-4 border-transparent'
                     } ${isSubItem ? 'pl-10 py-1.5 text-xs' : 'text-base'}`}
             >
                 <div className="flex items-center gap-3">
-                    {Icon && <Icon size={isSubItem ? 16 : 20} className={isActive ? 'text-red-500' : 'text-slate-500 group-hover:text-slate-300'} />}
+                    {Icon && <Icon size={isSubItem ? 16 : 20} className={isActive ? 'text-red-600' : 'text-neutral-400 group-hover:text-neutral-700'} />}
                     <span>{label}</span>
                 </div>
             </button>
@@ -69,12 +69,12 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
                 <button
                     onClick={() => toggleSection(sectionId)}
                     className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 group ${isActive
-                        ? 'bg-red-600/10 text-red-500 font-bold border-l-4 border-red-600'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-700/50 border-l-4 border-transparent'
+                        ? 'bg-red-50 text-red-600 font-bold border-l-4 border-red-600'
+                        : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 border-l-4 border-transparent'
                         }`}
                 >
                     <div className="flex items-center gap-3">
-                        <Icon size={20} className={isActive ? 'text-red-500' : 'text-slate-500 group-hover:text-slate-300'} />
+                        <Icon size={20} className={isActive ? 'text-red-600' : 'text-neutral-400 group-hover:text-neutral-700'} />
                         <span>{label}</span>
                     </div>
                     {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -89,23 +89,19 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
     };
 
     return (
-        <aside className="w-64 h-screen bg-slate-800 border-r border-slate-700 flex flex-col fixed left-0 top-0 z-40">
+        <aside className="w-64 h-screen bg-white border-r border-neutral-200 flex flex-col fixed left-0 top-0 z-40">
             {/* Logo Area */}
-            <div className="p-6 border-b border-slate-700/50">
+            <div className="p-6 border-b border-neutral-200">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-600/20">
-                        <Dumbbell className="text-white" size={24} />
-                    </div>
                     <div>
-                        <h1 className="text-white font-black text-xl tracking-tight">GMS<span className="text-red-600">.</span></h1>
-                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">{role} Portal</p>
+                        <h1 className="text-neutral-900 font-black text-xl tracking-tight">DFC<span className="text-red-600"> </span></h1>
                     </div>
                 </div>
             </div>
 
             {/* Nav Items */}
             <nav className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 mb-2">Main Menu</div>
+                <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-4 mb-2">Main Menu</div>
 
                 <NavItem id="home" label="Dashboard" icon={LayoutDashboard} />
 
@@ -140,8 +136,8 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
             </nav>
 
             {/* Footer / User Info could go here if needed, but UserMenu is in top bar usually */}
-            <div className="p-4 border-t border-slate-700/50 bg-slate-900/20">
-                <p className="text-slate-500 text-[10px] text-center font-medium">© 2026 Gym Management System</p>
+            <div className="p-4 border-t border-neutral-200 bg-white">
+                <p className="text-neutral-400 text-[10px] text-center font-medium">© 2026 Dharan Fitness Club</p>
             </div>
         </aside>
     );
