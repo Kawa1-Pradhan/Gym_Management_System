@@ -82,6 +82,10 @@ const users = new mongoose.Schema({
   notes: {
     type: String,
   },
+  points: {
+    type: Number,
+    default: 0
+  }
 });
 
 const User = mongoose.model("users", users);

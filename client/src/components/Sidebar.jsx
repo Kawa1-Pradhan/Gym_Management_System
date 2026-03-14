@@ -12,7 +12,9 @@ import {
     ChevronRight,
     LogOut,
     Waves,
-    Bell
+    Bell,
+    Trophy,
+    Coins
 } from 'lucide-react';
 
 const Sidebar = ({ activeTab, onTabChange, role }) => {
@@ -132,6 +134,11 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
                 <NavItem id="inventory" label="Inventory" icon={Package} />
 
                 <NavItem id="reports" label="Reports" icon={BarChart3} />
+
+                <NavItem id="achievements" label="Achievements" icon={Trophy} />
+
+                {role === 'ADMIN' && <NavItem id="points" label="Point System" icon={Coins} />}
+
                 {role === 'ADMIN' && <NavItem id="announcements" label="Announcements" icon={Bell} />}
             </nav>
 

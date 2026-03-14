@@ -34,12 +34,23 @@ const markAttendance = async (memberId, markedBy) => {
         throw { statusCode: 400, message: "Attendance already marked for today" };
     }
 
-    // 5. Create record
     const attendance = await Attendance.create({
         member: memberId,
         markedBy: markedBy,
         date: todayStart
     });
+
+    // Award points for attendance using rules
+    const { awardPoints } = await import("../controllers/achievementController.js");
+    const PointRule = (await import("../models/PointRule.js")).default;
+
+    const attendanceRule = await PointRule.findOne({ action: 'ATTENDANCE', isActive: true });
+    if (attendanceRule) {
+        await awardPoints(memberId, attendanceRule.points, "Gym Session Attendance", "ATTENDANCE");
+    } else {
+        // Fallback or skip if no rule defined
+        await awardPoints(memberId, 10, "Attendance Marked", "ATTENDANCE");
+    }
 
     return await Attendance.findById(attendance._id)
         .populate('member', 'name email phone')

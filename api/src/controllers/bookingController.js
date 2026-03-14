@@ -72,6 +72,20 @@ const bookBoxingSession = async (req, res) => {
       );
 
       res.status(201).json({ message: "Booking successful", booking });
+
+      // Award points for booking
+      try {
+        const { awardPoints } = await import("./achievementController.js");
+        const PointRule = (await import("../models/PointRule.js")).default;
+        const bookingRule = await PointRule.findOne({ action: 'BOOKING', isActive: true });
+        if (bookingRule) {
+          await awardPoints(memberId, bookingRule.points, `Booked Boxing Session: ${session?.name || 'Boxing'}`, "BOOKING");
+        } else {
+          await awardPoints(memberId, 2, "Boxing Session Booked", "BOOKING");
+        }
+      } catch (awardErr) {
+        console.error("Error awarding points for booking:", awardErr);
+      }
     } catch (dbError) {
       // Rollback session slots if booking save fails
       await boxingService.cancelBooking(sessionId, memberId);
@@ -139,6 +153,20 @@ const bookSaunaSession = async (req, res) => {
       );
 
       res.status(201).json({ message: "Booking successful", booking });
+
+      // Award points for booking
+      try {
+        const { awardPoints } = await import("./achievementController.js");
+        const PointRule = (await import("../models/PointRule.js")).default;
+        const bookingRule = await PointRule.findOne({ action: 'BOOKING', isActive: true });
+        if (bookingRule) {
+          await awardPoints(memberId, bookingRule.points, `Booked Sauna Session: ${session?.name || 'Sauna'}`, "BOOKING");
+        } else {
+          await awardPoints(memberId, 2, "Sauna Session Booked", "BOOKING");
+        }
+      } catch (awardErr) {
+        console.error("Error awarding points for booking:", awardErr);
+      }
     } catch (dbError) {
       // Rollback
       await saunaService.cancelBooking(sessionId, memberId);

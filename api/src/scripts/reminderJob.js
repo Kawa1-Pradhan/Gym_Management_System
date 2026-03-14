@@ -293,6 +293,14 @@ const checkBookingStatus = async () => {
 
                 if (attended) {
                     booking.status = 'Completed';
+
+                    try {
+                        const { awardPoints } = await import("../controllers/achievementController.js");
+                        await awardPoints(booking.memberId, 20, "Session Completed");
+                    } catch (e) {
+                        console.error("Failed to award points for completed session:", e);
+                    }
+
                     await notificationService.createNotification(
                         booking.memberId,
                         "Session Completed",

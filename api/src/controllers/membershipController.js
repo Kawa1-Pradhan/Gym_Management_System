@@ -177,6 +177,18 @@ export const verifyPayment = async (req, res) => {
             // Send Renewal Email Non-Blocking
             sendRenewalEmail(user.email, user.name, user.membershipType, newExpiry);
 
+            // Award points for membership renewal using rules
+            const { awardPoints } = await import("./achievementController.js");
+            const PointRule = (await import("../models/PointRule.js")).default;
+
+            const renewalRule = await PointRule.findOne({ action: 'RENEWAL', isActive: true });
+            if (renewalRule) {
+                await awardPoints(user._id, renewalRule.points, `Renewed ${user.membershipType} Membership`, "RENEWAL");
+            } else {
+                // Fallback or skip if no rule defined
+                await awardPoints(user._id, 50, "Membership Renewed", "RENEWAL");
+            }
+
             // Notify Admin about renewal
             const admins = await User.find({ role: 'ADMIN' });
             for (const admin of admins) {
@@ -276,6 +288,18 @@ export const verifyPayment = async (req, res) => {
             // Link payment to user account
             payment.userId = user._id;
             await payment.save();
+
+            // Award points for new membership using rules
+            const { awardPoints } = await import("./achievementController.js");
+            const PointRule = (await import("../models/PointRule.js")).default;
+
+            const signupRule = await PointRule.findOne({ action: 'SIGNUP', isActive: true });
+            if (signupRule) {
+                await awardPoints(user._id, signupRule.points, "New Membership Joined", "SIGNUP");
+            } else {
+                // Fallback or skip if no rule defined
+                await awardPoints(user._id, 100, "First Membership Purchase", "SIGNUP");
+            }
 
             // Notify Admin about new member
             const admins = await User.find({ role: 'ADMIN' });

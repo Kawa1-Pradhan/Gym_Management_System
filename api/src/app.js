@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -13,12 +14,25 @@ import membershipRoute from "./routes/membershipRoute.js";
 import notificationRoute from "./routes/notificationRoute.js";
 import reportRoute from "./routes/reportRoute.js";
 import announcementRoute from "./routes/announcementRoute.js";
+import achievementRoute from "./routes/achievementRoute.js";
 import connectDB from "./config/database.js";
 import logger from "./middlewares/logger.js";
 import setupDefaultAccounts from "./scripts/setupDefaultAccounts.js";
 import runReminderJobs from "./scripts/reminderJob.js";
-
-
+import "./models/User.js";
+import "./models/Booking.js";
+import "./models/Milestone.js";
+import "./models/PointRule.js";
+import "./models/PointLog.js";
+import "./models/SaunaSession.js";
+import "./models/BoxingSession.js";
+import "./models/Attendance.js";
+import "./models/UserAchievement.js";
+import "./models/MembershipPlan.js";
+import "./models/Payment.js";
+import "./models/Notification.js";
+import "./models/Announcement.js";
+import "./models/Inventory.js";
 
 const app = express();
 
@@ -63,6 +77,8 @@ app.use('/uploads', express.static('public/uploads'));
 
 app.use(logger);
 
+
+
 app.get("/", (req, res) => {
     res.json({
         name: config.name,
@@ -82,6 +98,7 @@ app.use("/api/membership", membershipRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/reports", reportRoute);
 app.use("/api/announcements", announcementRoute);
+app.use("/api/achievements", achievementRoute);
 
 // Start the server
 startServer();

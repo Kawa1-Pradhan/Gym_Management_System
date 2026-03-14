@@ -11,6 +11,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, Cell
 } from 'recharts';
+import { Trophy, Search, Star, Award, TrendingUp } from 'lucide-react';
 
 const StatCard = ({ title, value, subtext, color = 'blue' }) => {
   const colorClasses = {
@@ -57,6 +58,11 @@ const StaffDashboard = () => {
     conductedThisWeek: []
   });
 
+  const [milestones, setMilestones] = useState([]);
+  const [memberAchievements, setMemberAchievements] = useState([]);
+  const [memberPointHistory, setMemberPointHistory] = useState([]);
+  const [selectedMemberPath, setSelectedMemberPath] = useState('');
+
   const [boxingForm, setBoxingForm] = useState({
     name: '', instructor: '', date: '', startTime: '', endTime: '', maxCapacity: '', description: ''
   });
@@ -96,12 +102,13 @@ const StaffDashboard = () => {
       const todayStr = today.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
       const currentUserId = (user.id || user._id || '').toString();
 
-      const [boxingRes, saunaRes, bookingsRes, attRes, usersRes] = await Promise.all([
+      const [boxingRes, saunaRes, bookingsRes, attRes, usersRes, milestonesRes] = await Promise.all([
         apiRequest('/api/sessions/boxing'),
         apiRequest('/api/sessions/sauna'),
         apiRequest('/api/bookings'),
         apiRequest(`/api/attendance/reports?date=${todayStr}`),
-        apiRequest('/api/users')
+        apiRequest('/api/users'),
+        apiRequest('/api/achievements/milestones')
       ]);
 
       const boxers = Array.isArray(boxingRes) ? boxingRes : [];
@@ -114,6 +121,7 @@ const StaffDashboard = () => {
       setSaunaSessions(saunas);
       setAllBookings(bookings);
       setAttendanceRecords(attendance);
+      setMilestones(Array.isArray(milestonesRes) ? milestonesRes : []);
 
       const memberUsers = users.filter(u => u.role?.includes('MEMBER'));
       setMembers(memberUsers);
@@ -187,6 +195,27 @@ const StaffDashboard = () => {
     } catch (err) {
       console.error('Error loading dashboard data:', err);
       setError('Failed to refresh dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFetchMemberAchievements = async (memberId) => {
+    if (!memberId) {
+      setMemberAchievements(null);
+      setMemberPointHistory([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const [achData, historyData] = await Promise.all([
+        apiRequest(`/api/achievements/my-progress?memberId=${memberId}`),
+        apiRequest(`/api/achievements/history?memberId=${memberId}`)
+      ]);
+      setMemberAchievements(achData);
+      setMemberPointHistory(Array.isArray(historyData) ? historyData : []);
+    } catch (err) {
+      setError('Failed to fetch member data');
     } finally {
       setLoading(false);
     }
@@ -372,6 +401,7 @@ const StaffDashboard = () => {
     { id: 'boxing', label: 'Boxing', icon: '🥊' },
     { id: 'sauna', label: 'Sauna', icon: '🏊' },
     { id: 'attendance', label: 'Attendance', icon: '📋' },
+    { id: 'achievements', label: 'Achievements', icon: '🏆' },
     { id: 'inventory', label: 'Inventory', icon: '📦' },
     { id: 'reports', label: 'Reports', icon: '📊' }
   ];
@@ -1028,6 +1058,7 @@ const StaffDashboard = () => {
                         <th className="hidden sm:table-cell px-3 sm:px-8 py-4 text-left text-xs font-bold text-neutral-500 uppercase tracking-widest">Contact</th>
                         <th className="hidden md:table-cell px-3 sm:px-8 py-4 text-left text-xs font-bold text-neutral-500 uppercase tracking-widest">Membership</th>
                         <th className="px-3 sm:px-8 py-4 text-center text-xs font-bold text-neutral-500 uppercase tracking-widest">Status</th>
+                        <th className="px-3 sm:px-8 py-4 text-center text-xs font-bold text-neutral-500 uppercase tracking-widest">Points</th>
                         <th className="px-3 sm:px-8 py-4 text-right text-xs font-bold text-neutral-500 uppercase tracking-widest">Action</th>
                       </tr>
                     </thead>
@@ -1101,6 +1132,9 @@ const StaffDashboard = () => {
                                     )}
                                   </div>
                                 </td>
+                                <td className="px-3 sm:px-8 py-4 text-center">
+                                  <span className="text-sm font-black text-red-500">{member.points || 0}</span>
+                                </td>
                                 <td className="px-3 sm:px-8 py-4 text-right">
                                   {!isMarked ? (
                                     <button
@@ -1128,18 +1162,186 @@ const StaffDashboard = () => {
             </div>
           )}
 
+          {/* Achievements Tab */}
+          {
+            activeTab === 'achievements' && (
+              <div className="space-y-8 animate-in fade-in duration-500">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div>
+                    <h1 className="text-xl sm:text-3xl font-bold text-white flex items-center gap-3">
+                      <Trophy className="text-red-500" /> Member Achievements tracking
+                    </h1>
+                    <p className="text-neutral-400 font-medium text-xs sm:text-sm mt-1">Review member progress and global milestones.</p>
+                  </div>
+
+                  <div className="flex items-center gap-4 bg-neutral-900/50 p-2 rounded-2xl border border-neutral-800">
+                    <div className="flex items-center gap-2 px-3 py-2">
+                      <Search size={18} className="text-neutral-500" />
+                      <select
+                        className="bg-transparent text-sm font-bold text-white border-none focus:ring-0 cursor-pointer min-w-[200px]"
+                        onChange={(e) => handleFetchMemberAchievements(e.target.value)}
+                      >
+                        <option value="">-- Select Member to Track --</option>
+                        {members.map(m => (
+                          <option key={m._id} value={m._id} className="bg-neutral-900">{m.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {memberAchievements ? (
+                  <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 space-y-8">
+                      {/* Member Summary Header */}
+                      <div className="bg-neutral-900 rounded-2xl p-8 border border-neutral-800 shadow-lg relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 text-neutral-500">
+                          <Trophy size={160} />
+                        </div>
+                        <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
+                          <div className="w-24 h-24 bg-neutral-800 rounded-xl flex items-center justify-center text-4xl font-black border border-neutral-700 shadow-sm">
+                            {memberAchievements.currentLevel?.icon || '⭐'}
+                          </div>
+                          <div className="flex-1">
+                            <h2 className="text-3xl font-black text-white tracking-tight leading-none mb-2">
+                              {memberAchievements.currentLevel?.title || 'No Level Yet'}
+                            </h2>
+                            <div className="flex items-center gap-3">
+                              <span className="px-3 py-1 bg-red-900/30 rounded-full text-[10px] font-black uppercase tracking-widest text-red-500 border border-red-900/50">
+                                Total Progress: {memberAchievements.totalPoints} Points
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {memberAchievements.progress && (
+                          <div className="mt-8 space-y-3">
+                            <div className="flex justify-between items-end">
+                              <span className="text-xs font-black text-neutral-400 uppercase tracking-widest flex items-center gap-2">
+                                <TrendingUp size={14} className="text-red-500" /> Next Milestone: {memberAchievements.nextMilestone?.title}
+                              </span>
+                              <span className="text-xs font-black text-white">
+                                {memberAchievements.progress.pointsNeeded} Points Left
+                              </span>
+                            </div>
+                            <div className="h-3 bg-black rounded-full overflow-hidden border border-neutral-800 p-0.5">
+                              <div
+                                className="h-full bg-red-600 rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: `${memberAchievements.progress.percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Unlocked Badges */}
+                      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8 shadow-lg">
+                        <h3 className="text-lg font-bold text-white flex items-center gap-3 mb-8">
+                          <Award className="text-red-500" /> Unlocked achievements
+                        </h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                          {memberAchievements.unlockedAchievements?.map((ua, idx) => (
+                            <div key={idx} className="group relative">
+                              <div className="aspect-square bg-neutral-800 rounded-xl p-6 flex flex-col items-center justify-center border border-neutral-700 hover:border-neutral-600 transition-all duration-300">
+                                <span className="text-4xl mb-3">
+                                  {ua.milestone?.icon || '🏅'}
+                                </span>
+                                <span className="text-[10px] font-black text-neutral-300 text-center uppercase tracking-tighter leading-tight">
+                                  {ua.milestone?.title}
+                                </span>
+                                <span className="text-[8px] text-neutral-500 mt-1 font-bold">
+                                  {new Date(ua.unlockedAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                          {memberAchievements.unlockedAchievements?.length === 0 && (
+                            <div className="col-span-full py-12 text-center text-neutral-500 italic">No badges earned yet.</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-8">
+                      {/* Point History Log */}
+                      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden shadow-xl">
+                        <div className="p-6 border-b border-neutral-800 bg-black/20 flex items-center gap-3">
+                          <TrendingUp className="text-red-500" />
+                          <h3 className="text-sm font-black uppercase tracking-widest text-white">Points History</h3>
+                        </div>
+                        <div className="p-4 space-y-3 overflow-y-auto max-h-[350px] custom-scrollbar">
+                          {memberPointHistory.map((log, idx) => (
+                            <div key={log._id || idx} className="flex items-center justify-between p-3 bg-black/40 rounded-2xl border border-neutral-800 transition">
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-white truncate">{log.reason}</p>
+                                <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">
+                                  {new Date(log.createdAt).toLocaleDateString()} • {log.source}
+                                </p>
+                              </div>
+                              <span className={`text-xs font-black ${log.points >= 0 ? 'text-green-500' : 'text-red-500'} shrink-0 ml-3`}>
+                                {log.points >= 0 ? '+' : ''}{log.points}
+                              </span>
+                            </div>
+                          ))}
+                          {memberPointHistory.length === 0 && (
+                            <div className="py-12 text-center text-neutral-500 italic text-xs uppercase tracking-widest">No transaction history.</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Global Milestones List for Reference */}
+                      <div className="bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden shadow-xl">
+                        <div className="p-6 border-b border-neutral-800 bg-black/20 flex items-center gap-3">
+                          <Star className="text-red-500" />
+                          <h3 className="text-sm font-black uppercase tracking-widest text-white">System Milestones</h3>
+                        </div>
+                        <div className="p-2 space-y-1">
+                          {milestones.map(m => (
+                            <div key={m._id} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors">
+                              <div className="w-10 h-10 bg-neutral-800 rounded-xl flex items-center justify-center text-lg shadow-inner">
+                                {m.icon}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-sm font-bold text-white truncate">{m.title}</h4>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-black text-red-500 uppercase">{m.pointsRequired} Points</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-neutral-900 border border-dashed border-neutral-800 rounded-2xl py-32 flex flex-col items-center justify-center text-center shadow-lg">
+                    <div className="w-20 h-20 bg-neutral-800 rounded-xl flex items-center justify-center text-neutral-600 mb-6">
+                      <Search size={40} />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">No Member Selected</h3>
+                    <p className="text-neutral-500 max-w-xs mx-auto text-sm">Select a member from the dropdown above to view their achievement progress and unlocked badges.</p>
+                  </div>
+                )}
+              </div>
+            )
+          }
+
           {/* Inventory Tab */}
-          {activeTab === 'inventory' && (
-            <InventoryComponent />
-          )}
+          {
+            activeTab === 'inventory' && (
+              <InventoryComponent />
+            )
+          }
 
           {/* Reports Tab */}
-          {activeTab === 'reports' && (
-            <Reports />
-          )}
-        </main>
-      </div>
-    </div>
+          {
+            activeTab === 'reports' && (
+              <Reports />
+            )
+          }
+        </main >
+      </div >
+    </div >
   );
 };
 
