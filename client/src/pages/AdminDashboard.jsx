@@ -378,7 +378,7 @@ const AdminDashboard = () => {
       const todayStr = now.toLocaleDateString('en-CA');
       const activeSessionsTodayCount = fetchedSessions.filter(s => {
         if (!s || !s.date) return false;
-        const sDate = new Date(s.date).toLocaleDateString('en-CA');
+        const sDate = new Date(s.date).toISOString().split('T')[0];
         return sDate === todayStr && s.status === 'Active';
       }).length;
 

@@ -131,7 +131,7 @@ const StaffDashboard = () => {
         if (!s || !s.date) return false;
         const creatorId = (s.createdBy?._id || s.createdBy || '').toString();
         const isCreator = creatorId === currentUserId;
-        const sessionDateStr = new Date(s.date).toLocaleDateString('en-CA');
+        const sessionDateStr = new Date(s.date).toISOString().split('T')[0];
         return isCreator && sessionDateStr === todayStr && s.status !== 'Cancelled';
       });
 
@@ -144,7 +144,7 @@ const StaffDashboard = () => {
       const uniqueMembersToday = new Set(
         attendance
           .filter(a => {
-            const dateStr = new Date(a.date).toLocaleDateString('en-CA');
+            const dateStr = new Date(a.date).toISOString().split('T')[0];
             return dateStr === todayStr && a.status === 'Present';
           })
           .map(a => (a.member?._id || a.member || '').toString())
@@ -175,7 +175,7 @@ const StaffDashboard = () => {
           if (!s || !s.date) return false;
           const creatorId = (s.createdBy?._id || s.createdBy || '').toString();
           const isCreator = creatorId === currentUserId;
-          const sessionDateStr = new Date(s.date).toLocaleDateString('en-CA');
+          const sessionDateStr = new Date(s.date).toISOString().split('T')[0];
           return isCreator && sessionDateStr === dateStr && s.status === 'Completed';
         }).length;
         return {

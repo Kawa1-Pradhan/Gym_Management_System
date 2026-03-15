@@ -35,7 +35,7 @@ const saunaSessionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Active", "Cancelled", "Completed"],
+    enum: ["Active", "Cancelled", "Completed", "Expired"],
     default: "Active",
   },
   description: {

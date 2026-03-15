@@ -8,10 +8,16 @@ const getAllSessions = async () => {
     const expiredUpdates = activeSessions
         .filter(session => {
             if (!session.date || !session.endTime) return false;
-            const [hours, minutes] = session.endTime.split(':');
-            const sessionEnd = new Date(session.date);
-            sessionEnd.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-            return sessionEnd < now;
+            try {
+                // Construct session end time accurately
+                const sessionDate = new Date(session.date);
+                const dateStr = sessionDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
+                const sessionEnd = new Date(`${dateStr}T${session.endTime}:00`);
+                return sessionEnd < now;
+            } catch (e) {
+                console.error("Error parsing session date for expiration:", e);
+                return false;
+            }
         })
         .map(session => SaunaSession.findByIdAndUpdate(session._id, { status: 'Expired' }));
 
