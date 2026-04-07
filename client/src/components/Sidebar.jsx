@@ -47,12 +47,12 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
             <button
                 onClick={onClick || (() => onTabChange(id))}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 group ${isActive
-                    ? 'bg-red-50 text-red-600 font-bold border-l-4 border-red-600'
-                    : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 border-l-4 border-transparent'
+                    ? 'bg-red-500/10 text-red-500 font-bold border-l-4 border-red-600'
+                    : 'text-neutral-400 hover:text-white hover:bg-white/5 border-l-4 border-transparent'
                     } ${isSubItem ? 'pl-10 py-1.5 text-xs' : 'text-base'}`}
             >
                 <div className="flex items-center gap-3">
-                    {Icon && <Icon size={isSubItem ? 16 : 20} className={isActive ? 'text-red-600' : 'text-neutral-400 group-hover:text-neutral-700'} />}
+                    {Icon && <Icon size={isSubItem ? 16 : 20} className={isActive ? 'text-red-500' : 'text-neutral-500 group-hover:text-neutral-300'} />}
                     <span>{label}</span>
                 </div>
             </button>
@@ -71,12 +71,12 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
                 <button
                     onClick={() => toggleSection(sectionId)}
                     className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 group ${isActive
-                        ? 'bg-red-50 text-red-600 font-bold border-l-4 border-red-600'
-                        : 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 border-l-4 border-transparent'
+                        ? 'bg-red-500/10 text-red-500 font-bold border-l-4 border-red-600'
+                        : 'text-neutral-400 hover:text-white hover:bg-white/5 border-l-4 border-transparent'
                         }`}
                 >
                     <div className="flex items-center gap-3">
-                        <Icon size={20} className={isActive ? 'text-red-600' : 'text-neutral-400 group-hover:text-neutral-700'} />
+                        <Icon size={20} className={isActive ? 'text-red-500' : 'text-neutral-500 group-hover:text-neutral-300'} />
                         <span>{label}</span>
                     </div>
                     {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -91,12 +91,12 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
     };
 
     return (
-        <aside className="w-64 h-screen bg-white border-r border-neutral-200 flex flex-col fixed left-0 top-0 z-40">
+        <aside className="w-64 h-screen bg-gradient-to-b from-neutral-900 to-black border-r border-neutral-800 flex flex-col fixed left-0 top-0 z-40 shadow-2xl">
             {/* Logo Area */}
-            <div className="p-6 border-b border-neutral-200">
+            <div className="p-6 border-b border-neutral-800/50">
                 <div className="flex items-center gap-3">
                     <div>
-                        <h1 className="text-neutral-900 font-black text-xl tracking-tight">DFC<span className="text-red-600"> </span></h1>
+                        <h1 className="text-white font-black text-xl tracking-tight">DFC<span className="text-red-600"> </span></h1>
                     </div>
                 </div>
             </div>
@@ -143,8 +143,8 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
             </nav>
 
             {/* Footer / User Info could go here if needed, but UserMenu is in top bar usually */}
-            <div className="p-4 border-t border-neutral-200 bg-white">
-                <p className="text-neutral-400 text-[10px] text-center font-medium">© 2026 Dharan Fitness Club</p>
+            <div className="p-4 border-t border-neutral-800/50 bg-black/20">
+                <p className="text-neutral-500 text-[10px] text-center font-medium">© 2026 Dharan Fitness Club</p>
             </div>
         </aside>
     );

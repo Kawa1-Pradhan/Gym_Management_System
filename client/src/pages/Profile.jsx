@@ -147,8 +147,8 @@ const Profile = () => {
                 {/* Header */}
                 <div className="flex justify-between items-center mb-8 bg-neutral-900 p-6 rounded-lg shadow-xl border border-neutral-800">
                     <div>
-                        <h1 className="text-3xl font-bold text-white">Profile Settings</h1>
-                        <p className="text-neutral-400 text-sm">Welcome, {user?.name}</p>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-white">Profile Settings</h1>
+                        <p className="text-neutral-400 text-sm capitalize">Welcome, {user?.name?.toLowerCase()}</p>
                     </div>
                     <button
                         onClick={() => navigate(-1)}
@@ -196,8 +196,8 @@ const Profile = () => {
                                     onChange={handleFileChange}
                                 />
                             </div>
-                            <h2 className="text-xl font-bold">{user?.name}</h2>
-                            <p className="text-neutral-400 text-sm">{user?.email}</p>
+                            <h2 className="text-lg leading-snug font-bold capitalize mt-1 mb-1">{user?.name?.toLowerCase()}</h2>
+                            <p className="text-neutral-400 text-xs sm:text-sm truncate w-full px-2" title={user?.email}>{user?.email}</p>
                             <div className="mt-4 inline-block px-3 py-1 rounded-full bg-neutral-800 text-xs font-bold text-red-500 border border-red-500/20 uppercase tracking-wider">
                                 {role}
                             </div>
@@ -218,13 +218,13 @@ const Profile = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Full Name</label>
-                                        <div className="bg-black/50 border border-neutral-800/50 rounded-lg px-4 py-3 text-neutral-400 font-medium">
-                                            {user?.name}
+                                        <div className="bg-black/50 border border-neutral-800/50 rounded-lg px-4 py-3 text-neutral-400 font-medium capitalize truncate" title={user?.name}>
+                                            {user?.name?.toLowerCase()}
                                         </div>
                                     </div>
                                     <div>
                                         <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Email Address</label>
-                                        <div className="bg-black/50 border border-neutral-800/50 rounded-lg px-4 py-3 text-neutral-400 font-medium">
+                                        <div className="bg-black/50 border border-neutral-800/50 rounded-lg px-4 py-3 text-neutral-400 font-medium truncate" title={user?.email}>
                                             {user?.email}
                                         </div>
                                     </div>

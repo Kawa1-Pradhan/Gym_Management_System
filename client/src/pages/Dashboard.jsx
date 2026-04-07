@@ -314,13 +314,13 @@ const Dashboard = () => {
                 {/* Header Section */}
                 <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                        <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-2">Welcome back, {user.name}!</h1>
-                        <p className="text-neutral-400 font-medium">Here's what's happening with your membership today.</p>
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2 capitalize">Welcome back, {user.name?.toLowerCase()}!</h1>
+                        <p className="text-neutral-400 font-medium text-sm sm:text-base">Here's what's happening with your membership today.</p>
                     </div>
                     {user.membershipType && (
-                        <div className="bg-red-500/10 border border-red-500/20 px-4 sm:px-6 py-4 rounded-2xl flex-shrink-0">
+                        <div className="bg-red-500/10 border border-red-500/20 px-4 sm:px-6 py-4 rounded-2xl flex-shrink-0 mt-4 md:mt-0">
                             <p className="text-[10px] font-bold text-red-500 uppercase tracking-[0.2em] mb-1">Current Plan</p>
-                            <p className="text-lg sm:text-xl font-bold text-white">{user.membershipType}</p>
+                            <p className="text-base font-bold text-white tracking-tight">{user.membershipType}</p>
                         </div>
                     )}
                 </div>
