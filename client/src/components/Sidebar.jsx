@@ -106,6 +106,7 @@ const Sidebar = ({ activeTab, onTabChange, role }) => {
                 <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-4 mb-2">Main Menu</div>
 
                 <NavItem id="home" label="Dashboard" icon={LayoutDashboard} />
+                {role === 'STAFF' && <NavItem id="enrollment" label="Enroll Member" icon={UserPlus} />}
 
                 {role === 'ADMIN' && (
                     <ParentItem sectionId="user-management" label="User Management" icon={Users}>

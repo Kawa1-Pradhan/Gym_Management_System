@@ -21,7 +21,7 @@ const PaymentSuccess = () => {
     const verifyPayment = async (pidx) => {
         try {
             const response = await apiRequest('/api/membership/verify', {
-                method: 'POST',
+                method: 'POST   ',
                 body: { pidx }
             });
             // apiRequest throws if status >= 400

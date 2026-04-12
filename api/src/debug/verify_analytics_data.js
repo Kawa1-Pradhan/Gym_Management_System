@@ -1,10 +1,10 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
-import User from '../../src/models/User.js';
-import Booking from '../../src/models/Booking.js';
-import BoxingSession from '../../src/models/BoxingSession.js';
-import SaunaSession from '../../src/models/SaunaSession.js';
+import User from '../models/User.js';
+import Booking from '../models/Booking.js';
+import BoxingSession from '../models/BoxingSession.js';
+import SaunaSession from '../models/SaunaSession.js';
 import dns from 'dns';
 
 // Fix for potential DNS issues in some environments

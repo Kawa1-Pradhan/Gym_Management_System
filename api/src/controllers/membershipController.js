@@ -21,15 +21,12 @@ export const initiatePurchase = async (req, res) => {
         const { planId, categoryName, name, email, phone } = req.body;
         const userId = req.user ? req.user.id : null;
 
-        // Make sure the plan they picked actually exists
         const plan = await MembershipPlan.findById(planId);
         if (!plan) return res.status(404).json({ message: "Package not found" });
 
-        // Find the specific category price
         const category = plan.categories.find(c => c.name === categoryName);
         if (!category) return res.status(400).json({ message: "Invalid membership category" });
 
-        // Check if we already have this user or if they're checking out as a guest
         let customerInfo = { name, email, phone };
         let isNewMember = false;
         let finalUserId = null;
@@ -37,13 +34,12 @@ export const initiatePurchase = async (req, res) => {
         if (userId) {
             const user = await User.findById(userId);
             if (!user) return res.status(404).json({ message: "User not found" });
-
-            // Critical Decoupling: Standardize emails for comparison
+            
             const inputEmail = (email || "").toLowerCase().trim();
             const loggedInEmail = (user.email || "").toLowerCase().trim();
 
             if (inputEmail === loggedInEmail || !inputEmail) {
-                // The user is buying for themselves
+                
                 finalUserId = userId;
                 customerInfo = { name: user.name, email: user.email, phone: user.phone };
 
@@ -52,7 +48,7 @@ export const initiatePurchase = async (req, res) => {
                     isNewMember = true;
                 }
             } else {
-                // The user is logged in, but purchasing FOR SOMEONE ELSE (Guest Checkout via Admin/Staff proxy).
+               
                 isNewMember = true;
             }
         } else {
@@ -60,15 +56,13 @@ export const initiatePurchase = async (req, res) => {
             if (!name || !email || !phone) {
                 return res.status(400).json({ message: "Name, email, and phone are required for checkout." });
             }
-            isNewMember = true; // Guest is always new
-
+            isNewMember = true; 
             const existingUser = await User.findOne({ email });
             if (existingUser) {
                 return res.status(400).json({ message: "An account with this email already exists. Please login to renew." });
             }
         }
 
-        // Calculate final price: Base + (Optional) New Member Fees
         let finalPrice = category.price;
         const ADMISSION_FEE = 1000;
         const CARD_FEE = 500;
@@ -79,7 +73,6 @@ export const initiatePurchase = async (req, res) => {
 
         const amountPaisa = Math.round(finalPrice * 100);
 
-        // Set up Khalti payload
         const origin = req.get('origin') || process.env.CLIENT_URL || "http://localhost:5173";
         const purchaseOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const payload = {
@@ -96,8 +89,7 @@ export const initiatePurchase = async (req, res) => {
         };
 
         const khaltiResponse = await initiateKhaltiPayment(payload);
-
-        // Save payment record
+       
         const newPayment = new Payment({
             transactionId: khaltiResponse.pidx,
             amount: amountPaisa,
@@ -106,7 +98,7 @@ export const initiatePurchase = async (req, res) => {
             customerInfo,
             userId: finalUserId || null,
             planId: plan._id,
-            categoryName: categoryName, // We should add this to Payment model or store in order name
+            categoryName: categoryName, 
             status: "Pending",
             type: isNewMember ? "New" : "Renewal"
         });
@@ -156,10 +148,10 @@ export const verifyPayment = async (req, res) => {
         let passwordGenerated = null;
 
         if (payment.userId) {
-            // Member Renewal/Purchase
+            
             user = await User.findById(payment.userId);
 
-            // Calculate new expiry based on durationMonths
+           
             const currentExpiry = user.membershipExpiryDate && new Date(user.membershipExpiryDate) > new Date()
                 ? new Date(user.membershipExpiryDate)
                 : new Date();
@@ -174,10 +166,10 @@ export const verifyPayment = async (req, res) => {
 
             await user.save();
 
-            // Send Renewal Email Non-Blocking
+            
             sendRenewalEmail(user.email, user.name, user.membershipType, newExpiry);
 
-            // Award points for membership renewal using rules
+           
             const { awardPoints } = await import("./achievementController.js");
             const PointRule = (await import("../models/PointRule.js")).default;
 
@@ -185,11 +177,11 @@ export const verifyPayment = async (req, res) => {
             if (renewalRule) {
                 await awardPoints(user._id, renewalRule.points, `Renewed ${user.membershipType} Membership`, "RENEWAL");
             } else {
-                // Fallback or skip if no rule defined
+                
                 await awardPoints(user._id, 50, "Membership Renewed", "RENEWAL");
             }
 
-            // Notify Admin about renewal
+          
             const admins = await User.find({ role: 'ADMIN' });
             for (const admin of admins) {
                 await notificationService.upsertNotification(
@@ -203,12 +195,11 @@ export const verifyPayment = async (req, res) => {
             }
 
         } else {
-            // New Guest Account — use findOneAndUpdate with upsert to avoid
-            // duplicate key errors if Khalti sends multiple callbacks (e.g. on mobile retry)
+            
             const existingUser = await User.findOne({ email: payment.customerInfo.email.toLowerCase().trim() });
 
             if (existingUser) {
-                // User already created by a previous callback — just update membership
+                
                 user = existingUser;
                 const currentExpiry = user.membershipExpiryDate && new Date(user.membershipExpiryDate) > new Date()
                     ? new Date(user.membershipExpiryDate)
@@ -221,9 +212,7 @@ export const verifyPayment = async (req, res) => {
                 user.membershipType = `${plan.name} (${categoryName})`;
                 user.membershipStartDate = user.membershipStartDate || new Date();
                 await user.save();
-                passwordGenerated = null; // Do not send new credentials for an existing user
-
-                // Dispatch Renewal Email for existing accounts testing the guest checkout
+                passwordGenerated = null; 
                 sendRenewalEmail(user.email, user.name, user.membershipType, newExpiry);
             } else {
                 const randomPassword = crypto.randomBytes(4).toString("hex");
@@ -250,28 +239,25 @@ export const verifyPayment = async (req, res) => {
                     await user.save();
                 } catch (dupErr) {
                     if (dupErr.code === 11000) {
-                        // Duplicate Key Error - Identify if it's Email or Phone
+                        
                         const dupField = Object.keys(dupErr.keyPattern)[0];
 
                         if (dupField === 'email') {
-                            // Race condition — another request created the user. Fetch and update.
+                            
                             user = await User.findOne({ email: payment.customerInfo.email.toLowerCase().trim() });
                             if (user) {
                                 user.membershipStatus = "Active";
                                 user.membershipType = `${plan.name} (${categoryName})`;
                                 await user.save();
-                                passwordGenerated = null; // Swallowed duplicate duplicate-handling
+                                passwordGenerated = null; 
                             } else {
                                 throw dupErr;
                             }
                         } else if (dupField === 'phone') {
-                            // The user is testing a new email but re-used their Admin phone number!
-                            // MongoDB crashes because phone must be unique.
-                            // Bypass: append a random string to the phone so the guest registers successfully.
+                            
                             user.phone = `${payment.customerInfo.phone}-${crypto.randomBytes(2).toString('hex')}`;
                             await user.save();
-                            // passwordGenerated remains intact, email will send!
-                        } else {
+                            
                             throw dupErr;
                         }
                     } else {
@@ -279,17 +265,17 @@ export const verifyPayment = async (req, res) => {
                     }
                 }
 
-                // Send Credentials Email Non-Blocking only for truly new users
+                
                 if (passwordGenerated) {
                     sendCredentialsEmail(user.email, user.name, passwordGenerated, user.membershipType);
                 }
             }
 
-            // Link payment to user account
+            
             payment.userId = user._id;
             await payment.save();
 
-            // Award points for new membership using rules
+          
             const { awardPoints } = await import("./achievementController.js");
             const PointRule = (await import("../models/PointRule.js")).default;
 

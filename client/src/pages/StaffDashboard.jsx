@@ -6,6 +6,7 @@ import NotificationBell from '../components/NotificationBell';
 import InventoryComponent from '../components/InventoryComponent';
 import Sidebar from '../components/Sidebar';
 import Reports from './Reports';
+import EnrollMember from './EnrollMember';
 import { Dumbbell, ChevronRight } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -397,6 +398,7 @@ const StaffDashboard = () => {
 
   const TABS = [
     { id: 'home', label: 'Dashboard', icon: '🏠' },
+    { id: 'enrollment', label: 'Enroll Member', icon: '👤' },
     { id: 'bookings', label: 'Member Booking', icon: '📅' },
     { id: 'boxing', label: 'Boxing', icon: '🥊' },
     { id: 'sauna', label: 'Sauna', icon: '🏊' },
@@ -588,6 +590,16 @@ const StaffDashboard = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'enrollment' && (
+            <div className="animate-in fade-in duration-500">
+              <div className="mb-8">
+                <h1 className="text-xl sm:text-3xl font-bold text-white">Enroll New Member</h1>
+                <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mt-1">Register a new client or staff member into the system.</p>
+              </div>
+              <EnrollMember isDashboard={true} />
             </div>
           )}
 
