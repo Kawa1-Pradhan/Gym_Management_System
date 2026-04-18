@@ -536,7 +536,22 @@ const AdminDashboard = () => {
 
   const handleAwardPoints = async (e) => {
     e.preventDefault();
-    if (!awardPointsData.memberId || !awardPointsData.points) return;
+    setError('');
+    setSuccess('');
+
+    // Validate memberId
+    if (!awardPointsData.memberId || !awardPointsData.memberId.trim()) {
+      setError('Member ID is required');
+      return;
+    }
+
+    // Validate points > 0 (explicit check, since 0 is falsy in JS)
+    const numPoints = Number(awardPointsData.points);
+    if (isNaN(numPoints) || numPoints <= 0) {
+      setError('Points must be greater than 0');
+      return;
+    }
+
     try {
       setLoading(true);
       await apiRequest('/api/achievements/award-points', {
@@ -553,6 +568,7 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
+
 
   const handleUpdatePointRule = async (e) => {
     e.preventDefault();

@@ -234,14 +234,29 @@ export const awardPoints = async (userId, pointsToAdd, reason, source = "MANUAL"
 export const manualAwardPoints = async (req, res) => {
     try {
         const { memberId, points, reason } = req.body;
-        if (!memberId || !points) {
-            return res.status(400).json({ message: "Member ID and points are required" });
+
+        if (!memberId || !String(memberId).trim()) {
+            return res.status(400).json({ message: "Member ID is required" });
         }
 
-        await awardPoints(memberId, Number(points), reason || "Manually awarded by Admin", "MANUAL");
+        if (points === undefined || points === null || points === '') {
+            return res.status(400).json({ message: "Points are required" });
+        }
 
-        res.json({ message: "Points awarded successfully" });
+        const numPoints = Number(points);
+        if (isNaN(numPoints) || numPoints <= 0) {
+            return res.status(400).json({ message: "Points must be greater than 0" });
+        }
+
+        const member = await User.findById(String(memberId).trim());
+        if (!member) {
+            return res.status(404).json({ message: "Member not found" });
+        }
+
+        await awardPoints(member._id, numPoints, reason || "Manually awarded by Admin", "MANUAL");
+
+        return res.json({ message: `${numPoints} points awarded successfully to ${member.name}` });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: error.message });
     }
 };
