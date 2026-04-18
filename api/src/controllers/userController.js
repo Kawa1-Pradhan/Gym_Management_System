@@ -82,12 +82,27 @@ const deleteUser = async (req, res) => {
 
 const deactivateUser = async (req, res) => {
     try {
-        const data = await userService.deactivateUser(req.params.id);
+        const targetId = req.params.id;
+        const requesterId = req.user.id || req.user._id;
+
+        // Prevent admin from deactivating themselves
+        if (String(requesterId) === String(targetId)) {
+            return res.status(400).json({ message: "You cannot deactivate yourself" });
+        }
+
+        // Prevent deactivating any admin account
+        const targetUser = await userService.getUserById(targetId);
+        if (targetUser && targetUser.role && targetUser.role.includes('ADMIN')) {
+            return res.status(400).json({ message: "Admin accounts cannot be deactivated" });
+        }
+
+        const data = await userService.deactivateUser(targetId);
         res.status(200).send(data);
     } catch (error) {
         res.status(error.statusCode || 500).json({ message: error.message || "Internal Server Error" });
     }
 };
+
 
 const resetPassword = async (req, res) => {
     try {
