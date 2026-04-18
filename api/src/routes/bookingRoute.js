@@ -5,8 +5,8 @@ import { requireAuth, requireMember, requireActiveMember } from '../middlewares/
 const router = express.Router();
 
 // Public/Member routes - Get active sessions
-router.get('/sessions/boxing/active', bookingController.getActiveBoxingSessions);
-router.get('/sessions/sauna/active', bookingController.getActiveSaunaSessions);
+router.get('/sessions/boxing/active',requireAuth, bookingController.getActiveBoxingSessions);
+router.get('/sessions/sauna/active',requireAuth, bookingController.getActiveSaunaSessions);
 
 // Member-centric routes - Booking management (Now staff accessible for administrative booking)
 router.post('/boxing/:id', requireAuth, bookingController.bookBoxingSession);

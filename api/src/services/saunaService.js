@@ -88,13 +88,12 @@ const bookSession = async (sessionId, memberId) => {
         throw new Error("Session is not active or has been cancelled");
     }
 
-    if (session.availableSlots <= 0) {
+    if (session.bookings.length >= session.maxCapacity) {
         throw new Error("Session is full");
     }
 
     // Uniqueness is enforced by the Booking model index
 
-    session.availableSlots -= 1;
     session.bookings.push(memberId);
     await session.save();
 
@@ -107,7 +106,6 @@ const cancelBooking = async (sessionId, memberId) => {
         throw new Error("Session not found");
     }
 
-    session.availableSlots += 1;
     session.bookings = session.bookings.filter(
         id => id.toString() !== memberId.toString()
     );

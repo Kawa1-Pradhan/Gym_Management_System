@@ -62,9 +62,11 @@ const boxingSessionSchema = new mongoose.Schema({
   },
 });
 
-// Automatically update updatedAt on save
-boxingSessionSchema.pre("save", function () {
+// Automatically update updatedAt and availableSlots on save
+boxingSessionSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
+  this.availableSlots = Math.max(0, this.maxCapacity - (this.bookings ? this.bookings.length : 0));
+  next();
 });
 
 // Index for efficient queries

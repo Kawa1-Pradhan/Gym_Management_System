@@ -97,7 +97,8 @@ const BookSession = () => {
 
   const SessionCard = ({ session, sessionType }) => {
     const isBooked = isSessionBooked(session._id, sessionType);
-    const isFull = session.availableSlots === 0;
+    const bookingsCount = session.bookings?.length || 0;
+    const isFull = bookingsCount >= session.maxCapacity;
 
     return (
       <div className="bg-neutral-900 border border-neutral-800 hover:border-red-500/30 p-6 rounded-xl shadow-lg transition-all duration-200 flex flex-col justify-between">
@@ -120,7 +121,7 @@ const BookSession = () => {
                 ? 'bg-red-900/20 text-red-400 border-red-500/20'
                 : 'bg-green-900/20 text-green-400 border-green-500/20'
               }`}>
-              {session.availableSlots}/{session.maxCapacity}
+              {bookingsCount}/{session.maxCapacity}
             </div>
           </div>
 

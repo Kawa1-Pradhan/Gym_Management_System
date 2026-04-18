@@ -7,7 +7,10 @@ import notificationService from "../services/notificationService.js";
 const getActiveBoxingSessions = async (req, res) => {
   try {
     const sessions = await boxingService.getAllSessions();
-    const activeSessions = sessions.filter(s => s.status === "Active" && s.availableSlots > 0);
+    const activeSessions = sessions.filter(s => 
+      s.status === "Active" && 
+      (s.bookings ? s.bookings.length : 0) < s.maxCapacity
+    );
     res.json(activeSessions);
   } catch (error) {
     console.error("Error fetching active boxing sessions:", error);
@@ -19,7 +22,10 @@ const getActiveBoxingSessions = async (req, res) => {
 const getActiveSaunaSessions = async (req, res) => {
   try {
     const sessions = await saunaService.getAllSessions();
-    const activeSessions = sessions.filter(s => s.status === "Active" && s.availableSlots > 0);
+    const activeSessions = sessions.filter(s => 
+      s.status === "Active" && 
+      (s.bookings ? s.bookings.length : 0) < s.maxCapacity
+    );
     res.json(activeSessions);
   } catch (error) {
     console.error("Error fetching active sauna sessions:", error);
