@@ -12,6 +12,7 @@ const router = express.Router();
 router.get("/rules", requireAuth, getPointRules);
 router.put("/rules/:id", requireAuth, requireStaffOrAdmin, updatePointRule);
 router.get("/history", requireAuth, getPointHistory);
+router.delete("/history/:id", requireAuth, (await import("../controllers/achievementController.js")).deletePointLog);
 
 // Admin / Staff Routes
 router.get("/milestones", requireAuth, getMilestones);

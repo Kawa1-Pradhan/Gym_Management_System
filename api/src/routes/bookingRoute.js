@@ -16,5 +16,6 @@ router.get('/my-bookings', requireAuth, requireMember, bookingController.getMyBo
 // Staff/Admin routes
 router.get('/', requireAuth, bookingController.getAllBookings);
 router.delete('/:id', requireAuth, bookingController.cancelBooking);
+router.delete('/record/:id', requireAuth, bookingController.deleteBookingRecord);
 
 export default router;

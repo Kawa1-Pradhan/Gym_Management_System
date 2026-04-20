@@ -209,6 +209,30 @@ const Dashboard = () => {
         }
     };
 
+    const handleDeleteHistory = async (id) => {
+        if (!window.confirm("Permanently remove this from your history log? This cannot be undone.")) return;
+        try {
+            await apiRequest(`/api/bookings/record/${id}`, { method: 'DELETE' });
+            setSuccess("History record removed.");
+            loadData();
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            setError(err.message || "Failed to remove history record");
+        }
+    };
+
+    const handleDeletePointLog = async (id) => {
+        if (!window.confirm("Permanently delete this point record?")) return;
+        try {
+            await apiRequest(`/api/achievements/history/${id}`, { method: 'DELETE' });
+            setSuccess("Point record removed.");
+            loadData();
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            setError(err.message || "Failed to remove point record");
+        }
+    };
+
     const handleRenew = async (plan, category) => {
         if (!window.confirm(`Renew with ${plan.name} (${category.name}) for NPR ${category.price.toLocaleString()}?`)) return;
         setRenewing(true);
@@ -377,6 +401,7 @@ const Dashboard = () => {
                                     <th className="px-8 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest">Method</th>
                                     <th className="px-8 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest">Date</th>
                                     <th className="px-8 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest text-right">Points</th>
+                                    <th className="px-8 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-800/50">
@@ -398,6 +423,15 @@ const Dashboard = () => {
                                                 <span className={`text-sm font-black ${log.points >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                                                     {log.points >= 0 ? '+' : ''}{log.points}
                                                 </span>
+                                            </td>
+                                            <td className="px-8 py-4 text-right">
+                                                <button
+                                                    onClick={() => handleDeletePointLog(log._id)}
+                                                    className="text-neutral-500 hover:text-red-500 transition-colors p-2"
+                                                    title="Delete log"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                </button>
                                             </td>
                                         </tr>
                                     ))
@@ -484,6 +518,7 @@ const Dashboard = () => {
                                             <th className="px-8 py-4 text-left text-xs font-bold text-neutral-500 uppercase tracking-widest">Session</th>
                                             <th className="px-8 py-4 text-left text-xs font-bold text-neutral-500 uppercase tracking-widest">Date</th>
                                             <th className="px-8 py-4 text-left text-xs font-bold text-neutral-500 uppercase tracking-widest">Status</th>
+                                            <th className="px-8 py-4 text-right text-xs font-bold text-neutral-500 uppercase tracking-widest">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-neutral-800">
@@ -504,6 +539,15 @@ const Dashboard = () => {
                                                         }`}>
                                                         {booking.status}
                                                     </span>
+                                                </td>
+                                                <td className="px-8 py-4 text-right">
+                                                    <button
+                                                        onClick={() => handleDeleteHistory(booking._id)}
+                                                        className="text-neutral-500 hover:text-red-500 transition-colors p-2"
+                                                        title="Remove from history"
+                                                    >
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}

@@ -65,10 +65,9 @@ const saunaSessionSchema = new mongoose.Schema({
 });
 
 // Automatically update updatedAt and availableSlots on save
-saunaSessionSchema.pre("save", function (next) {
+saunaSessionSchema.pre("save", function () {
   this.updatedAt = Date.now();
   this.availableSlots = Math.max(0, this.maxCapacity - (this.bookings ? this.bookings.length : 0));
-  next();
 });
 
 // Index for efficient queries

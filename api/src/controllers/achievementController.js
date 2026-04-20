@@ -260,3 +260,25 @@ export const manualAwardPoints = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
+export const deletePointLog = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const log = await PointLog.findById(id);
+
+        if (!log) {
+            return res.status(404).json({ message: "Log not found" });
+        }
+
+        // Allow only the owner or an admin/staff to delete
+        const isStaffOrAdmin = req.user.role.includes('STAFF') || req.user.role.includes('ADMIN');
+        if (log.userId.toString() !== req.user.id.toString() && !isStaffOrAdmin) {
+            return res.status(403).json({ message: "Not authorized to delete this log" });
+        }
+
+        await PointLog.findByIdAndDelete(id);
+        res.json({ message: "Point history log deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
