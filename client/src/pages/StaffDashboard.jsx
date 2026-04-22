@@ -91,6 +91,7 @@ const StaffDashboard = () => {
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     const token = localStorage.getItem('token');
     if (!token || !userData.role || !userData.role.includes('STAFF')) {
+      alert("Unauthorized access. Staff privileges required.");
       navigate('/dashboard');
       return;
     }
@@ -413,7 +414,7 @@ const StaffDashboard = () => {
     { id: 'reports', label: 'Reports', icon: '📊' }
   ];
 
-  if (!user) return null;
+  if (!user || !user.role?.includes('STAFF')) return null;
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);

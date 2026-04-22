@@ -217,7 +217,12 @@ const AdminDashboard = () => {
     const token = localStorage.getItem('token');
 
     if (!token || !userData.role || !userData.role.includes('ADMIN')) {
-      navigate('/dashboard');
+      alert("Unauthorized access. Admin privileges required.");
+      if (userData?.role?.includes('STAFF')) {
+        navigate('/staff-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
       return;
     }
 
@@ -654,6 +659,10 @@ const AdminDashboard = () => {
     setActiveTab(tabId);
     setIsMobileMenuOpen(false);
   };
+
+  if (!user || !user.role?.includes('ADMIN')) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen bg-black text-white">

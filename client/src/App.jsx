@@ -33,6 +33,13 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/reports" element={<Reports />} />
+          
+          {/* URL Aliases for convenience */}
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/staff" element={<StaffDashboard />} />
+
+          {/* Catch-all route to prevent white screens on unknown URLs */}
+          <Route path="*" element={<Dashboard />} />
         </Routes>
       </div>
     </Router>
